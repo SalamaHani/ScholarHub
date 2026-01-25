@@ -1,0 +1,161 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Scholarship model - core of the platform
+model Scholarship {
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  organization    String
+  country         String
+  region          String?
+  fieldOfStudy    String   // Comma-separated list of fields
+  degreeLevel     String   // Comma-separated list: Bachelor, Master, PhD, etc.
+  fundingType     String   // Full, Partial, Tuition Only, etc.
+  category        String?  // Main category
+  amount          String?
+  currency        String?
+  deadline        DateTime
+  applicationLink String
+  requirements    String
+  eligibility     String
+  benefits        String?
+  documents       String?
+  isActive        Boolean  @default(true)
+  isFeatured      Boolean  @default(false)
+  status          String   @default("APPROVED") // PENDING, APPROVED, REJECTED
+  language        String?  @default("English")
+  studyMode       String?  @default("On-campus")
+  open            Boolean  @default(true)
+  views           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Ownership
+  owner           User?    @relation("ScholarshipOwner", fields: [ownerId], references: [id])
+  ownerId         String?
+
+  // Relations
+  savedBy         SavedScholarship[]
+  categories      CategoryOnScholarship[]
+  applications    Application[]
+
+  @@index([deadline])
+  @@index([country])
+  @@index([isActive])
+  @@index([status])
+}
+
+// Category model for organizing scholarships
+model Category {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  slug         String   @unique
+  description  String?
+  icon         String?
+  color        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  scholarships CategoryOnScholarship[]
+}
+
+// Many-to-many relation between Category and Scholarship
+model CategoryOnScholarship {
+  scholarship   Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  scholarshipId String
+  category      Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId    String
+
+  @@id([scholarshipId, categoryId])
+}
+
+// User model for students, professors, and admins
+model User {
+  id                  String   @id @default(cuid())
+  email               String   @unique
+  password            String
+  name                String?
+  role                String   @default("STUDENT") // STUDENT, PROFESSOR, ADMIN
+  avatar              String?
+  university          String?
+  fieldOfStudy        String?
+  degreeLevel         String?
+  isEmailVerified     Boolean  @default(false)
+  isProfessorVerified Boolean  @default(false)
+  isBlocked           Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  savedScholarships   SavedScholarship[]
+  notifications       Notification[]
+  applications        Application[]
+  ownedScholarships   Scholarship[]      @relation("ScholarshipOwner")
+}
+
+// Application model for students applying to scholarships
+model Application {
+  id            String      @id @default(cuid())
+  student       User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId     String
+  scholarship   Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  scholarshipId String
+  status        String      @default("PENDING") // DRAFT, PENDING, ACCEPTED, REJECTED, WITHDRAWN
+  answers       String?     // JSON string for application answers
+  documents     String?     // JSON string for uploaded document URLs
+  evaluation    String?     // Feedback from professor
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([studentId, scholarshipId])
+}
+
+// Saved scholarships - bookmarks
+model SavedScholarship {
+  id            String      @id @default(cuid())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  scholarship   Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  scholarshipId String
+  notes         String?
+  savedAt       DateTime    @default(now())
+
+  @@unique([userId, scholarshipId])
+}
+
+// Notifications for deadline reminders
+model Notification {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  title     String
+  message   String
+  type      String   // deadline, new_scholarship, system_alert, etc.
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+}
+
+// Contact form submissions
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
