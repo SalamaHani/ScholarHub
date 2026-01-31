@@ -60,7 +60,7 @@ export default function DashboardPage() {
     // Determine context for scholarship hooks
     const role = user?.role?.toUpperCase() || ROLES.STUDENT;
 
-    const { myApplications } = useApplications(role);
+    const { myApplications } = useApplications();
 
     // Professional data fetching based on role
     const {
@@ -295,12 +295,16 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Button variant="outline" className="w-full text-xs justify-start gap-2 h-9 bg-white">
-                                        <Settings className="h-3.5 w-3.5" /> View Profile Details
-                                    </Button>
-                                    <Button variant="outline" className="w-full text-xs justify-start gap-2 h-9 bg-white">
-                                        <Eye className="h-3.5 w-3.5" /> Edit Profile Settings
-                                    </Button>
+                                    <Link href="/profile">
+                                        <Button variant="outline" className="w-full text-xs justify-start gap-2 h-9 bg-white">
+                                            <Settings className="h-3.5 w-3.5" /> View Profile Details
+                                        </Button>
+                                    </Link>
+                                    <Link href="/profile">
+                                        <Button variant="outline" className="w-full text-xs justify-start gap-2 h-9 bg-white">
+                                            <Eye className="h-3.5 w-3.5" /> Edit Profile Settings
+                                        </Button>
+                                    </Link>
                                 </div>
                             </CardContent>
                         </Card>

@@ -33,7 +33,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
     const { id } = params;
     const { data: scholarship, isLoading, error } = useScholarship(id);
     const { save, remove } = useSavedScholarships();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const { data: isSaved, isLoading: isCheckingSaved } = useCheckSaved(id);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -195,7 +195,21 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                                         variant="gradient"
                                         size="lg"
                                         className="w-full h-14 text-base font-bold shadow-lg shadow-primary/25 group"
-                                        onClick={() => setIsModalOpen(true)}
+                                        onClick={() => {
+                                            if (!isAuthenticated) return toast({ title: "Auth Required", description: "Sign in to apply." });
+
+                                            // Real-time Check for Professional UX
+                                            const completeness = user?.profileCompleteness ?? 0;
+                                            if (completeness >= 80) {
+                                                toast({
+                                                    title: "Profile Verified",
+                                                    description: "You have 80%+ profile completeness. Ready for application.",
+                                                    variant: "success",
+                                                });
+                                            }
+
+                                            setIsModalOpen(true);
+                                        }}
                                     >
                                         Apply on ScholarHub
                                         <ArrowLeft className="h-4 w-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />

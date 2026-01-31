@@ -12,9 +12,10 @@ export const getCookie = (name: string): string | null => {
     if (typeof document === "undefined") return null;
     const cookies = document.cookie.split(";");
     for (const cookie of cookies) {
-        const [key, value] = cookie.split("=");
+        let [key, ...valueParts] = cookie.split("=");
+        key = key.trim();
         if (key === name) {
-            return decodeURIComponent(value);
+            return decodeURIComponent(valueParts.join("="));
         }
     }
     return null;

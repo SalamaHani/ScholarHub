@@ -15,13 +15,30 @@ export interface User {
     avatar?: string;
     isVerified: boolean;
     isBlocked: boolean;
+    firstName?: string;
+    lastName?: string;
     createdAt: string;
     updatedAt: string;
+    professorProfile?: {
+        institution: string;
+        department?: string;
+        position?: string;
+        specialization?: string;
+        isVerified: boolean;
+        experience?: any;
+    };
+    studentProfile?: {
+        university?: string;
+        fieldOfStudy?: string;
+        currentDegree?: string;
+        gpa?: number;
+    };
     profile?: {
         bio?: string;
         university?: string;
         department?: string;
         phone?: string;
+        country?: string;
     };
 }
 

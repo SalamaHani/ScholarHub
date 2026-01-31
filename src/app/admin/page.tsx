@@ -530,17 +530,26 @@ function UsersSection() {
                                                 ) : (
                                                     <Badge variant="success" className="w-fit">Active</Badge>
                                                 )}
-                                                {user.isVerified ? (
-                                                    <Badge variant="outline" className="w-fit text-emerald-600">
-                                                        <UserCheck className="h-3 w-3 mr-1" />
-                                                        Verified
-                                                    </Badge>
-                                                ) : user.role === "PROFESSOR" ? (
-                                                    <Badge variant="outline" className="w-fit text-amber-600 bg-amber-50">
-                                                        <Clock className="h-3 w-3 mr-1" />
-                                                        Pending
-                                                    </Badge>
-                                                ) : null}
+                                                {user.role === "PROFESSOR" ? (
+                                                    user.professorProfile?.isVerified ? (
+                                                        <Badge variant="outline" className="w-fit text-emerald-600 bg-emerald-50 border-emerald-200">
+                                                            <UserCheck className="h-3 w-3 mr-1" />
+                                                            Verified
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline" className="w-fit text-amber-600 bg-amber-50 border-amber-200">
+                                                            <Clock className="h-3 w-3 mr-1" />
+                                                            Pending
+                                                        </Badge>
+                                                    )
+                                                ) : (
+                                                    user.isEmailVerified ? (
+                                                        <Badge variant="outline" className="w-fit text-blue-600 bg-blue-50 border-blue-200">
+                                                            <UserCheck className="h-3 w-3 mr-1" />
+                                                            Email Verified
+                                                        </Badge>
+                                                    ) : null
+                                                )}
                                             </div>
                                         </td>
                                         <td className="p-4 text-sm text-muted-foreground">
@@ -563,7 +572,7 @@ function UsersSection() {
                                                             <Pencil className="h-4 w-4 mr-2" />
                                                             Edit Profile
                                                         </DropdownMenuItem>
-                                                        {!user.isVerified && user.role === "PROFESSOR" && (
+                                                        {user.role === "PROFESSOR" && !user.professorProfile?.isVerified && (
                                                             <ConfirmActionDialog
                                                                 title="Verify User"
                                                                 description={`Are you sure you want to verify ${user.firstName} ${user.lastName}? This will grant them professor privileges.`}
@@ -680,11 +689,20 @@ function UsersSection() {
                                             <Badge variant="secondary" className="px-2 py-0.5 font-bold uppercase tracking-wider text-[10px]">
                                                 {viewingUser.role}
                                             </Badge>
-                                            {viewingUser.isVerified && (
-                                                <Badge className="bg-emerald-100 text-emerald-600 border-emerald-200 px-2 py-0.5 flex items-center gap-1">
-                                                    <UserCheck className="h-3 w-3" />
-                                                    Verified
-                                                </Badge>
+                                            {viewingUser.role === "PROFESSOR" ? (
+                                                viewingUser.professorProfile?.isVerified && (
+                                                    <Badge className="bg-emerald-100 text-emerald-600 border-emerald-200 px-2 py-0.5 flex items-center gap-1">
+                                                        <UserCheck className="h-3 w-3" />
+                                                        Verified Professor
+                                                    </Badge>
+                                                )
+                                            ) : (
+                                                viewingUser.isEmailVerified && (
+                                                    <Badge className="bg-blue-100 text-blue-600 border-blue-200 px-2 py-0.5 flex items-center gap-1">
+                                                        <UserCheck className="h-3 w-3" />
+                                                        Email Verified
+                                                    </Badge>
+                                                )
                                             )}
                                             {viewingUser.isBlocked && (
                                                 <Badge variant="destructive" className="px-2 py-0.5">Blocked Account</Badge>
@@ -745,56 +763,73 @@ function UsersSection() {
                                         </h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                                             <div className="space-y-1">
-                                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">University</Label>
+                                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{viewingUser.role === 'PROFESSOR' ? 'Institution' : 'University'}</Label>
                                                 <p className="text-sm font-medium flex items-center gap-2">
                                                     <Building2 className="h-3.5 w-3.5 text-primary/60" />
-                                                    {viewingUser.university || viewingUser.profile?.university}
+                                                    {viewingUser.role === 'PROFESSOR'
+                                                        ? (viewingUser.institution || viewingUser.professorProfile?.institution)
+                                                        : (viewingUser.university || viewingUser.studentProfile?.university)}
                                                 </p>
                                             </div>
-                                            {(viewingUser.department || viewingUser.profile?.department) && (
+                                            {(viewingUser.department || viewingUser.profile?.department || viewingUser.professorProfile?.department) && (
                                                 <div className="space-y-1">
                                                     <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Department</Label>
                                                     <p className="text-sm font-medium">
-                                                        {viewingUser.department || viewingUser.profile?.department}
+                                                        {viewingUser.department || viewingUser.profile?.department || viewingUser.professorProfile?.department}
                                                     </p>
                                                 </div>
                                             )}
-                                            {(viewingUser.fieldOfStudy || viewingUser.profile?.fieldOfStudy) && (
-                                                <div className="space-y-1">
-                                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Major / Field</Label>
-                                                    <p className="text-sm font-medium flex items-center gap-2">
-                                                        <Award className="h-3.5 w-3.5 text-primary/60" />
-                                                        {viewingUser.fieldOfStudy || viewingUser.profile?.fieldOfStudy}
-                                                    </p>
-                                                </div>
+                                            {viewingUser.role === 'PROFESSOR' ? (
+                                                <>
+                                                    {(viewingUser.position || viewingUser.professorProfile?.position) && (
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Academic Position</Label>
+                                                            <p className="text-sm font-medium">
+                                                                {viewingUser.position || viewingUser.professorProfile?.position}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    {(viewingUser.specialization || viewingUser.professorProfile?.specialization) && (
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Specialization</Label>
+                                                            <p className="text-sm font-medium">
+                                                                {viewingUser.specialization || viewingUser.professorProfile?.specialization}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {(viewingUser.fieldOfStudy || viewingUser.profile?.fieldOfStudy || viewingUser.studentProfile?.fieldOfStudy) && (
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Major / Field</Label>
+                                                            <p className="text-sm font-medium flex items-center gap-2">
+                                                                <Award className="h-3.5 w-3.5 text-primary/60" />
+                                                                {viewingUser.fieldOfStudy || viewingUser.profile?.fieldOfStudy || viewingUser.studentProfile?.fieldOfStudy}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    {(viewingUser.gpa || viewingUser.profile?.gpa || viewingUser.studentProfile?.gpa) && (
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Academic Score (GPA)</Label>
+                                                            <p className="text-sm font-bold text-primary">
+                                                                {viewingUser.gpa || viewingUser.profile?.gpa || viewingUser.studentProfile?.gpa}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </>
                                             )}
-                                            {(viewingUser.gpa || viewingUser.profile?.gpa) && (
+                                            {(viewingUser.degreeLevel || viewingUser.profile?.degreeLevel || viewingUser.studentProfile?.currentDegree) && (
                                                 <div className="space-y-1">
-                                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Academic Score (GPA)</Label>
-                                                    <p className="text-sm font-bold text-primary">
-                                                        {viewingUser.gpa || viewingUser.profile?.gpa}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {(viewingUser.degreeLevel || viewingUser.profile?.degreeLevel) && (
-                                                <div className="space-y-1">
-                                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Level of Study</Label>
+                                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{viewingUser.role === 'PROFESSOR' ? 'Highest Degree' : 'Level of Study'}</Label>
                                                     <p className="text-sm font-medium uppercase text-[11px] bg-muted w-fit px-2 py-0.5 rounded-full border">
-                                                        {viewingUser.degreeLevel || viewingUser.profile?.degreeLevel}
+                                                        {viewingUser.degreeLevel || viewingUser.profile?.degreeLevel || viewingUser.studentProfile?.currentDegree}
                                                     </p>
                                                 </div>
                                             )}
-                                            {(viewingUser.currentDegree || viewingUser.profile?.currentDegree) && (
+                                            {viewingUser.role === 'STUDENT' && (viewingUser.graduationYear || viewingUser.profile?.graduationYear) && (
                                                 <div className="space-y-1">
-                                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Target/Current Degree</Label>
-                                                    <p className="text-sm font-medium">
-                                                        {viewingUser.currentDegree || viewingUser.profile?.currentDegree}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {(viewingUser.graduationYear || viewingUser.profile?.graduationYear) && (
-                                                <div className="space-y-1">
-                                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Graduation Environment</Label>
+                                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Expected Graduation</Label>
                                                     <p className="text-sm font-medium">
                                                         Class of {viewingUser.graduationYear || viewingUser.profile?.graduationYear}
                                                     </p>

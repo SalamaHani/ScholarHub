@@ -47,6 +47,7 @@ export const useAuth = () => {
                 title: "Login successful",
                 description: "Welcome back to ScholarHub!",
             });
+            await dispatch(initializeAuth())
             router.push("/");
         } catch (err: any) {
             toast({

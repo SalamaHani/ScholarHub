@@ -37,7 +37,8 @@ export interface User {
     position?: string;
     specialization?: string;
     website?: string;
-    experience?: string;
+    isVerified?: boolean;
+    experience?: any[];
     verifiedAt?: string | null;
     verifiedBy?: string | null;
     verificationDocs?: string | null;
@@ -47,6 +48,7 @@ export interface User {
     isEmailVerified: boolean;
     isProfessorVerified: boolean;
     isBlocked: boolean;
+    certifications?: any[];
     progressMessage?: string;
     progressStatus?: string;
 }
@@ -102,7 +104,19 @@ function normalizeUser(rawUser: any): User {
         position: rawUser.position || profile.position,
         specialization: rawUser.specialization || profile.specialization,
         website: rawUser.website || profile.website,
-        experience: rawUser.experience || profile.experience,
+        isVerified: rawUser.isVerified ?? profile.isVerified ?? rawUser.isProfessorVerified,
+        experience: (() => {
+            const exp = rawUser.experience || profile.experience;
+            if (!exp) return [];
+            if (typeof exp === 'string') {
+                try {
+                    return JSON.parse(exp);
+                } catch (e) {
+                    return [];
+                }
+            }
+            return Array.isArray(exp) ? exp : [];
+        })(),
         verifiedAt: rawUser.verifiedAt || profile.verifiedAt,
         verifiedBy: rawUser.verifiedBy || profile.verifiedBy,
         verificationDocs: rawUser.verificationDocs || profile.verificationDocs,
@@ -119,6 +133,18 @@ function normalizeUser(rawUser: any): User {
                 }
             }
             return Array.isArray(langs) ? langs : [];
+        })(),
+        certifications: (() => {
+            const certs = rawUser.certifications || profile.certifications;
+            if (!certs) return [];
+            if (typeof certs === 'string') {
+                try {
+                    return JSON.parse(certs);
+                } catch (e) {
+                    return [];
+                }
+            }
+            return Array.isArray(certs) ? certs : [];
         })(),
     };
 }
@@ -139,12 +165,25 @@ function setAuthStorage(token: string, user: User): void {
         role: user.role,
         email: user.email,
         name: professionalName,
+        avatar: user.avatar,
+        isVerified: user.isVerified || user.isProfessorVerified
     }));
+
+    // LocalStorage for full user data (client-only recovery)
+    if (typeof window !== "undefined") {
+        localStorage.setItem("scholarhub_user", JSON.stringify(user));
+        localStorage.setItem("scholarhub_token", token);
+    }
 }
 
 function clearAuthStorage(): void {
     // Cookies
     clearAllAuthCookies();
+    // LocalStorage
+    if (typeof window !== "undefined") {
+        localStorage.removeItem("scholarhub_user");
+        localStorage.removeItem("scholarhub_token");
+    }
 }
 
 function getStoredAuth(): { token: string | null; user: User | null } {
@@ -152,17 +191,28 @@ function getStoredAuth(): { token: string | null; user: User | null } {
         return { token: null, user: null };
     }
 
-    // Professional recovery: Rely only on cookies
-    const token = getCookie("token");
-    const userStr = getCookie("user_data");
-
+    // Professional recovery: Prefer local storage for full data, fall back to cookies
+    let token = localStorage.getItem("scholarhub_token") || getCookie("token");
     let user: User | null = null;
-    if (userStr) {
+
+    const storedUser = localStorage.getItem("scholarhub_user");
+    if (storedUser) {
         try {
-            user = JSON.parse(userStr);
+            user = JSON.parse(storedUser);
         } catch (e) {
-            console.error("Failed to parse stored user data:", e);
-            user = null;
+            console.error("Failed to parse localStorage user:", e);
+        }
+    }
+
+    // Fallback to cookie if localStorage is empty
+    if (!user) {
+        const userStr = getCookie("user_data");
+        if (userStr) {
+            try {
+                user = JSON.parse(userStr);
+            } catch (e) {
+                console.error("Failed to parse stored user data:", e);
+            }
         }
     }
 
@@ -222,8 +272,9 @@ export const loginUser = createAsyncThunk(
             const user = authData.user || (authData.tokens ? authData.user : authData);
 
             if (token && user) {
-                setAuthStorage(token, user);
-                return { user, token };
+                const normalizedUser = normalizeUser(user);
+                setAuthStorage(token, normalizedUser);
+                return { user: normalizedUser, token };
             }
 
             throw new Error("Invalid response format from server");
@@ -247,8 +298,9 @@ export const registerUser = createAsyncThunk(
             const user = authData.user || (authData.tokens ? authData.user : authData);
 
             if (token && user) {
-                setAuthStorage(token, user);
-                return { user, token };
+                const normalizedUser = normalizeUser(user);
+                setAuthStorage(token, normalizedUser);
+                return { user: normalizedUser, token };
             }
 
             throw new Error("Registration succeeded but response format was invalid");

@@ -50,7 +50,7 @@ export const useApplications = (filters?: ApplicationFilters) => {
     const allApplications = useQuery({
         queryKey: ["applications", "all", filters],
         queryFn: async () => {
-            const { data } = await api.get<any>("/admin/applications", { params: filters });
+            const { data } = await api.get<any>("/applications", { params: filters });
             return data.data || data;
         },
         enabled: !!user && user.role === "ADMIN",

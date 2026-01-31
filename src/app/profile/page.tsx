@@ -33,7 +33,9 @@ import {
     Twitter,
     Linkedin,
     Trash2,
-    Download
+    Download,
+    UserCheck,
+    Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +64,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/axios";
+import { getProfileStatus, getStatusColor, getStatusStroke, getProgressMessage, getStatusIndicatorColor } from "@/lib/profileStatus";
 
 const DEGREE_LEVELS = [
     { value: "BACHELOR", label: "Bachelor's Degree" },
@@ -72,6 +75,37 @@ const DEGREE_LEVELS = [
     { value: "OTHER", label: "Other" },
 ];
 
+interface ProfileFormData {
+    name: string;
+    avatar: string;
+    university: string;
+    fieldOfStudy: string;
+    degreeLevel: string;
+    currentDegree: string;
+    gpa: number;
+    graduationYear: number;
+    country: string;
+    city: string;
+    zipCode: string;
+    bio: string;
+    age: number;
+    gender: string;
+    phoneNumber: string;
+    institution: string;
+    department: string;
+    profileCompleteness: number;
+    position: string;
+    specialization: string;
+    website: string;
+    experience: any[];
+    certifications: any[];
+    isVerified: boolean;
+    skills: string;
+    languages: any[];
+    documents: any[];
+    officeLocation: string;
+}
+
 export default function ProfilePage() {
     const { user, isLoading, editProfile, updateAvatar: updateAvatarAction, refresh } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
@@ -81,11 +115,15 @@ export default function ProfilePage() {
     const [isEditingSkills, setIsEditingSkills] = useState(false);
     const [isEditingLanguages, setIsEditingLanguages] = useState(false);
     const [isEditingDocs, setIsEditingDocs] = useState(false);
+    const [isEditingExperience, setIsEditingExperience] = useState(false);
+    const [isEditingCertifications, setIsEditingCertifications] = useState(false);
     const [isUploadingDoc, setIsUploadingDoc] = useState(false);
     const { toast } = useToast();
     const [skillTags, setSkillTags] = useState<string[]>([]);
     const [skillInputValue, setSkillInputValue] = useState("");
-    const [languageProficiencies, setLanguageProficiencies] = useState<{ name: string, proficiency: number }[]>([]);
+    const [languageProficiencies, setLanguageProficiencies] = useState<{ name: string, proficiency: number, level?: string }[]>([]);
+    const [experienceItems, setExperienceItems] = useState<{ title: string, organization: string, startDate: string, endDate: string, location: string, description: string }[]>([]);
+    const [certificationItems, setCertificationItems] = useState<{ title: string, organization: string, issueDate: string, expiryDate?: string, credentialId?: string, credentialUrl?: string }[]>([]);
 
     // Initialize tags when dialog opens or user loads
     useEffect(() => {
@@ -93,9 +131,15 @@ export default function ProfilePage() {
             setSkillTags(user.skills);
         }
         if (user?.languages) {
-            setLanguageProficiencies(user.languages);
+            setLanguageProficiencies(user.languages as any);
         }
-    }, [user?.skills, user?.languages, isEditingSkills, isEditingLanguages]);
+        if (user?.experience) {
+            setExperienceItems(user.experience);
+        }
+        if (user?.certifications) {
+            setCertificationItems(user.certifications);
+        }
+    }, [user?.skills, user?.languages, user?.experience, user?.certifications, isEditingSkills, isEditingLanguages, isEditingExperience, isEditingCertifications]);
 
     const handleAddLanguage = () => {
         setLanguageProficiencies([...languageProficiencies, { name: "", proficiency: 50 }]);
@@ -126,7 +170,35 @@ export default function ProfilePage() {
         setSkillTags(skillTags.filter(s => s !== skill));
     };
 
-    const { register, handleSubmit, watch, setValue, reset, formState: { isSubmitting } } = useForm({
+    const handleAddExperience = () => {
+        setExperienceItems([...experienceItems, { title: "", organization: "", startDate: "", endDate: "", location: "", description: "" }]);
+    };
+
+    const handleRemoveExperience = (index: number) => {
+        setExperienceItems(experienceItems.filter((_, i) => i !== index));
+    };
+
+    const handleUpdateExperience = (index: number, field: string, value: string) => {
+        const updated = [...experienceItems];
+        (updated[index] as any)[field] = value;
+        setExperienceItems(updated);
+    };
+
+    const handleAddCertification = () => {
+        setCertificationItems([...certificationItems, { title: "", organization: "", issueDate: "", expiryDate: "", credentialId: "", credentialUrl: "" }]);
+    };
+
+    const handleRemoveCertification = (index: number) => {
+        setCertificationItems(certificationItems.filter((_, i) => i !== index));
+    };
+
+    const handleUpdateCertification = (index: number, field: string, value: string) => {
+        const updated = [...certificationItems];
+        (updated[index] as any)[field] = value;
+        setCertificationItems(updated);
+    };
+
+    const { register, handleSubmit, watch, setValue, reset, formState: { isSubmitting } } = useForm<ProfileFormData>({
         defaultValues: {
             name: user?.name || "",
             avatar: user?.avatar || "",
@@ -145,14 +217,17 @@ export default function ProfilePage() {
             phoneNumber: user?.phoneNumber || "",
             institution: user?.institution || "",
             department: user?.department || "",
+            isVerified: user?.isVerified || false,
             profileCompleteness: user?.profileCompleteness || 0,
             position: user?.position || "",
             specialization: user?.specialization || "",
             website: user?.website || "",
-            experience: user?.experience || "",
+            experience: user?.experience || [],
+            certifications: user?.certifications || [],
             skills: user?.skills?.join(", ") || "",
             languages: user?.languages || [],
             documents: user?.documents || [],
+            officeLocation: (user as any)?.officeLocation || "",
         }
     });
 
@@ -179,12 +254,15 @@ export default function ProfilePage() {
                 profileCompleteness: user.profileCompleteness || 0,
                 department: user.department || "",
                 position: user.position || "",
+                isVerified: !!user.isVerified,
                 specialization: user.specialization || "",
                 website: user.website || "",
-                experience: user.experience || "",
+                experience: user.experience || [],
+                certifications: user.certifications || [],
                 skills: user.skills?.join(", ") || "",
                 languages: user.languages || [],
                 documents: user.documents || [],
+                officeLocation: (user as any).officeLocation || "",
             });
         }
     }, [user, reset]);
@@ -214,7 +292,9 @@ export default function ProfilePage() {
             const processedData = {
                 ...data,
                 skills: skillTags,
-                languages: validLanguages
+                languages: validLanguages,
+                experience: experienceItems,
+                certifications: certificationItems
             };
 
             await editProfile.mutate(processedData);
@@ -225,6 +305,8 @@ export default function ProfilePage() {
             setIsEditingBio(false);
             setIsEditingSkills(false);
             setIsEditingLanguages(false);
+            setIsEditingExperience(false);
+            setIsEditingCertifications(false);
 
             // Re-sync to ensure any server-side completeness calculations are captured
             refresh();
@@ -346,40 +428,55 @@ export default function ProfilePage() {
 
     if (!user) return null;
 
-    // Unified Progress & Completeness Intelligence
+    // Unified Progress & Completeness Intelligence (Standardized)
+    // Comprehensive calculation including ALL profile data fields
     const serverCompleteness = user.profileCompleteness ?? 0;
     const completeness = user.profileCompleteness !== undefined ? user.profileCompleteness : (() => {
         let score = 0;
-        if (user.name) score += 10;
-        if (user.avatar) score += 10;
-        if (user.bio) score += 15;
-        if (user.university || user.institution) score += 15;
-        if (user.skills && user.skills.length > 0) score += 15;
-        if (user.languages && user.languages.length > 0) score += 10;
+
+        // Core Identity (20 points)
+        if (user.name) score += 8;
+        if (user.avatar) score += 7;
+        if (user.bio) score += 5;
+
+        // Contact & Location (15 points)
+        if (user.phoneNumber) score += 5;
+        if (user.country) score += 3;
+        if (user.city) score += 2;
+        if (user.zipCode) score += 2;
+        if (user.age) score += 2;
+        if (user.gender) score += 1;
+
+        // Academic/Institutional Profile (25 points)
+        if (user.role === 'STUDENT') {
+            if (user.university) score += 8;
+            if (user.fieldOfStudy) score += 7;
+            if (user.gpa) score += 5;
+            if (user.graduationYear) score += 3;
+            if (user.degreeLevel) score += 2;
+        } else if (user.role === 'PROFESSOR') {
+            if (user.institution) score += 8;
+            if (user.department) score += 7;
+            if (user.position) score += 5;
+            if (user.specialization) score += 3;
+            if (user.website) score += 2;
+        }
+
+        // Professional Development (25 points)
+        if (user.skills && user.skills.length > 0) score += 10;
+        if (user.languages && user.languages.length > 0) score += 7;
+        if (user.certifications && user.certifications.length > 0) score += 5;
+        if (user.experience && user.experience.length > 0) score += 3;
+
+        // Documentation (15 points)
         if (user.documents && user.documents.length > 0) score += 15;
+
         return Math.min(score, 100);
     })();
 
-    const progressMessage = user.progressMessage || `${completeness}% Profile Strength`;
-    const progressStatus = user.progressStatus || (completeness >= 70 ? "EXCELLENT" : completeness >= 50 ? "GOOD" : "POOR");
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case "EXCELLENT": return "text-emerald-600";
-            case "GOOD": return "text-yellow-500";
-            case "POOR": return "text-red-500";
-            default: return "text-slate-400";
-        }
-    };
-
-    const getStatusStroke = (status: string) => {
-        switch (status) {
-            case "EXCELLENT": return "stroke-emerald-600";
-            case "GOOD": return "stroke-yellow-500";
-            case "POOR": return "stroke-red-500";
-            default: return "stroke-slate-400";
-        }
-    };
+    // Standardized Status System: POOR (≤50%), GOOD (51-79%), EXCELLENT (≥80%)
+    const progressStatus = getProfileStatus(completeness);
+    const progressMessage = getProgressMessage(completeness);
 
 
 
@@ -394,23 +491,42 @@ export default function ProfilePage() {
                     {/* Sidebar: Profile Summary & Stats */}
                     <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
                         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-                            <Card className="border-none shadow-xl shadow-slate-200/50 overflow-hidden bg-white">
-                                <CardHeader className="pb-2 text-center border-b border-slate-50">
+                            <Card className={cn(
+                                "border-none shadow-xl overflow-hidden relative",
+                                progressStatus === "EXCELLENT" ? "bg-gradient-to-br from-emerald-50 to-green-50 shadow-emerald-200/50" :
+                                    progressStatus === "GOOD" ? "bg-gradient-to-br from-yellow-50 to-amber-50 shadow-yellow-200/50" :
+                                        "bg-gradient-to-br from-red-50 to-rose-50 shadow-red-200/50"
+                            )}>
+                                <div className={cn(
+                                    "h-1.5 w-full",
+                                    progressStatus === "EXCELLENT" ? "bg-gradient-to-r from-emerald-500 to-green-500" :
+                                        progressStatus === "GOOD" ? "bg-gradient-to-r from-yellow-500 to-amber-500" :
+                                            "bg-gradient-to-r from-red-500 to-rose-500"
+                                )} />
+                                <CardHeader className="pb-2 text-center border-b border-white/50">
                                     <CardTitle className={cn("text-[10px] font-bold tracking-widest uppercase", getStatusColor(progressStatus))}>
                                         {progressStatus} Status
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex flex-col items-center pt-6 pb-8">
                                     <div className="relative h-36 w-36 mb-6">
-                                        <svg className="h-full w-full" viewBox="0 0 100 100">
-                                            <circle className="text-slate-100" strokeWidth="8" stroke="currentColor" fill="transparent" r="42" cx="50" cy="50" />
+                                        <svg className="h-full w-full transform -rotate-90" viewBox="0 0 100 100">
                                             <circle
-                                                className={cn("transition-all duration-1000 ease-out", getStatusStroke(progressStatus))}
+                                                className="text-white/50"
+                                                strokeWidth="8"
+                                                stroke="currentColor"
+                                                fill="transparent"
+                                                r="42"
+                                                cx="50"
+                                                cy="50"
+                                            />
+                                            <circle
+                                                className={cn("transition-all duration-1000 ease-out")}
                                                 strokeWidth="8"
                                                 strokeDasharray={264}
                                                 strokeDashoffset={264 - (264 * completeness) / 100}
                                                 strokeLinecap="round"
-                                                stroke="currentColor"
+                                                stroke={progressStatus === "EXCELLENT" ? "#10b981" : progressStatus === "GOOD" ? "#eab308" : "#ef4444"}
                                                 fill="transparent"
                                                 r="42"
                                                 cx="50"
@@ -422,32 +538,62 @@ export default function ProfilePage() {
                                         </div>
                                     </div>
                                     <div className="w-full space-y-4 px-2 mb-6">
-                                        <CompletenessStep label="Bio & Identity" completed={!!(user.name && user.bio)} />
-                                        <CompletenessStep label="Education Info" completed={!!(user.university || user.institution)} />
+                                        <CompletenessStep label="Bio & Identity" completed={!!(user.name && user.bio && user.avatar)} />
+                                        <CompletenessStep label="Contact Info" completed={!!(user.phoneNumber && user.country)} />
+                                        <CompletenessStep label="Location Details" completed={!!(user.city && user.zipCode)} />
+                                        <CompletenessStep label="Personal Info" completed={!!(user.age && user.gender)} />
+                                        {user.role === 'STUDENT' ? (
+                                            <>
+                                                <CompletenessStep label="Academic Profile" completed={!!(user.university && user.fieldOfStudy && user.gpa)} />
+                                                <CompletenessStep label="Degree Info" completed={!!(user.degreeLevel && user.graduationYear)} />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <CompletenessStep label="Institutional Profile" completed={!!(user.institution && user.department)} />
+                                                <CompletenessStep label="Academic Position" completed={!!(user.position && user.specialization)} />
+                                            </>
+                                        )}
                                         <CompletenessStep label="Skills & Mastery" completed={(user.skills?.length ?? 0) > 0} />
-                                        <CompletenessStep label="Language Mastery" completed={(user.languages?.length ?? 0) > 0} />
+                                        <CompletenessStep label="Language Proficiency" completed={(user.languages?.length ?? 0) > 0} />
+                                        <CompletenessStep label="Experience" completed={(user.experience?.length ?? 0) > 0} />
+                                        <CompletenessStep label="Certifications" completed={(user.certifications?.length ?? 0) > 0} />
                                         <CompletenessStep label="Document Vault" completed={(user.documents?.length ?? 0) > 0} />
-                                        <CompletenessStep label="Profile Photo" completed={!!user.avatar} />
                                     </div>
-                                    <p className="text-[10px] font-bold text-slate-400 bg-slate-50 px-4 py-2 rounded-xl italic text-center w-full mb-4">
+                                    <p className={cn(
+                                        "text-[10px] font-bold px-4 py-2 rounded-xl italic text-center w-full mb-4",
+                                        progressStatus === "EXCELLENT" ? "text-emerald-700 bg-emerald-100/50" :
+                                            progressStatus === "GOOD" ? "text-yellow-700 bg-yellow-100/50" :
+                                                "text-red-700 bg-red-100/50"
+                                    )}>
                                         {progressMessage}
                                     </p>
-                                    <Button variant="outline" className="w-full rounded-xl font-bold text-xs h-10 border-primary/20 text-primary hover:bg-primary/5">Improve Now</Button>
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            "w-full rounded-xl font-bold text-xs h-10 transition-all",
+                                            progressStatus === "EXCELLENT" ? "border-emerald-500/30 text-emerald-600 hover:bg-emerald-500 hover:text-white" :
+                                                progressStatus === "GOOD" ? "border-yellow-500/30 text-yellow-600 hover:bg-yellow-500 hover:text-white" :
+                                                    "border-red-500/30 text-red-600 hover:bg-red-500 hover:text-white"
+                                        )}
+                                        onClick={() => setIsEditing(true)}
+                                    >
+                                        {progressStatus === "EXCELLENT" ? "Optimize Profile" : "Improve Now"}
+                                    </Button>
                                 </CardContent>
                             </Card>
                         </motion.div>
 
                         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                            <Card className="bg-zinc-900 border-none shadow-2xl text-white overflow-hidden relative group">
+                            <Card className="bg-gradient-to-br from-primary via-blue-600 to-purple-600 border-none shadow-2xl text-white overflow-hidden relative group">
                                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
                                     <GraduationCap className="h-20 w-20" />
                                 </div>
                                 <CardContent className="p-8 relative z-10">
                                     <h3 className="font-bold text-xl mb-3">Scholarship Match</h3>
-                                    <p className="text-xs text-zinc-400 leading-relaxed mb-6 font-medium">
-                                        Based on your GPA of <span className="text-primary font-bold">{user.gpa || "N/A"}</span> and field in <span className="text-primary font-bold">{user.fieldOfStudy || "your major"}</span>, we found matches.
+                                    <p className="text-xs text-white/80 leading-relaxed mb-6 font-medium">
+                                        Based on your GPA of <span className="text-white font-bold">{user.gpa || "N/A"}</span> and field in <span className="text-white font-bold">{user.fieldOfStudy || "your major"}</span>, we found matches.
                                     </p>
-                                    <Button variant="gradient" className="w-full font-bold h-11 rounded-xl shadow-xl shadow-primary/20">Find Funds</Button>
+                                    <Button variant="gradient" className="w-full font-bold h-11 rounded-xl shadow-xl shadow-black/20 bg-white text-primary hover:bg-white/90">Find Funds</Button>
                                 </CardContent>
                             </Card>
                         </motion.div>
@@ -484,14 +630,26 @@ export default function ProfilePage() {
                                                     <h1 className="text-4xl font-bold tracking-tight text-slate-800">{user.name || "Scholar User"}</h1>
                                                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                                                         <Badge className="bg-primary/10 text-primary border-primary/20 rounded-lg font-bold text-[10px] tracking-wide px-3 py-1">{user.role}</Badge>
-                                                        {user.isEmailVerified && <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 rounded-lg font-bold text-[10px] tracking-wide px-3 py-1 flex items-center gap-1.5"><ShieldCheck className="h-3 w-3" /> Verified</Badge>}
+                                                        {user.role === 'PROFESSOR' ? user.isVerified ? (
+                                                            <Badge variant="outline" className="w-fit text-emerald-600">
+                                                                <UserCheck className="h-3 w-3 mr-1" />
+                                                                Verified
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="outline" className="w-fit text-amber-600 bg-amber-50">
+                                                                <Clock className="h-3 w-3 mr-1" />
+                                                                Pending
+                                                            </Badge>
+                                                        ) : null}
+
+
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-8 gap-y-2 text-xs font-bold text-slate-400 tracking-wide">
                                                 <span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {user.country || "Global Scholar"}</span>
                                                 <span className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary" /> {user.email}</span>
-                                                <span className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /> Joined {new Date(user.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                                                <span className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /> Joined {new Date(user?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -507,7 +665,8 @@ export default function ProfilePage() {
                                     <InfoItem label="Faculty / Department" value={user.department} icon={BookOpen} />
                                     <InfoItem label="Academic Position" value={user.position} icon={Award} />
                                     <InfoItem label="Research Specialization" value={user.specialization} icon={TrendingUp} />
-                                    <InfoItem label="Total Experience" value={user.experience} icon={Briefcase} />
+                                    <InfoItem label="Total Experience" value={user.experience && user.experience.length > 0 ? `${user.experience.length} Professional Positions` : undefined} icon={Briefcase} />
+                                    <InfoItem label="Certifications" value={certificationItems.length > 0 ? `${certificationItems.length} Verified Credentials` : undefined} icon={Award} />
                                 </div>
                             </ProfileSection>
                         ) : (
@@ -519,6 +678,8 @@ export default function ProfilePage() {
                                     <InfoItem label="Expected Graduation" value={user.graduationYear ? String(user.graduationYear) : undefined} icon={Calendar} />
                                     <InfoItem label="Target Degree" value={user.degreeLevel} icon={Award} />
                                     <InfoItem label="Current Level" value={user.currentDegree} icon={ShieldCheck} />
+                                    <InfoItem label="Work Experience" value={user.experience && user.experience.length > 0 ? `${user.experience.length} Positions` : undefined} icon={Briefcase} />
+                                    <InfoItem label="Certifications" value={certificationItems.length > 0 ? `${certificationItems.length} Credentials` : undefined} icon={Award} highlight />
                                 </div>
                             </ProfileSection>
                         )}
@@ -591,27 +752,109 @@ export default function ProfilePage() {
                             </div>
                         </ProfileSection>
 
-                        {/* 5. Experience Timeline (Professor Only) */}
-                        {user.role === "PROFESSOR" && (
-                            <ProfileSection title="Experience" icon={Briefcase} onAdd={() => { }}>
-                                <div className="space-y-10 pl-2">
-                                    <ExperienceItem
-                                        title={user.position || "Faculty Member"}
-                                        org={user.institution || "University"}
-                                        date="Full Time - Present"
-                                        location={user.country || "Global"}
-                                        detail={user.department || "Academic Department"}
-                                    />
-                                    <ExperienceItem
-                                        title="Student Assistant"
-                                        org="Community Library"
-                                        date="Jan 2023 - Dec 2023"
-                                        location="Local District"
-                                        detail="Library management and research assistance."
-                                    />
-                                </div>
-                            </ProfileSection>
-                        )}
+                        {/* 5. Experience Timeline */}
+                        <ProfileSection title="Experience" icon={Briefcase} onAdd={() => setIsEditingExperience(true)}>
+                            <div className="space-y-4">
+                                {experienceItems.length > 0 ? (
+                                    experienceItems.map((exp, idx) => (
+                                        <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-100 relative group">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity rounded hover:text-red-500 hover:bg-red-50"
+                                                onClick={() => handleRemoveExperience(idx)}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                            <div className="flex items-start gap-4">
+                                                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                                    <Briefcase className="h-5 w-5 text-primary" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-semibold text-slate-800">{exp.title || "Position"}</h4>
+                                                    <p className="text-sm text-slate-600">{exp.organization || "Organization"}</p>
+                                                    <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                                                        <span>{exp.startDate || "Start"} - {exp.endDate || "Present"}</span>
+                                                        {exp.location && <span>• {exp.location}</span>}
+                                                    </div>
+                                                    {exp.description && <p className="text-sm text-slate-500 mt-2">{exp.description}</p>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                                        <Briefcase className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                                        <p className="text-sm text-slate-500">No experience added yet</p>
+                                    </div>
+                                )}
+                                <Button
+                                    variant="outline"
+                                    className="w-full h-10 rounded-xl border-dashed border-2 font-medium"
+                                    onClick={() => {
+                                        handleAddExperience();
+                                        setIsEditingExperience(true);
+                                    }}
+                                >
+                                    <PlusCircle className="h-4 w-4 mr-2" />
+                                    Add Experience
+                                </Button>
+                            </div>
+                        </ProfileSection>
+                        {/* 6. Training & Certifications */}
+                        <ProfileSection title="Training & Certifications" icon={Award} onAdd={() => setIsEditingCertifications(true)}>
+                            <div className="space-y-4">
+                                {certificationItems.length > 0 ? (
+                                    certificationItems.map((cert, idx) => (
+                                        <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-100 relative group">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity rounded hover:text-red-500 hover:bg-red-50"
+                                                onClick={() => handleRemoveCertification(idx)}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                            <div className="flex items-start gap-4">
+                                                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                                    <Award className="h-5 w-5 text-primary" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-semibold text-slate-800">{cert.title || "Certification"}</h4>
+                                                    <p className="text-sm text-slate-600">{cert.organization || "Issuing Organization"}</p>
+                                                    <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                                                        <span>Issued: {cert.issueDate || "Date"}</span>
+                                                        {cert.expiryDate && <span>• Expires: {cert.expiryDate}</span>}
+                                                    </div>
+                                                    {cert.credentialId && <p className="text-xs text-slate-400 mt-1">ID: {cert.credentialId}</p>}
+                                                    {cert.credentialUrl && (
+                                                        <a href={cert.credentialUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary font-bold mt-2 hover:underline">
+                                                            View Credential <ExternalLink className="h-3 w-3" />
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                                        <Award className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                                        <p className="text-sm text-slate-500">No certifications added yet</p>
+                                    </div>
+                                )}
+                                <Button
+                                    variant="outline"
+                                    className="w-full h-10 rounded-xl border-dashed border-2 font-medium"
+                                    onClick={() => {
+                                        handleAddCertification();
+                                        setIsEditingCertifications(true);
+                                    }}
+                                >
+                                    <PlusCircle className="h-4 w-4 mr-2" />
+                                    Add Certification
+                                </Button>
+                            </div>
+                        </ProfileSection>
 
 
 
@@ -657,41 +900,36 @@ export default function ProfilePage() {
 
             {/* Profile Photo Update Dialog */}
             <Dialog open={isEditingAvatar} onOpenChange={setIsEditingAvatar}>
-                <DialogContent className="sm:max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem]">
-                    <div className="h-2 bg-gradient-to-r from-primary to-indigo-600" />
-                    <div className="p-10 pb-6 text-center">
-                        <h2 className="text-3xl font-bold italic tracking-tight text-slate-800">Update Photo</h2>
-                        <p className="text-sm font-bold text-slate-400 mt-2 tracking-wide">Choose a professional scholarly image</p>
+                <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
+                    <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                        <h2 className="text-xl font-semibold text-slate-900">Update Photo</h2>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingAvatar(false)}>
+                            <X className="h-4 w-4 text-slate-500" />
+                        </Button>
                     </div>
-                    <div className="px-10 pb-10 flex flex-col items-center gap-8">
-                        <div className="h-48 w-48 rounded-[2.5rem] border-4 border-slate-50 shadow-xl overflow-hidden bg-slate-50 relative group">
+                    <div className="p-6 flex flex-col items-center gap-6">
+                        <div className="h-40 w-40 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 relative">
                             {watchAvatar ? (
                                 <img src={watchAvatar} alt="Preview" className="h-full w-full object-cover" />
                             ) : (
-                                <div className="h-full w-full flex items-center justify-center text-4xl font-bold text-primary/20 bg-slate-50">
-                                    <Camera className="h-12 w-12" />
+                                <div className="h-full w-full flex items-center justify-center">
+                                    <Camera className="h-10 w-10 text-slate-300" />
                                 </div>
                             )}
                         </div>
-                        <div className="w-full space-y-4">
+                        <div className="w-full space-y-3">
                             <Button
-                                className="w-full h-14 rounded-2xl font-bold tracking-wide"
+                                className="w-full h-11 rounded-md font-medium"
                                 variant="outline"
                                 onClick={() => document.getElementById('avatar-upload-dialog')?.click()}
                             >
-                                <Camera className="h-5 w-5 mr-3" />
+                                <Camera className="h-4 w-4 mr-2" />
                                 Select New Image
                             </Button>
-                            <input
-                                type="file"
-                                id="avatar-upload-dialog"
-                                className="hidden"
-                                accept="image/*"
-                                onChange={onImageChange}
-                            />
-                            <div className="flex gap-4">
-                                <Button variant="ghost" className="h-14 flex-1 rounded-2xl font-bold text-slate-400" onClick={() => setIsEditingAvatar(false)}>Cancel</Button>
-                                <Button className="h-14 flex-[2] rounded-2xl font-bold tracking-wide" variant="gradient" onClick={() => setIsEditingAvatar(false)}>Save Changes</Button>
+                            <input type="file" id="avatar-upload-dialog" className="hidden" accept="image/*" onChange={onImageChange} />
+                            <div className="flex gap-3">
+                                <Button variant="outline" className="h-11 flex-1 rounded-md font-medium" onClick={() => setIsEditingAvatar(false)}>Cancel</Button>
+                                <Button className="h-11 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" onClick={() => setIsEditingAvatar(false)}>Save</Button>
                             </div>
                         </div>
                     </div>
@@ -700,94 +938,82 @@ export default function ProfilePage() {
 
             {/* 1. Personal Identity Dialog */}
             <Dialog open={isEditing} onOpenChange={setIsEditing}>
-                <DialogContent className="sm:max-w-3xl p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem]">
-                    <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col max-h-[92vh]">
-                        <div className="h-2 bg-gradient-to-r from-primary to-indigo-600" />
-                        <div className="p-10 pb-4">
-                            <h2 className="text-4xl font-bold italic tracking-tight text-slate-800">Personal Identity</h2>
-                            <p className="text-sm font-bold text-slate-400 mt-2 tracking-wide">Manage your basic details and identification</p>
+                <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
+                    <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col max-h-[90vh]">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                            <h2 className="text-xl font-semibold text-slate-900">Personal Identity</h2>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditing(false)}>
+                                <X className="h-4 w-4 text-slate-500" />
+                            </Button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto px-10 pb-10 pt-2 space-y-10 scrollbar-thin scrollbar-thumb-primary/10">
-                            <div className="space-y-8">
-                                <div className="space-y-6">
-                                    <SectionHeader label="Basic Info" />
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Full Name</Label>
-                                            <div className="relative">
-                                                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                                                <Input {...register("name")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 pl-12 focus-visible:ring-primary font-bold text-slate-700" />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Phone Number</Label>
-                                            <div className="relative">
-                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                                                <Input {...register("phoneNumber")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 pl-12 focus-visible:ring-primary font-bold text-slate-700" placeholder="+1..." />
-                                            </div>
-                                        </div>
-                                    </div>
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                        <User className="h-4 w-4 text-primary" /> Full Name
+                                    </Label>
+                                    <Input {...register("name")} className="h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all" placeholder="e.g. John Doe" />
                                 </div>
-
-                                <div className="space-y-6">
-                                    <SectionHeader label="Location & Address" />
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Country</Label>
-                                            <div className="relative">
-                                                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                                                <Input {...register("country")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 pl-12 focus-visible:ring-primary font-bold text-slate-700" />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">City</Label>
-                                            <Input {...register("city")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Zip Code</Label>
-                                            <Input {...register("zipCode")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <SectionHeader label="Identity Context" />
-                                    <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Age</Label>
-                                            <Input type="number" {...register("age", { valueAsNumber: true })} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Gender</Label>
-                                            <Select value={watch("gender")} onValueChange={(v) => setValue("gender", v)}>
-                                                <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 font-bold"><SelectValue placeholder="Select" /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="MALE" className="font-bold">Male</SelectItem>
-                                                    <SelectItem value="FEMALE" className="font-bold">Female</SelectItem>
-                                                    <SelectItem value="OTHER" className="font-bold">Other</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                    {user.role === "PROFESSOR" && (
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Portfolio Website</Label>
-                                            <div className="relative">
-                                                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                                                <Input {...register("website")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 pl-12 focus-visible:ring-primary font-bold" placeholder="https://..." />
-                                            </div>
-                                        </div>
-                                    )}
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                        <Phone className="h-4 w-4 text-primary" /> Phone Number
+                                    </Label>
+                                    <Input {...register("phoneNumber")} className="h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all" placeholder="+1..." />
                                 </div>
                             </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                        <Globe className="h-4 w-4 text-primary" /> Country
+                                    </Label>
+                                    <Input {...register("country")} className="h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all" placeholder="e.g. United States" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                        <MapPin className="h-4 w-4 text-primary" /> City
+                                    </Label>
+                                    <Input {...register("city")} className="h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                        <MapPin className="h-4 w-4 text-primary" /> Zip Code
+                                    </Label>
+                                    <Input {...register("zipCode")} className="h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all" />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-slate-700">Age</Label>
+                                    <Input type="number" {...register("age", { valueAsNumber: true })} className="h-10 rounded-md border-slate-200 focus:border-blue-500 focus:ring-blue-500" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-slate-700">Gender</Label>
+                                    <Select value={watch("gender")} onValueChange={(v) => setValue("gender", v)}>
+                                        <SelectTrigger className="h-10 rounded-md border-slate-200"><SelectValue placeholder="Select" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="MALE">Male</SelectItem>
+                                            <SelectItem value="FEMALE">Female</SelectItem>
+                                            <SelectItem value="OTHER">Other</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            {user.role === "PROFESSOR" && (
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-slate-700">Portfolio Website</Label>
+                                    <Input {...register("website")} className="h-10 rounded-md border-slate-200 focus:border-blue-500 focus:ring-blue-500" placeholder="https://..." />
+                                </div>
+                            )}
                         </div>
 
-                        <div className="p-10 border-t border-slate-50 flex gap-4">
-                            <Button type="button" variant="ghost" className="h-14 flex-1 rounded-2xl font-bold text-slate-400 tracking-wide hover:bg-slate-50" onClick={() => setIsEditing(false)}>Cancel</Button>
-                            <Button type="submit" variant="gradient" className="h-14 flex-[2] rounded-2xl font-bold tracking-wide shadow-2xl shadow-primary/30" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="h-5 w-5 animate-spin mr-3" />}
-                                Update Identity
+                        <div className="p-6 border-t border-slate-100 flex gap-3">
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditing(false)}>Cancel</Button>
+                            <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                Save
                             </Button>
                         </div>
                     </form>
@@ -796,88 +1022,118 @@ export default function ProfilePage() {
 
             {/* 2. Academic / Institutional Credentials Dialog */}
             <Dialog open={isEditingAcademic} onOpenChange={setIsEditingAcademic}>
-                <DialogContent className="sm:max-w-3xl p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem]">
-                    <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col max-h-[92vh]">
-                        <div className="h-2 bg-gradient-to-r from-emerald-400 to-teal-600" />
-                        <div className="p-10 pb-4">
-                            <h2 className="text-4xl font-bold italic tracking-tight text-slate-800">Academic Credentials</h2>
-                            <p className="text-sm font-bold text-slate-400 mt-2 tracking-wide">Sync your institutional status and performance</p>
+                <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
+                    <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col max-h-[90vh]">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                            <h2 className="text-xl font-semibold text-slate-900">Academic Credentials</h2>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingAcademic(false)}>
+                                <X className="h-4 w-4 text-slate-500" />
+                            </Button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto px-10 pb-10 pt-2 space-y-10 scrollbar-thin scrollbar-thumb-primary/10">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
                             {user.role === "PROFESSOR" ? (
-                                <div className="space-y-6">
-                                    <SectionHeader label="Institutional Details" />
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Current Institution</Label>
-                                            <Input {...register("institution")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" placeholder="e.g. Stanford University" />
+                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <Building2 className="h-4 w-4 text-primary" /> Current Institution
+                                            </Label>
+                                            <Input {...register("institution")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Stanford University" />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Faculty / Department</Label>
-                                            <Input {...register("department")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" placeholder="e.g. Computer Science" />
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Academic Position</Label>
-                                            <Input {...register("position")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" placeholder="e.g. Associate Professor" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Research Specialization</Label>
-                                            <Input {...register("specialization")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" placeholder="e.g. Machine Learning" />
+                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <BookOpen className="h-4 w-4 text-primary" /> Faculty / Department
+                                            </Label>
+                                            <Input {...register("department")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Computer Science" />
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Total Experience</Label>
-                                        <Input {...register("experience")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" placeholder="e.g. 10 Years" />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <Award className="h-4 w-4 text-primary" /> Academic Position
+                                            </Label>
+                                            <Input {...register("position")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Associate Professor" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <TrendingUp className="h-4 w-4 text-primary" /> Research Specialization
+                                            </Label>
+                                            <Input {...register("specialization")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Machine Learning" />
+                                        </div>
                                     </div>
-                                </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <Briefcase className="h-4 w-4 text-primary" /> Years of Experience
+                                            </Label>
+                                            <div className="relative">
+                                                <Input type="number" {...register("experience")} className="h-11 rounded-xl border-slate-200 pr-16" placeholder="10" />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-bold uppercase tracking-widest text-[10px]">Years</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <MapPin className="h-4 w-4 text-primary" /> Office Location
+                                            </Label>
+                                            <Input {...register("officeLocation")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Building A, Room 305" />
+                                        </div>
+                                    </div>
+                                </>
                             ) : (
-                                <div className="space-y-6">
-                                    <SectionHeader label="Academic Performance" />
-                                    <div className="space-y-6">
+                                <>
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                            <Building2 className="h-4 w-4 text-primary" /> Host University
+                                        </Label>
+                                        <Input {...register("university")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. University of Tokyo" />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Host University</Label>
-                                            <Input {...register("university")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" placeholder="e.g. University of Tokyo" />
+                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <GraduationCap className="h-4 w-4 text-primary" /> Current Degree / Level
+                                            </Label>
+                                            <Input {...register("currentDegree")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. B.Sc. Candidate" />
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Current Degree / Level</Label>
-                                                <Input {...register("currentDegree")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" placeholder="e.g. B.Sc. Candidate" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Target Degree</Label>
-                                                <Select value={watchDegreeLevel} onValueChange={(v) => setValue("degreeLevel", v)}>
-                                                    <SelectTrigger className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 font-bold"><SelectValue /></SelectTrigger>
-                                                    <SelectContent>{DEGREE_LEVELS.map(l => <SelectItem key={l.value} value={l.value} className="font-bold">{l.label}</SelectItem>)}</SelectContent>
-                                                </Select>
-                                            </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <Award className="h-4 w-4 text-primary" /> Target Degree
+                                            </Label>
+                                            <Select value={watchDegreeLevel} onValueChange={(v) => setValue("degreeLevel", v)}>
+                                                <SelectTrigger className="h-11 rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
+                                                <SelectContent>{DEGREE_LEVELS.map(l => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}</SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         <div className="space-y-2 col-span-1">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Current GPA</Label>
-                                            <Input type="number" step="0.01" {...register("gpa", { valueAsNumber: true })} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" placeholder="3.8" />
+                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <TrendingUp className="h-4 w-4 text-primary" /> GPA
+                                            </Label>
+                                            <Input type="number" step="0.01" {...register("gpa", { valueAsNumber: true })} className="h-11 rounded-xl border-slate-200" placeholder="3.8" />
                                         </div>
                                         <div className="space-y-2 col-span-1">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Grad Year</Label>
-                                            <Input type="number" {...register("graduationYear", { valueAsNumber: true })} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" placeholder="2025" />
+                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <Calendar className="h-4 w-4 text-primary" /> Grad Year
+                                            </Label>
+                                            <Input type="number" {...register("graduationYear", { valueAsNumber: true })} className="h-11 rounded-xl border-slate-200" placeholder="2025" />
                                         </div>
                                         <div className="space-y-2 col-span-2">
-                                            <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Major / Field</Label>
-                                            <Input {...register("fieldOfStudy")} className="rounded-2xl border-slate-100 bg-slate-50/50 h-14 focus-visible:ring-primary font-bold" placeholder="e.g. AI & Robotics" />
+                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <BookOpen className="h-4 w-4 text-primary" /> Major / Field
+                                            </Label>
+                                            <Input {...register("fieldOfStudy")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. AI & Robotics" />
                                         </div>
                                     </div>
-                                </div>
+                                </>
                             )}
                         </div>
 
-                        <div className="p-10 border-t border-slate-50 flex gap-4">
-                            <Button type="button" variant="ghost" className="h-14 flex-1 rounded-2xl font-bold text-slate-400 tracking-wide hover:bg-slate-50" onClick={() => setIsEditingAcademic(false)}>Cancel</Button>
-                            <Button type="submit" variant="gradient" className="h-14 flex-[2] rounded-2xl font-bold tracking-wide shadow-2xl shadow-primary/30" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="h-5 w-5 animate-spin mr-3" />}
-                                Sync Credentials
+                        <div className="p-6 border-t border-slate-100 flex gap-3">
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingAcademic(false)}>Cancel</Button>
+                            <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                Save
                             </Button>
                         </div>
                     </form>
@@ -886,34 +1142,30 @@ export default function ProfilePage() {
 
             {/* 3. Story & Biography Dialog */}
             <Dialog open={isEditingBio} onOpenChange={setIsEditingBio}>
-                <DialogContent className="sm:max-w-2xl p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem]">
+                <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
                     <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col">
-                        <div className="h-2 bg-gradient-to-r from-violet-400 to-primary" />
-                        <div className="p-10 pb-4">
-                            <h2 className="text-3xl font-bold italic tracking-tight text-slate-800">Academic Biography</h2>
-                            <p className="text-sm font-bold text-slate-400 mt-2 tracking-wide">Tell your scholarly story to the community</p>
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                            <h2 className="text-xl font-semibold text-slate-900">Academic Biography</h2>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingBio(false)}>
+                                <X className="h-4 w-4 text-slate-500" />
+                            </Button>
                         </div>
-                        <div className="p-10 pt-4 space-y-6">
+                        <div className="p-6 space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Personal Bio</Label>
-                                <div className="relative group">
-                                    <Quote className="absolute left-6 top-6 h-8 w-8 text-primary/10 group-focus-within:text-primary/30 transition-colors" />
-                                    <Textarea
-                                        {...register("bio")}
-                                        className="rounded-[2rem] border-slate-100 bg-slate-50/50 min-h-[220px] focus-visible:ring-primary font-bold p-10 pl-16 text-slate-700 leading-relaxed"
-                                        placeholder="Share your goals, research interests, or academic journey..."
-                                    />
-                                </div>
-                                <p className="text-[10px] text-slate-400 mt-3 font-medium bg-slate-50 p-4 rounded-xl italic">
-                                    Write a compelling biography that highlights your achievements and future aspirations.
-                                </p>
+                                <Label className="text-sm font-medium text-slate-700">Personal Bio</Label>
+                                <Textarea
+                                    {...register("bio")}
+                                    className="rounded-md border-slate-200 min-h-[180px] focus:border-blue-500 focus:ring-blue-500"
+                                    placeholder="Share your goals, research interests, or academic journey..."
+                                />
+                                <p className="text-xs text-slate-500">Write a compelling biography that highlights your achievements and future aspirations.</p>
                             </div>
                         </div>
-                        <div className="p-10 border-t border-slate-50 flex gap-4">
-                            <Button type="button" variant="ghost" className="h-14 flex-1 rounded-2xl font-bold text-slate-400 tracking-wide hover:bg-slate-50" onClick={() => setIsEditingBio(false)}>Cancel</Button>
-                            <Button type="submit" variant="gradient" className="h-14 flex-[2] rounded-2xl font-bold tracking-wide shadow-2xl shadow-primary/30" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="h-5 w-5 animate-spin mr-3" />}
-                                Update Biography
+                        <div className="p-6 border-t border-slate-100 flex gap-3">
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingBio(false)}>Cancel</Button>
+                            <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                Save
                             </Button>
                         </div>
                     </form>
@@ -922,67 +1174,52 @@ export default function ProfilePage() {
 
             {/* Specialized Skills & Expertise Dialog */}
             <Dialog open={isEditingSkills} onOpenChange={setIsEditingSkills}>
-                <DialogContent className="sm:max-w-xl p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem]">
+                <DialogContent className="sm:max-w-xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
                     <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col">
-                        <div className="h-2 bg-gradient-to-r from-emerald-400 to-primary" />
-                        <div className="p-10 pb-4">
-                            <h2 className="text-3xl font-bold italic tracking-tight text-slate-800">Expertise Profile</h2>
-                            <p className="text-sm font-bold text-slate-400 mt-2 tracking-wide">Highlight your core professional competencies</p>
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                            <h2 className="text-xl font-semibold text-slate-900">Expertise Profile</h2>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingSkills(false)}>
+                                <X className="h-4 w-4 text-slate-500" />
+                            </Button>
                         </div>
-                        <div className="p-10 pt-4 space-y-6">
-                            <div className="space-y-4">
-                                <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Current Competencies</Label>
-                                <div className="flex flex-wrap gap-2 min-h-[60px] p-4 bg-slate-50/50 rounded-2xl border border-slate-100 italic transition-all">
+                        <div className="p-6 space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-slate-700">Current Skills</Label>
+                                <div className="flex flex-wrap gap-2 min-h-[60px] p-3 bg-slate-50 rounded-md border border-slate-200">
                                     <AnimatePresence>
                                         {skillTags.length > 0 ? skillTags.map(skill => (
-                                            <motion.div
-                                                key={skill}
-                                                initial={{ scale: 0.8, opacity: 0 }}
-                                                animate={{ scale: 1, opacity: 1 }}
-                                                exit={{ scale: 0.8, opacity: 0 }}
-                                            >
-                                                <Badge variant="secondary" className="pl-4 pr-2 py-2 rounded-xl bg-white border-slate-100 text-slate-700 shadow-sm flex items-center gap-2 group hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all cursor-default">
-                                                    <span className="font-bold text-xs">{skill}</span>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-5 w-5 rounded-md hover:bg-transparent"
-                                                        onClick={() => handleRemoveSkill(skill)}
-                                                    >
+                                            <motion.div key={skill} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}>
+                                                <Badge variant="secondary" className="px-3 py-1.5 rounded-md bg-white border border-slate-200 text-slate-700 flex items-center gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all cursor-default">
+                                                    <span className="text-sm">{skill}</span>
+                                                    <Button type="button" variant="ghost" size="icon" className="h-4 w-4 rounded hover:bg-transparent" onClick={() => handleRemoveSkill(skill)}>
                                                         <X className="h-3 w-3" />
                                                     </Button>
                                                 </Badge>
                                             </motion.div>
                                         )) : (
-                                            <p className="text-xs text-slate-300 font-medium py-2">No skills added yet...</p>
+                                            <p className="text-sm text-slate-400 py-2">No skills added yet...</p>
                                         )}
                                     </AnimatePresence>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-bold text-slate-400 tracking-wide ml-1">Add New Skill</Label>
-                                <div className="relative">
-                                    <Settings className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                                    <Input
-                                        value={skillInputValue}
-                                        onChange={(e) => setSkillInputValue(e.target.value)}
-                                        onKeyDown={handleAddSkill}
-                                        className="rounded-2xl border-slate-100 bg-slate-50/50 h-16 pl-12 focus-visible:ring-primary font-bold"
-                                        placeholder="Type a skill and press Enter"
-                                    />
-                                </div>
-                                <p className="text-[10px] text-slate-400 mt-2 font-medium italic">
-                                    Press <span className="text-primary font-bold">Enter</span> to add a tag. Click a tag to remove it.
-                                </p>
+                                <Label className="text-sm font-medium text-slate-700">Add New Skill</Label>
+                                <Input
+                                    value={skillInputValue}
+                                    onChange={(e) => setSkillInputValue(e.target.value)}
+                                    onKeyDown={handleAddSkill}
+                                    className="h-10 rounded-md border-slate-200"
+                                    placeholder="Type a skill and press Enter"
+                                />
+                                <p className="text-xs text-slate-500">Press <span className="font-medium text-slate-700">Enter</span> to add a tag.</p>
                             </div>
                         </div>
-                        <div className="p-10 border-t border-slate-50 flex gap-4">
-                            <Button type="button" variant="ghost" className="h-14 flex-1 rounded-2xl font-bold text-slate-400 tracking-wide hover:bg-slate-50" onClick={() => setIsEditingSkills(false)}>Cancel</Button>
-                            <Button type="submit" variant="gradient" className="h-14 flex-[2] rounded-2xl font-bold tracking-wide shadow-2xl shadow-primary/30" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="h-5 w-5 animate-spin mr-3" />}
-                                Update Expertise
+                        <div className="p-6 border-t border-slate-100 flex gap-3">
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingSkills(false)}>Cancel</Button>
+                            <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                Save
                             </Button>
                         </div>
                     </form>
@@ -991,95 +1228,216 @@ export default function ProfilePage() {
 
             {/* Specialized Language Mastery Dialog */}
             <Dialog open={isEditingLanguages} onOpenChange={setIsEditingLanguages}>
-                <DialogContent className="sm:max-w-2xl p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem]">
-                    <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col">
-                        <div className="h-2 bg-gradient-to-r from-blue-400 to-indigo-600" />
-                        <div className="p-10 pb-4">
-                            <h2 className="text-3xl font-bold italic tracking-tight text-slate-800">Language Dashboard</h2>
-                            <p className="text-sm font-bold text-slate-400 mt-2 tracking-wide">Manage your linguistic proficiencies</p>
+                <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
+                    <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col max-h-[90vh]">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                            <h2 className="text-xl font-semibold text-slate-900">Languages</h2>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingLanguages(false)}>
+                                <X className="h-4 w-4 text-slate-500" />
+                            </Button>
                         </div>
-                        <div className="px-10 pb-6 pt-2 overflow-y-auto max-h-[60vh] space-y-8 scrollbar-thin scrollbar-thumb-primary/10">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
                             {languageProficiencies.length > 0 ? (
                                 languageProficiencies.map((lang, idx) => (
-                                    <motion.div
-                                        key={idx}
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        className="p-6 bg-slate-50/50 rounded-[2rem] border border-slate-100 relative group"
-                                    >
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 absolute top-4 right-4 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
-                                            onClick={() => handleRemoveLanguage(idx)}
-                                        >
+                                    <div key={idx} className="p-4 bg-slate-50 rounded-md border border-slate-200 relative">
+                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 absolute top-3 right-3 rounded hover:text-red-500 hover:bg-red-50" onClick={() => handleRemoveLanguage(idx)}>
                                             <X className="h-4 w-4" />
                                         </Button>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                             <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-slate-400 tracking-wide">Language Name</Label>
-                                                <Input
-                                                    value={lang.name}
-                                                    onChange={(e) => handleUpdateLanguage(idx, "name", e.target.value)}
-                                                    className="rounded-xl border-slate-200 bg-white h-12 font-bold"
-                                                    placeholder="e.g. Spanish"
-                                                />
+                                                <Label className="text-sm font-medium text-slate-700">Language Name</Label>
+                                                <Input value={lang.name} onChange={(e) => handleUpdateLanguage(idx, "name", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. Spanish" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-slate-400 tracking-wide">Proficiency Level</Label>
+                                                <Label className="text-sm font-medium text-slate-700">Proficiency Level</Label>
                                                 <Select value={lang.level} onValueChange={(v) => handleUpdateLanguage(idx, "level", v)}>
-                                                    <SelectTrigger className="rounded-xl border-slate-200 bg-white h-12 font-bold"><SelectValue /></SelectTrigger>
+                                                    <SelectTrigger className="h-10 rounded-md border-slate-200"><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         {["Beginner", "Intermediate", "Advanced", "Professional", "Native"].map(l => (
-                                                            <SelectItem key={l} value={l} className="font-bold">{l}</SelectItem>
+                                                            <SelectItem key={l} value={l}>{l}</SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
                                             </div>
                                         </div>
-
-                                        <div className="space-y-4">
+                                        <div className="space-y-2">
                                             <div className="flex justify-between items-center">
-                                                <Label className="text-[10px] font-bold text-slate-400 tracking-wide">Proficiency Range</Label>
-                                                <span className="text-xs font-bold text-primary">{lang.proficiency}%</span>
+                                                <Label className="text-sm font-medium text-slate-700">Proficiency</Label>
+                                                <span className="text-sm font-medium text-slate-700">{lang.proficiency}%</span>
                                             </div>
-                                            <div className="flex items-center gap-4">
-                                                <input
-                                                    type="range"
-                                                    min="0"
-                                                    max="100"
-                                                    value={lang.proficiency}
-                                                    onChange={(e) => handleUpdateLanguage(idx, "proficiency", parseInt(e.target.value))}
-                                                    className="flex-1 h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-primary"
-                                                />
-                                            </div>
+                                            <input type="range" min="0" max="100" value={lang.proficiency} onChange={(e) => handleUpdateLanguage(idx, "proficiency", parseInt(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary" />
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 ))
                             ) : (
-                                <div className="text-center py-10 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200">
-                                    <Globe className="h-10 w-10 text-slate-200 mx-auto mb-3" />
-                                    <p className="text-xs font-bold text-slate-400 italic">No languages added yet...</p>
+                                <div className="text-center py-8 bg-slate-50 rounded-md border border-dashed border-slate-200">
+                                    <Globe className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                                    <p className="text-sm text-slate-500">No languages added yet...</p>
                                 </div>
                             )}
 
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full h-14 rounded-2xl border-dashed border-2 font-bold text-primary hover:bg-primary/5 transition-all"
-                                onClick={handleAddLanguage}
-                            >
+                            <Button type="button" variant="outline" className="w-full h-10 rounded-md border-dashed border-2" onClick={handleAddLanguage}>
                                 <PlusCircle className="h-4 w-4 mr-2" />
-                                Add New Language Mastery
+                                Add Language
                             </Button>
                         </div>
-                        <div className="p-10 border-t border-slate-50 flex gap-4">
-                            <Button type="button" variant="ghost" className="h-14 flex-1 rounded-2xl font-bold text-slate-400 tracking-wide hover:bg-slate-50" onClick={() => setIsEditingLanguages(false)}>Cancel</Button>
-                            <Button type="submit" variant="gradient" className="h-14 flex-[2] rounded-2xl font-bold tracking-wide shadow-2xl shadow-primary/30" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="h-5 w-5 animate-spin mr-3" />}
-                                Sync Masteries
+                        <div className="p-6 border-t border-slate-100 flex gap-3">
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingLanguages(false)}>Cancel</Button>
+                            <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                Save
+                            </Button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Experience Timeline Dialog */}
+            <Dialog open={isEditingExperience} onOpenChange={setIsEditingExperience}>
+                <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
+                    <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col max-h-[90vh]">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                            <h2 className="text-xl font-semibold text-slate-900">Experience Timeline</h2>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingExperience(false)}>
+                                <X className="h-4 w-4 text-slate-500" />
+                            </Button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            {experienceItems.length > 0 ? (
+                                experienceItems.map((exp, idx) => (
+                                    <div key={idx} className="p-4 bg-slate-50 rounded-md border border-slate-200 relative space-y-4">
+                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 absolute top-3 right-3 rounded hover:text-red-500 hover:bg-red-50" onClick={() => handleRemoveExperience(idx)}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium text-slate-700">Job Title</Label>
+                                                <Input value={exp.title} onChange={(e) => handleUpdateExperience(idx, "title", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. Senior Researcher" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium text-slate-700">Organization</Label>
+                                                <Input value={exp.organization} onChange={(e) => handleUpdateExperience(idx, "organization", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. MIT" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium text-slate-700">Start Date</Label>
+                                                <Input value={exp.startDate} onChange={(e) => handleUpdateExperience(idx, "startDate", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="Jan 2020" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium text-slate-700">End Date</Label>
+                                                <Input value={exp.endDate} onChange={(e) => handleUpdateExperience(idx, "endDate", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="Present" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium text-slate-700">Location</Label>
+                                                <Input value={exp.location} onChange={(e) => handleUpdateExperience(idx, "location", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="Cambridge, MA" />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-medium text-slate-700">Description</Label>
+                                            <Textarea value={exp.description} onChange={(e) => handleUpdateExperience(idx, "description", e.target.value)} className="rounded-md border-slate-200 min-h-[80px]" placeholder="Briefly describe your role and achievements..." />
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 bg-slate-50 rounded-md border border-dashed border-slate-200">
+                                    <Briefcase className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                                    <p className="text-sm text-slate-500">No experience milestones added yet.</p>
+                                </div>
+                            )}
+
+                            <Button type="button" variant="outline" className="w-full h-10 rounded-md border-dashed border-2" onClick={handleAddExperience}>
+                                <PlusCircle className="h-4 w-4 mr-2" />
+                                Add Position
+                            </Button>
+                        </div>
+
+                        <div className="p-6 border-t border-slate-100 flex gap-3">
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingExperience(false)}>Cancel</Button>
+                            <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                Save
+                            </Button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Certifications Dialog */}
+            <Dialog open={isEditingCertifications} onOpenChange={setIsEditingCertifications}>
+                <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
+                    <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col max-h-[90vh]">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                            <h2 className="text-xl font-semibold text-slate-900">Training & Certifications</h2>
+                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingCertifications(false)}>
+                                <X className="h-4 w-4 text-slate-500" />
+                            </Button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            {certificationItems.length > 0 ? (
+                                certificationItems.map((cert, idx) => (
+                                    <div key={idx} className="p-4 bg-slate-50 rounded-md border border-slate-200 relative space-y-4">
+                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 absolute top-3 right-3 rounded hover:text-red-500 hover:bg-red-50" onClick={() => handleRemoveCertification(idx)}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium text-slate-700">Certification Title</Label>
+                                                <Input value={cert.title} onChange={(e) => handleUpdateCertification(idx, "title", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. AWS Certified Solutions Architect" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium text-slate-700">Issuing Organization</Label>
+                                                <Input value={cert.organization} onChange={(e) => handleUpdateCertification(idx, "organization", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. Amazon Web Services" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium text-slate-700">Issue Date</Label>
+                                                <Input value={cert.issueDate} onChange={(e) => handleUpdateCertification(idx, "issueDate", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. Jan 2023" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium text-slate-700">Expiry Date (Optional)</Label>
+                                                <Input value={cert.expiryDate} onChange={(e) => handleUpdateCertification(idx, "expiryDate", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. Jan 2026" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium text-slate-700">Credential ID</Label>
+                                                <Input value={cert.credentialId} onChange={(e) => handleUpdateCertification(idx, "credentialId", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. ABC-123-XYZ" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium text-slate-700">Credential URL</Label>
+                                                <Input value={cert.credentialUrl} onChange={(e) => handleUpdateCertification(idx, "credentialUrl", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="https://..." />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 bg-slate-50 rounded-md border border-dashed border-slate-200">
+                                    <Award className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                                    <p className="text-sm text-slate-500">No certifications added yet.</p>
+                                </div>
+                            )}
+
+                            <Button type="button" variant="outline" className="w-full h-10 rounded-md border-dashed border-2" onClick={handleAddCertification}>
+                                <PlusCircle className="h-4 w-4 mr-2" />
+                                Add Certification
+                            </Button>
+                        </div>
+
+                        <div className="p-6 border-t border-slate-100 flex gap-3">
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingCertifications(false)}>Cancel</Button>
+                            <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                Save
                             </Button>
                         </div>
                     </form>
@@ -1088,58 +1446,55 @@ export default function ProfilePage() {
 
             {/* Academic Document Vault Dialog */}
             <Dialog open={isEditingDocs} onOpenChange={setIsEditingDocs}>
-                <DialogContent className="sm:max-w-xl p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] flex flex-col max-h-[90vh]">
-                    <div className="h-2 bg-gradient-to-r from-orange-400 to-rose-500 shrink-0" />
-                    <div className="p-10 pb-4 shrink-0">
-                        <h2 className="text-3xl font-bold italic tracking-tight text-slate-800">Document Vault</h2>
-                        <p className="text-sm font-bold text-slate-400 mt-2 tracking-wide">Upload proof of academic or institutional status</p>
+                <DialogContent className="sm:max-w-xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg flex flex-col max-h-[90vh]">
+                    <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+                        <h2 className="text-xl font-semibold text-slate-900">Document Vault</h2>
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingDocs(false)}>
+                            <X className="h-4 w-4 text-slate-500" />
+                        </Button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-10 pb-10 pt-4 space-y-8 scrollbar-thin scrollbar-thumb-primary/10">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
                         <div
                             className={cn(
-                                "border-4 border-dashed rounded-[2rem] p-12 flex flex-col items-center justify-center text-center gap-4 transition-all relative overflow-hidden",
-                                isUploadingDoc ? "bg-slate-50 border-primary/20" : "bg-slate-50/50 border-slate-100 hover:border-primary/30 hover:bg-primary/5 cursor-pointer"
+                                "border-2 border-dashed rounded-md p-8 flex flex-col items-center justify-center text-center gap-3 transition-all cursor-pointer",
+                                isUploadingDoc ? "bg-slate-50 border-slate-300" : "bg-slate-50 border-slate-200 hover:border-blue-400 hover:bg-blue-50"
                             )}
                             onClick={() => !isUploadingDoc && document.getElementById('vault-upload')?.click()}
                         >
                             {isUploadingDoc ? (
                                 <>
-                                    <Loader2 className="h-12 w-12 text-primary animate-spin mb-2" />
-                                    <p className="text-sm font-bold text-slate-600">Securely Uploading...</p>
-                                    <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Encrypting File</p>
+                                    <Loader2 className="h-8 w-8 text-slate-600 animate-spin" />
+                                    <p className="text-sm font-medium text-slate-600">Uploading...</p>
                                 </>
                             ) : (
                                 <>
-                                    <div className="h-20 w-20 rounded-3xl bg-white shadow-xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                                        <FileText className="h-10 w-10 text-primary" />
+                                    <div className="h-12 w-12 rounded-md bg-white border border-slate-200 flex items-center justify-center">
+                                        <FileText className="h-6 w-6 text-slate-600" />
                                     </div>
                                     <div>
-                                        <p className="text-lg font-bold text-slate-700 tracking-tight">Drop your file or Click to Browse</p>
-                                        <p className="text-xs text-slate-400 font-medium mt-1">Supports PDF, DOCX, or JPG (Max 5MB)</p>
+                                        <p className="text-sm font-medium text-slate-700">Drop your file or click to browse</p>
+                                        <p className="text-xs text-slate-500 mt-1">PDF, Word, or Images (Max 5MB)</p>
                                     </div>
                                 </>
                             )}
                             <input type="file" id="vault-upload" className="hidden" onChange={onDocumentUpload} disabled={isUploadingDoc} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
                         </div>
 
-                        <div className="space-y-4">
-                            <SectionHeader label="Security Guidelines" />
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex items-center gap-3">
-                                    <ShieldCheck className="h-5 w-5 text-emerald-500" />
-                                    <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-tight">Encrypted</span>
-                                </div>
-                                <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center gap-3">
-                                    <Globe className="h-5 w-5 text-blue-500" />
-                                    <span className="text-[10px] font-bold text-blue-700 uppercase tracking-tight">Private</span>
-                                </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="p-3 bg-emerald-50 rounded-md border border-emerald-200 flex items-center gap-2">
+                                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                                <span className="text-xs font-medium text-emerald-700">Encrypted</span>
+                            </div>
+                            <div className="p-3 bg-blue-50 rounded-md border border-blue-200 flex items-center gap-2">
+                                <Globe className="h-4 w-4 text-blue-600" />
+                                <span className="text-xs font-medium text-blue-700">Private</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="p-10 border-t border-slate-50 shrink-0">
-                        <Button type="button" variant="outline" className="w-full h-14 rounded-2xl font-bold" onClick={() => setIsEditingDocs(false)} disabled={isUploadingDoc}>Return to Profile</Button>
+                    <div className="p-6 border-t border-slate-100 shrink-0">
+                        <Button type="button" variant="outline" className="w-full h-10 rounded-md font-medium" onClick={() => setIsEditingDocs(false)} disabled={isUploadingDoc}>Close</Button>
                     </div>
                 </DialogContent>
             </Dialog>
