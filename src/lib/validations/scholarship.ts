@@ -15,6 +15,12 @@ export const scholarshipSchema = z.object({
     isFeatured: z.boolean().optional(),
     degreeLevel: z.array(z.string()).min(1, "At least one degree level is required"),
     fieldOfStudy: z.array(z.string()).min(1, "At least one field of study is required"),
+    questions: z.array(z.object({
+        id: z.string(),
+        question: z.string(),
+        type: z.enum(["TEXT", "MULTIPLE_CHOICE"]),
+        options: z.array(z.string()).optional()
+    })).optional(),
 });
 
 export type ScholarshipInput = z.infer<typeof scholarshipSchema>;

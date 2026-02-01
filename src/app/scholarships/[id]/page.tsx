@@ -255,6 +255,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                 onClose={() => setIsModalOpen(false)}
                 scholarshipTitle={scholarship.title}
                 scholarshipId={scholarship.id}
+                questions={scholarship.questions}
             />
         </div>
     );

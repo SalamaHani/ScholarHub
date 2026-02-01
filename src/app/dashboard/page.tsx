@@ -323,7 +323,7 @@ export default function DashboardPage() {
                                                 <ApplicationEvaluateRow
                                                     key={app.id}
                                                     application={app}
-                                                    onEvaluate={(status, evaluation) => evaluate.mutate({ id: app.id, status, evaluation })}
+                                                    onEvaluate={(status: string, evaluation: string) => evaluate.mutate({ id: app.id, status, evaluation })}
                                                     isSubmitting={evaluate.isPending}
                                                 />
                                             ))
@@ -351,7 +351,7 @@ export default function DashboardPage() {
                                                 <TestimonialManageRow
                                                     key={t.id}
                                                     testimonial={t}
-                                                    onUpdate={(data) => updateTestimonial.mutate({ id: t.id, data })}
+                                                    onUpdate={(data: any) => updateTestimonial.mutate({ id: t.id, data })}
                                                     onDelete={() => removeTestimonial.mutate(t.id)}
                                                     isProcessing={updateTestimonial.isPending || removeTestimonial.isPending}
                                                 />
@@ -677,22 +677,36 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
     const [evaluationText, setEvaluationText] = useState(application.evaluation || "");
 
     return (
-        <Card className="hover:border-primary/50 transition-colors bg-white shadow-none border group">
+        <Card className="hover:border-primary/50 transition-all bg-white shadow-none border group overflow-hidden relative">
+            {/* Status Stripe */}
+            <div className={`absolute left-0 top-0 bottom-0 w-1 ${application.status === 'ACCEPTED' ? 'bg-emerald-500' :
+                application.status === 'REJECTED' ? 'bg-rose-500' :
+                    'bg-amber-500'
+                }`} />
+
             <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1">
-                    <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center border shrink-0 overflow-hidden">
-                        {application.student?.avatar ? (
-                            <img src={application.student.avatar} alt={application.student.name} className="h-full w-full object-cover" />
-                        ) : (
-                            <User className="h-6 w-6 text-slate-400" />
-                        )}
+                    <div className="relative">
+                        <div className="h-14 w-14 rounded-2xl bg-slate-100 flex items-center justify-center border shrink-0 overflow-hidden shadow-sm">
+                            {application.student?.avatar ? (
+                                <img src={application.student.avatar} alt={application.student.name} className="h-full w-full object-cover" />
+                            ) : (
+                                <User className="h-7 w-7 text-slate-400" />
+                            )}
+                        </div>
+                        <div className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white ${application.student?.isVerified ? 'bg-blue-500' : 'bg-slate-300'
+                            }`} />
                     </div>
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-sm">{application.student?.name || "Anonymous Student"}</h4>
-                            <Badge variant="outline" className="text-[9px] uppercase">{application.status}</Badge>
+                            <h4 className="font-bold text-base tracking-tight">{application.student?.name || "Anonymous Student"}</h4>
+                            <Badge variant="secondary" className="text-[9px] font-black uppercase tracking-widest px-2 py-0 h-4">
+                                {application.status}
+                            </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">Applied for: <span className="text-primary font-medium">{application.scholarship?.title}</span></p>
+                        <p className="text-xs text-muted-foreground font-medium">
+                            Target: <span className="text-primary font-bold">{application.scholarship?.title}</span>
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -715,6 +729,38 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                                         <p className="font-bold">{application.student?.gpa || "N/A"}</p>
                                     </div>
                                 </div>
+                                {application.answers && (
+                                    <div className="space-y-4 pt-6 border-t">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                                <MessageSquare className="h-4 w-4 text-primary" />
+                                            </div>
+                                            <h3 className="text-sm font-black uppercase tracking-tight text-primary">Applicant Responses</h3>
+                                        </div>
+                                        <div className="grid gap-3">
+                                            {(() => {
+                                                try {
+                                                    const answers = JSON.parse(application.answers);
+                                                    const questions = application.scholarship?.questions || [];
+
+                                                    return questions.map((q: any) => (
+                                                        <div key={q.id} className="p-4 rounded-3xl bg-zinc-50 border border-zinc-100 space-y-2 group/ans hover:bg-white hover:border-primary/20 transition-all">
+                                                            <div className="flex items-start justify-between gap-4">
+                                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">{q.question}</p>
+                                                                <Badge variant="outline" className="h-4 text-[8px] bg-white">{q.type}</Badge>
+                                                            </div>
+                                                            <p className="text-sm font-semibold text-slate-900 leading-relaxed italic">
+                                                                "{answers[q.id] || "No answer provided"}"
+                                                            </p>
+                                                        </div>
+                                                    ));
+                                                } catch (e) {
+                                                    return <p className="text-xs text-muted-foreground italic">No formatted answers available.</p>;
+                                                }
+                                            })()}
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="space-y-2">
                                     <Label>Professor Evaluation / Comments</Label>
                                     <Textarea

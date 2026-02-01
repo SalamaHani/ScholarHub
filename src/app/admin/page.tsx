@@ -1574,6 +1574,7 @@ function ApplicationsSection() {
     const { allApplications, evaluate } = useApplications();
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [viewingApplication, setViewingApplication] = useState<any>(null);
 
     const applications = Array.isArray(allApplications.data) ? allApplications.data : allApplications.data?.applications || [];
 
@@ -1681,7 +1682,12 @@ function ApplicationsSection() {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex justify-end gap-2">
-                                                <Button variant="outline" size="sm" className="h-8">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-8"
+                                                    onClick={() => setViewingApplication(app)}
+                                                >
                                                     <Eye className="h-4 w-4 mr-1" />
                                                     View
                                                 </Button>
@@ -1739,6 +1745,74 @@ function ApplicationsSection() {
                     </table>
                 </div>
             </Card>
+
+            <Dialog open={!!viewingApplication} onOpenChange={(open) => !open && setViewingApplication(null)}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+                    {viewingApplication && (
+                        <div className="flex flex-col">
+                            <div className="p-8 bg-primary/5 border-b space-y-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center text-2xl font-bold text-blue-600 border-4 border-white shadow-lg">
+                                        {viewingApplication.student?.name?.charAt(0) || "S"}
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-bold">{viewingApplication.student?.name}</h2>
+                                        <p className="text-muted-foreground">{viewingApplication.student?.email}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Badge variant={viewingApplication.status === "ACCEPTED" ? "success" : viewingApplication.status === "PENDING" ? "warning" : "destructive"}>
+                                        {viewingApplication.status}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">Applied on {new Date(viewingApplication.createdAt).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+
+                            <div className="p-8 space-y-8">
+                                <section className="space-y-4">
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                        <GraduationCap className="h-4 w-4" />
+                                        Scholarship Information
+                                    </h3>
+                                    <div className="p-4 rounded-2xl bg-muted/40 border space-y-1">
+                                        <p className="font-bold text-lg text-primary">{viewingApplication.scholarship?.title}</p>
+                                        <p className="text-sm font-medium text-muted-foreground">{viewingApplication.scholarship?.organization}</p>
+                                    </div>
+                                </section>
+
+                                {viewingApplication.answers && (
+                                    <section className="space-y-4">
+                                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                            <MessageSquare className="h-4 w-4" />
+                                            Scholarship Questions & Answers
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {(() => {
+                                                try {
+                                                    const answers = JSON.parse(viewingApplication.answers);
+                                                    const questions = viewingApplication.scholarship?.questions || [];
+                                                    return questions.map((q: any) => (
+                                                        <div key={q.id} className="p-4 rounded-2xl bg-white border shadow-sm space-y-2">
+                                                            <p className="text-[10px] font-black uppercase text-primary tracking-wider">{q.question}</p>
+                                                            <p className="text-sm font-medium leading-relaxed italic">"{answers[q.id] || "No answer provided"}"</p>
+                                                        </div>
+                                                    ));
+                                                } catch (e) {
+                                                    return <p className="text-xs text-muted-foreground italic">Could not parse answers.</p>;
+                                                }
+                                            })()}
+                                        </div>
+                                    </section>
+                                )}
+                            </div>
+
+                            <DialogFooter className="p-8 bg-muted/20 border-t">
+                                <Button variant="outline" className="w-full" onClick={() => setViewingApplication(null)}>Close</Button>
+                            </DialogFooter>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </motion.div>
     );
 }
@@ -2449,7 +2523,7 @@ function TestimonialsSection() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 text-slate-900">
-                            {filteredTestimonials.map((t) => (
+                            {filteredTestimonials.map((t: any) => (
                                 <motion.tr
                                     key={t.id}
                                     initial={{ opacity: 0 }}

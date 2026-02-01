@@ -31,6 +31,7 @@ export interface Scholarship {
     status: "PENDING" | "APPROVED" | "REJECTED";
     rejectionReason?: string;
     views: number;
+    questions?: Array<{ id: string; question: string; type: "TEXT" | "MULTIPLE_CHOICE"; options?: string[] }>;
     createdAt: string;
     updatedAt: string;
 }
