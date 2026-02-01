@@ -45,6 +45,7 @@ export interface ScholarshipFilters {
     category?: string;
     status?: string;
     featured?: boolean;
+    userId?: string;
 }
 
 // --- Hooks ---
@@ -128,12 +129,14 @@ export const useScholarships = (filters?: ScholarshipFilters) => {
 
     // 5. Professor's own scholarships - Directly uses the dedicated endpoint
     const professorList = useQuery({
-        queryKey: ["scholarships", "professor"],
+        queryKey: ["scholarships", "professor", filters],
         queryFn: async () => {
-            const { data } = await api.get<any>("/professor");
+            const { data } = await api.get<any>("/professor", {
+                params: filters,
+            });
             return data.data || data;
         },
-        enabled: !!user && user.role === "PROFESSOR",
+        enabled: !!user && (user.role === "PROFESSOR" || user.role === "ADMIN"),
     });
 
     // 6. Admin Pending List - Directly uses the dedicated endpoint

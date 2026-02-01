@@ -37,47 +37,7 @@ export function ApplicationModal({ isOpen, onClose, scholarshipTitle, scholarshi
     const { submit } = useApplications();
 
     // Get profile completeness from user
-    const completeness = user.profileCompleteness !== undefined ? user.profileCompleteness : (() => {
-        let score = 0;
-        // Core Identity (20 points)
-        if (user.name) score += 8;
-        if (user.avatar) score += 7;
-        if (user.bio) score += 5;
-
-        // Contact & Location (15 points)
-        if (user.phoneNumber) score += 5;
-        if (user.country) score += 3;
-        if (user.city) score += 2;
-        if (user.zipCode) score += 2;
-        if (user.age) score += 2;
-        if (user.gender) score += 1;
-
-        // Academic/Institutional Profile (25 points)
-        if (user.role === 'STUDENT') {
-            if (user.university) score += 8;
-            if (user.fieldOfStudy) score += 7;
-            if (user.gpa) score += 5;
-            if (user.graduationYear) score += 3;
-            if (user.degreeLevel) score += 2;
-        } else if (user.role === 'PROFESSOR') {
-            if (user.institution) score += 8;
-            if (user.department) score += 7;
-            if (user.position) score += 5;
-            if (user.specialization) score += 3;
-            if (user.website) score += 2;
-        }
-
-        // Professional Development (25 points)
-        if (user.skills && user.skills.length > 0) score += 10;
-        if (user.languages && user.languages.length > 0) score += 7;
-        if (user.certifications && user.certifications.length > 0) score += 5;
-        if (user.experience && user.experience.length > 0) score += 3;
-
-        // Documentation (15 points)
-        if (user.documents && user.documents.length > 0) score += 15;
-
-        return Math.min(score, 100);
-    })();
+    const completeness = user?.profileCompleteness ?? 0;
     const isEligible = completeness >= 80;
     const isSubmitting = submit.isPending;
 

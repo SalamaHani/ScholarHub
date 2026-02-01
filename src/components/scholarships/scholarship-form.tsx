@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { scholarshipSchema, ScholarshipInput } from "@/lib/validations/scholarship";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,9 +16,10 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, Loader2, Save, BookOpen } from "lucide-react";
+import { X, Plus, Loader2, Save, BookOpen, AlertCircle } from "lucide-react";
 import { useScholarships, Scholarship } from "@/hooks/useScholarships";
 import { useCategories, Category } from "@/hooks/useCategories";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ScholarshipFormProps {
     initialData?: Partial<Scholarship>;
@@ -41,34 +44,23 @@ const fundingTypes = [
 
 export function ScholarshipForm({ initialData, onSuccess, onCancel }: ScholarshipFormProps) {
     const { create, update } = useScholarships();
-
     const { list } = useCategories();
     const categories = list.data?.categories || [];
-    console.log(list.data?.categories);
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // Degree level state (array)
-    const [selectedDegreeLevels, setSelectedDegreeLevels] = useState<string[]>(
-        initialData?.degreeLevel
-            ? (Array.isArray(initialData.degreeLevel) ? initialData.degreeLevel : String(initialData.degreeLevel).split(',').map(s => s.trim()).filter(Boolean))
-            : []
-    );
-
-    // Field of study state (array)
-    const [selectedFields, setSelectedFields] = useState<string[]>(
-        initialData?.fieldOfStudy
-            ? (Array.isArray(initialData.fieldOfStudy) ? initialData.fieldOfStudy : String(initialData.fieldOfStudy).split(',').map(s => s.trim()).filter(Boolean))
-            : []
-    );
-
-    const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
+    const {
+        register,
+        handleSubmit,
+        setValue,
+        watch,
+        formState: { errors, isValidating, isSubmitting: isFormSubmitting },
+    } = useForm<ScholarshipInput>({
+        resolver: zodResolver(scholarshipSchema),
         defaultValues: {
             title: initialData?.title || "",
             organization: initialData?.organization || "",
             country: initialData?.country || "",
             deadline: (initialData?.deadline && !isNaN(new Date(initialData.deadline).getTime())) ? new Date(initialData.deadline).toISOString().split('T')[0] : "",
-            fundingType: initialData?.fundingType || "FULL",
+            fundingType: (initialData?.fundingType as any) || "FULL",
             applicationLink: initialData?.applicationLink || "",
             description: initialData?.description || "",
             requirements: initialData?.requirements || "",
@@ -76,58 +68,48 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
             benefits: initialData?.benefits || "",
             documents: initialData?.documents || "",
             isFeatured: initialData?.isFeatured || false,
+            degreeLevel: initialData?.degreeLevel
+                ? (Array.isArray(initialData.degreeLevel) ? initialData.degreeLevel : String(initialData.degreeLevel).split(',').map(s => s.trim()).filter(Boolean))
+                : [],
+            fieldOfStudy: initialData?.fieldOfStudy
+                ? (Array.isArray(initialData.fieldOfStudy) ? initialData.fieldOfStudy : String(initialData.fieldOfStudy).split(',').map(s => s.trim()).filter(Boolean))
+                : [],
         }
     });
 
-    const onSubmit = async (data: any) => {
-        setIsSubmitting(true);
+    const selectedDegreeLevels = watch("degreeLevel");
+    const selectedFields = watch("fieldOfStudy");
+
+    const onSubmit = async (data: ScholarshipInput) => {
         try {
-            const payload = {
-                ...data,
-                degreeLevel: selectedDegreeLevels,
-                fieldOfStudy: selectedFields,
-            };
-
-            // Validation check
-            if (selectedDegreeLevels.length === 0) {
-                setIsSubmitting(false);
-                return;
-            }
-            if (selectedFields.length === 0) {
-                setIsSubmitting(false);
-                return;
-            }
-
             if (initialData?.id) {
                 await update.mutateAsync({
                     id: initialData.id,
-                    data: payload,
+                    data,
                 });
             } else {
-                await create.mutateAsync(payload);
+                await create.mutateAsync(data);
             }
             onSuccess();
         } catch (error) {
             console.error("Form submission error:", error);
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
     const toggleDegreeLevel = (value: string) => {
-        setSelectedDegreeLevels(prev =>
-            prev.includes(value)
-                ? prev.filter(v => v !== value)
-                : [...prev, value]
-        );
+        const current = selectedDegreeLevels || [];
+        const next = current.includes(value)
+            ? current.filter(v => v !== value)
+            : [...current, value];
+        setValue("degreeLevel", next, { shouldValidate: true });
     };
 
     const toggleField = (value: string) => {
-        setSelectedFields(prev =>
-            prev.includes(value)
-                ? prev.filter(v => v !== value)
-                : [...prev, value]
-        );
+        const current = selectedFields || [];
+        const next = current.includes(value)
+            ? current.filter(v => v !== value)
+            : [...current, value];
+        setValue("fieldOfStudy", next, { shouldValidate: true });
     };
 
     return (
@@ -139,19 +121,22 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                         <Label htmlFor="title" className="text-sm font-bold">Scholarship Title</Label>
                         <Input
                             id="title"
-                            {...register("title", { required: "Title is required" })}
+                            {...register("title")}
                             placeholder="e.g. Fulbright Foreign Student Program"
+                            className={errors.title ? "border-red-500 bg-red-50/30" : ""}
                         />
-                        {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+                        {errors.title && <p className="text-[10px] font-bold text-red-500">{errors.title.message}</p>}
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="organization" className="text-sm font-bold">Organization / University</Label>
                         <Input
                             id="organization"
-                            {...register("organization", { required: "Organization is required" })}
+                            {...register("organization")}
                             placeholder="e.g. U.S. Department of State"
+                            className={errors.organization ? "border-red-500 bg-red-50/30" : ""}
                         />
+                        {errors.organization && <p className="text-[10px] font-bold text-red-500">{errors.organization.message}</p>}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -159,17 +144,21 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                             <Label htmlFor="country" className="text-sm font-bold">Country</Label>
                             <Input
                                 id="country"
-                                {...register("country", { required: "Country is required" })}
+                                {...register("country")}
                                 placeholder="e.g. United States"
+                                className={errors.country ? "border-red-500 bg-red-50/30" : ""}
                             />
+                            {errors.country && <p className="text-[10px] font-bold text-red-500">{errors.country.message}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="deadline" className="text-sm font-bold">Deadline</Label>
                             <Input
                                 id="deadline"
                                 type="date"
-                                {...register("deadline", { required: "Deadline is required" })}
+                                {...register("deadline")}
+                                className={errors.deadline ? "border-red-500 bg-red-50/30" : ""}
                             />
+                            {errors.deadline && <p className="text-[10px] font-bold text-red-500">{errors.deadline.message}</p>}
                         </div>
                     </div>
 
@@ -179,15 +168,15 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                             {degreeLevels.map((level) => (
                                 <Badge
                                     key={level.value}
-                                    variant={selectedDegreeLevels.includes(level.value) ? "default" : "outline"}
-                                    className="cursor-pointer px-3 py-1"
+                                    variant={selectedDegreeLevels?.includes(level.value) ? "default" : "outline"}
+                                    className={`cursor-pointer px-3 py-1 transition-all ${selectedDegreeLevels?.includes(level.value) ? "bg-primary shadow-md" : "hover:bg-primary/5"}`}
                                     onClick={() => toggleDegreeLevel(level.value)}
                                 >
                                     {level.label}
                                 </Badge>
                             ))}
                         </div>
-                        {selectedDegreeLevels.length === 0 && <p className="text-[10px] text-destructive">At least one degree level is required</p>}
+                        {errors.degreeLevel && <p className="text-[10px] font-bold text-red-500">{errors.degreeLevel.message}</p>}
                     </div>
 
                     <div className="space-y-3">
@@ -198,11 +187,11 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
 
                         <div className="flex gap-2">
                             <Select onValueChange={(v) => {
-                                if (v && !selectedFields.includes(v)) {
+                                if (v && !selectedFields?.includes(v)) {
                                     toggleField(v);
                                 }
                             }}>
-                                <SelectTrigger className="rounded-xl border-primary/10 h-11 focus:ring-primary">
+                                <SelectTrigger className="rounded-xl border-primary/10 h-11 focus:ring-primary bg-zinc-50/50">
                                     <SelectValue placeholder="Add a major or field of study..." />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -210,7 +199,7 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                                         <SelectItem
                                             key={cat.id}
                                             value={cat.name}
-                                            disabled={selectedFields.includes(cat.name)}
+                                            disabled={selectedFields?.includes(cat.name)}
                                         >
                                             {cat.name}
                                         </SelectItem>
@@ -225,12 +214,12 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                         </div>
 
                         <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-xl bg-primary/5 border border-dashed border-primary/20">
-                            {selectedFields.length > 0 ? (
+                            {(selectedFields || []).length > 0 ? (
                                 selectedFields.map((field) => (
                                     <Badge
                                         key={field}
                                         variant="secondary"
-                                        className="px-3 py-1 flex items-center gap-1.5 bg-white text-primary border-primary/10 hover:bg-primary/5 transition-colors group"
+                                        className="px-3 py-1 flex items-center gap-1.5 bg-white text-primary border-primary/10 hover:bg-primary/5 transition-colors group shadow-sm"
                                     >
                                         <span className="text-xs font-semibold">{field}</span>
                                         <X
@@ -245,9 +234,9 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                                 </p>
                             )}
                         </div>
-                        {selectedFields.length === 0 && (
-                            <p className="text-[10px] text-destructive font-medium">
-                                * At least one field of study is required
+                        {errors.fieldOfStudy && (
+                            <p className="text-[10px] font-bold text-red-500">
+                                {errors.fieldOfStudy.message}
                             </p>
                         )}
                     </div>
@@ -256,9 +245,9 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                         <Label htmlFor="fundingType" className="text-sm font-bold">Funding Type</Label>
                         <Select
                             value={watch("fundingType")}
-                            onValueChange={(v) => setValue("fundingType", v)}
+                            onValueChange={(v: any) => setValue("fundingType", v, { shouldValidate: true })}
                         >
-                            <SelectTrigger id="fundingType">
+                            <SelectTrigger id="fundingType" className="bg-zinc-50/50">
                                 <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
@@ -269,15 +258,18 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                                 ))}
                             </SelectContent>
                         </Select>
+                        {errors.fundingType && <p className="text-[10px] font-bold text-red-500">{errors.fundingType.message}</p>}
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="applicationLink" className="text-sm font-bold">Original Application Link</Label>
                         <Input
                             id="applicationLink"
-                            {...register("applicationLink", { required: "Link is required" })}
+                            {...register("applicationLink")}
                             placeholder="https://..."
+                            className={errors.applicationLink ? "border-red-500 bg-red-50/30" : ""}
                         />
+                        {errors.applicationLink && <p className="text-[10px] font-bold text-red-500">{errors.applicationLink.message}</p>}
                     </div>
                 </div>
 
@@ -287,10 +279,11 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                         <Label htmlFor="description" className="text-sm font-bold">Description</Label>
                         <Textarea
                             id="description"
-                            {...register("description", { required: "Description is required" })}
+                            {...register("description")}
                             placeholder="Brief overview of the scholarship..."
-                            className="min-h-[100px]"
+                            className={`min-h-[100px] bg-zinc-50/50 ${errors.description ? "border-red-500" : ""}`}
                         />
+                        {errors.description && <p className="text-[10px] font-bold text-red-500">{errors.description.message}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -299,7 +292,7 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                             id="requirements"
                             {...register("requirements")}
                             placeholder="Academic records, Language scores, etc."
-                            className="min-h-[80px]"
+                            className="min-h-[80px] bg-zinc-50/50"
                         />
                     </div>
 
@@ -309,7 +302,7 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                             id="eligibility"
                             {...register("eligibility")}
                             placeholder="Who can apply?"
-                            className="min-h-[80px]"
+                            className="min-h-[80px] bg-zinc-50/50"
                         />
                     </div>
 
@@ -319,18 +312,18 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                             id="benefits"
                             {...register("benefits")}
                             placeholder="Tuition, Stipend, Insurance, etc."
-                            className="min-h-[80px]"
+                            className="min-h-[80px] bg-zinc-50/50"
                         />
                     </div>
                 </div>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-6 border-t">
-                <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
+                <Button type="button" variant="ghost" onClick={onCancel} disabled={isFormSubmitting}>
                     Cancel
                 </Button>
-                <Button type="submit" variant="gradient" className="min-w-[140px]" disabled={isSubmitting}>
-                    {isSubmitting ? (
+                <Button type="submit" variant="gradient" className="min-w-[140px]" disabled={isFormSubmitting}>
+                    {isFormSubmitting ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Saving...

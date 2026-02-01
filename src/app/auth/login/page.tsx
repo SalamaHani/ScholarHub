@@ -2,34 +2,39 @@
 
 import React, { useState } from "react";
 import {
-    Github,
     Mail,
     ArrowRight,
     Eye,
     EyeOff,
+    Github,
     Chrome
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { motion } from "framer-motion";
-
+import { motion, AnimatePresence } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema, LoginInput } from "@/lib/validations/auth";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const { login } = useAuth();
-
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        login.mutate({ email, password });
-    };
-
     const isLoading = login.isPending;
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LoginInput>({
+        resolver: zodResolver(loginSchema),
+    });
+
+    const onSubmit = (data: LoginInput) => {
+        login.mutate(data);
+    };
 
     return (
         <motion.div
@@ -44,7 +49,7 @@ export default function LoginPage() {
                 </p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="email" className="text-zinc-600 font-semibold">Email Address</Label>
                     <div className="relative">
@@ -53,13 +58,25 @@ export default function LoginPage() {
                             id="email"
                             type="email"
                             placeholder="name@example.com"
-                            className="pl-10 h-12 border-zinc-200 focus:border-primary focus:ring-primary/20 bg-zinc-50/50"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            className={`pl-10 h-12 border-zinc-200 focus:border-primary focus:ring-primary/20 bg-zinc-50/50 ${errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
+                            {...register("email")}
                         />
                     </div>
+                    <AnimatePresence mode="wait">
+                        {errors.email && (
+                            <motion.p
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="text-xs font-bold text-red-500 mt-1 flex items-center gap-1.5"
+                            >
+                                <span className="w-1 h-1 rounded-full bg-red-500" />
+                                {errors.email.message}
+                            </motion.p>
+                        )}
+                    </AnimatePresence>
                 </div>
+
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
                         <Label htmlFor="password" title="Password" className="text-zinc-600 font-semibold">Password</Label>
@@ -71,11 +88,9 @@ export default function LoginPage() {
                         <Input
                             id="password"
                             type={showPassword ? "text" : "password"}
-                            className="pl-3.5 pr-10 h-12 border-zinc-200 focus:border-primary focus:ring-primary/20 bg-zinc-50/50"
+                            className={`pl-3.5 pr-10 h-12 border-zinc-200 focus:border-primary focus:ring-primary/20 bg-zinc-50/50 ${errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
                             placeholder="••••••••"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            {...register("password")}
                         />
                         <button
                             type="button"
@@ -85,6 +100,19 @@ export default function LoginPage() {
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                     </div>
+                    <AnimatePresence mode="wait">
+                        {errors.password && (
+                            <motion.p
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="text-xs font-bold text-red-500 mt-1 flex items-center gap-1.5"
+                            >
+                                <span className="w-1 h-1 rounded-full bg-red-500" />
+                                {errors.password.message}
+                            </motion.p>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 <Button

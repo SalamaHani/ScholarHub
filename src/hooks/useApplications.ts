@@ -43,7 +43,7 @@ export const useApplications = (filters?: ApplicationFilters) => {
             const { data } = await api.get<any>("/applications");
             return data.data || data;
         },
-        enabled: !!user && user.role === "STUDENT",
+        enabled: !!user && (user.role === "STUDENT" || user.role === "PROFESSOR"),
     });
 
     // 2. All Applications (Admin) - Full list with filters

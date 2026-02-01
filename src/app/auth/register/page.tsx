@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Github,
     ArrowRight,
@@ -12,28 +12,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { motion } from "framer-motion";
-
+import { motion, AnimatePresence } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { registerSchema, RegisterInput } from "@/lib/validations/auth";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
     const { register: registerMutation } = useAuth();
-    const [role, setRole] = useState("student");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState("");
+    const [activeRole, setActiveRole] = useState<"STUDENT" | "PROFESSOR">("STUDENT");
 
-    const handleRegister = (e: React.FormEvent) => {
-        e.preventDefault();
+    const {
+        register,
+        handleSubmit,
+        setValue,
+        formState: { errors },
+    } = useForm<RegisterInput>({
+        resolver: zodResolver(registerSchema),
+        defaultValues: {
+            role: "STUDENT",
+        }
+    });
+
+    useEffect(() => {
+        setValue("role", activeRole);
+    }, [activeRole, setValue]);
+
+    const onSubmit = (data: RegisterInput) => {
         registerMutation.mutate({
-            email,
-            password,
-            firstName,
-            lastName,
-            name: `${firstName} ${lastName}`.trim(),
-            role: role.toUpperCase() as "STUDENT" | "PROFESSOR",
+            ...data,
+            name: `${data.firstName} ${data.lastName}`.trim(),
         });
     };
 
@@ -52,16 +61,16 @@ export default function RegisterPage() {
                 </p>
             </div>
 
-            <Tabs defaultValue="student" className="w-full" onValueChange={setRole}>
+            <Tabs defaultValue="STUDENT" className="w-full" onValueChange={(v) => setActiveRole(v as "STUDENT" | "PROFESSOR")}>
                 <TabsList className="grid w-full grid-cols-2 bg-zinc-100/50 border border-zinc-200 h-11 p-1">
                     <TabsTrigger
-                        value="student"
+                        value="STUDENT"
                         className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all rounded-md text-xs font-bold"
                     >
                         Student
                     </TabsTrigger>
                     <TabsTrigger
-                        value="professor"
+                        value="PROFESSOR"
                         className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all rounded-md text-xs font-bold"
                     >
                         Professor
@@ -69,29 +78,31 @@ export default function RegisterPage() {
                 </TabsList>
             </Tabs>
 
-            <form onSubmit={handleRegister} className="space-y-3.5">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
                 <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                         <Label htmlFor="firstName" className="text-zinc-600 text-xs font-bold">First Name</Label>
                         <Input
                             id="firstName"
                             placeholder="John"
-                            className="h-10 border-zinc-200 bg-zinc-50/50 text-sm focus:border-primary focus:ring-primary/20"
-                            required
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
+                            className={`h-10 border-zinc-200 bg-zinc-50/50 text-sm focus:border-primary focus:ring-primary/20 ${errors.firstName ? "border-red-500" : ""}`}
+                            {...register("firstName")}
                         />
+                        {errors.firstName && (
+                            <p className="text-[10px] font-bold text-red-500">{errors.firstName.message}</p>
+                        )}
                     </div>
                     <div className="space-y-1.5">
                         <Label htmlFor="lastName" className="text-zinc-600 text-xs font-bold">Last Name</Label>
                         <Input
                             id="lastName"
                             placeholder="Doe"
-                            className="h-10 border-zinc-200 bg-zinc-50/50 text-sm focus:border-primary focus:ring-primary/20"
-                            required
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
+                            className={`h-10 border-zinc-200 bg-zinc-50/50 text-sm focus:border-primary focus:ring-primary/20 ${errors.lastName ? "border-red-500" : ""}`}
+                            {...register("lastName")}
                         />
+                        {errors.lastName && (
+                            <p className="text-[10px] font-bold text-red-500">{errors.lastName.message}</p>
+                        )}
                     </div>
                 </div>
 
@@ -101,11 +112,12 @@ export default function RegisterPage() {
                         id="email"
                         type="email"
                         placeholder="name@university.edu"
-                        className="h-10 border-zinc-200 bg-zinc-50/50 text-sm focus:border-primary focus:ring-primary/20"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        className={`h-10 border-zinc-200 bg-zinc-50/50 text-sm focus:border-primary focus:ring-primary/20 ${errors.email ? "border-red-500" : ""}`}
+                        {...register("email")}
                     />
+                    {errors.email && (
+                        <p className="text-[10px] font-bold text-red-500">{errors.email.message}</p>
+                    )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -114,11 +126,9 @@ export default function RegisterPage() {
                         <Input
                             id="password"
                             type={showPassword ? "text" : "password"}
-                            className="h-10 border-zinc-200 bg-zinc-50/50 pr-10 text-sm focus:border-primary focus:ring-primary/20"
+                            className={`h-10 border-zinc-200 bg-zinc-50/50 pr-10 text-sm focus:border-primary focus:ring-primary/20 ${errors.password ? "border-red-500" : ""}`}
                             placeholder="••••••••"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            {...register("password")}
                         />
                         <button
                             type="button"
@@ -128,6 +138,9 @@ export default function RegisterPage() {
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                     </div>
+                    {errors.password && (
+                        <p className="text-[10px] font-bold text-red-500">{errors.password.message}</p>
+                    )}
                 </div>
 
                 <Button
@@ -136,7 +149,7 @@ export default function RegisterPage() {
                     className="w-full h-11 bg-primary hover:bg-primary/95 text-white font-bold shadow-md shadow-primary/10 transition-all hover:translate-y-[-1px] active:translate-y-[0px]"
                     disabled={isLoading}
                 >
-                    {isLoading ? "Creating..." : `Register as ${role === "student" ? "Student" : "Professor"}`}
+                    {isLoading ? "Creating..." : `Register as ${activeRole === "STUDENT" ? "Student" : "Professor"}`}
                     {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
                 </Button>
             </form>

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { profileSchema, ProfileInput } from "@/lib/validations/profile";
 import { useAuth } from "@/hooks/use-auth";
 import {
     User,
@@ -75,36 +77,7 @@ const DEGREE_LEVELS = [
     { value: "OTHER", label: "Other" },
 ];
 
-interface ProfileFormData {
-    name: string;
-    avatar: string;
-    university: string;
-    fieldOfStudy: string;
-    degreeLevel: string;
-    currentDegree: string;
-    gpa: number;
-    graduationYear: number;
-    country: string;
-    city: string;
-    zipCode: string;
-    bio: string;
-    age: number;
-    gender: string;
-    phoneNumber: string;
-    institution: string;
-    department: string;
-    profileCompleteness: number;
-    position: string;
-    specialization: string;
-    website: string;
-    experience: any[];
-    certifications: any[];
-    isVerified: boolean;
-    skills: string;
-    languages: any[];
-    documents: any[];
-    officeLocation: string;
-}
+// Non-form fields are handled separately or directly from the user object
 
 export default function ProfilePage() {
     const { user, isLoading, editProfile, updateAvatar: updateAvatarAction, refresh } = useAuth();
@@ -198,7 +171,8 @@ export default function ProfilePage() {
         setCertificationItems(updated);
     };
 
-    const { register, handleSubmit, watch, setValue, reset, formState: { isSubmitting } } = useForm<ProfileFormData>({
+    const { register, handleSubmit, watch, setValue, reset, formState: { isSubmitting, errors } } = useForm<ProfileInput>({
+        resolver: zodResolver(profileSchema),
         defaultValues: {
             name: user?.name || "",
             avatar: user?.avatar || "",
@@ -217,17 +191,15 @@ export default function ProfilePage() {
             phoneNumber: user?.phoneNumber || "",
             institution: user?.institution || "",
             department: user?.department || "",
-            isVerified: user?.isVerified || false,
-            profileCompleteness: user?.profileCompleteness || 0,
             position: user?.position || "",
             specialization: user?.specialization || "",
             website: user?.website || "",
             experience: user?.experience || [],
             certifications: user?.certifications || [],
-            skills: user?.skills?.join(", ") || "",
+            skills: user?.skills || [],
             languages: user?.languages || [],
-            documents: user?.documents || [],
-            officeLocation: (user as any)?.officeLocation || "",
+            officeLocation: user?.officeLocation || "",
+            email: user?.email || "",
         }
     });
 
@@ -251,18 +223,16 @@ export default function ProfilePage() {
                 gender: user.gender || "",
                 phoneNumber: user.phoneNumber || "",
                 institution: user.institution || "",
-                profileCompleteness: user.profileCompleteness || 0,
                 department: user.department || "",
                 position: user.position || "",
-                isVerified: !!user.isVerified,
                 specialization: user.specialization || "",
                 website: user.website || "",
                 experience: user.experience || [],
                 certifications: user.certifications || [],
-                skills: user.skills?.join(", ") || "",
+                skills: user.skills || [],
                 languages: user.languages || [],
-                documents: user.documents || [],
-                officeLocation: (user as any).officeLocation || "",
+                officeLocation: user.officeLocation || "",
+                email: user.email || "",
             });
         }
     }, [user, reset]);
@@ -430,56 +400,11 @@ export default function ProfilePage() {
 
     // Unified Progress & Completeness Intelligence (Standardized)
     // Comprehensive calculation including ALL profile data fields
-    const serverCompleteness = user.profileCompleteness ?? 0;
-    const completeness = user.profileCompleteness !== undefined ? user.profileCompleteness : (() => {
-        let score = 0;
-
-        // Core Identity (20 points)
-        if (user.name) score += 8;
-        if (user.avatar) score += 7;
-        if (user.bio) score += 5;
-
-        // Contact & Location (15 points)
-        if (user.phoneNumber) score += 5;
-        if (user.country) score += 3;
-        if (user.city) score += 2;
-        if (user.zipCode) score += 2;
-        if (user.age) score += 2;
-        if (user.gender) score += 1;
-
-        // Academic/Institutional Profile (25 points)
-        if (user.role === 'STUDENT') {
-            if (user.university) score += 8;
-            if (user.fieldOfStudy) score += 7;
-            if (user.gpa) score += 5;
-            if (user.graduationYear) score += 3;
-            if (user.degreeLevel) score += 2;
-        } else if (user.role === 'PROFESSOR') {
-            if (user.institution) score += 8;
-            if (user.department) score += 7;
-            if (user.position) score += 5;
-            if (user.specialization) score += 3;
-            if (user.website) score += 2;
-        }
-
-        // Professional Development (25 points)
-        if (user.skills && user.skills.length > 0) score += 10;
-        if (user.languages && user.languages.length > 0) score += 7;
-        if (user.certifications && user.certifications.length > 0) score += 5;
-        if (user.experience && user.experience.length > 0) score += 3;
-
-        // Documentation (15 points)
-        if (user.documents && user.documents.length > 0) score += 15;
-
-        return Math.min(score, 100);
-    })();
+    const completeness = user.profileCompleteness || 0;
 
     // Standardized Status System: POOR (≤50%), GOOD (51-79%), EXCELLENT (≥80%)
     const progressStatus = getProfileStatus(completeness);
     const progressMessage = getProgressMessage(completeness);
-
-
-
     return (
         <div className="min-h-screen bg-slate-50/50 pb-20">
             {/* Context Header Banner */}
@@ -953,13 +878,15 @@ export default function ProfilePage() {
                                     <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                                         <User className="h-4 w-4 text-primary" /> Full Name
                                     </Label>
-                                    <Input {...register("name")} className="h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all" placeholder="e.g. John Doe" />
+                                    <Input {...register("name")} className={`h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all ${errors.name ? 'border-red-500 bg-red-50/10' : ''}`} placeholder="e.g. John Doe" />
+                                    {errors.name && <p className="text-[10px] font-bold text-red-500 pl-1">{errors.name.message}</p>}
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                                         <Phone className="h-4 w-4 text-primary" /> Phone Number
                                     </Label>
-                                    <Input {...register("phoneNumber")} className="h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all" placeholder="+1..." />
+                                    <Input {...register("phoneNumber")} className={`h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all ${errors.phoneNumber ? 'border-red-500 bg-red-50/10' : ''}`} placeholder="+1..." />
+                                    {errors.phoneNumber && <p className="text-[10px] font-bold text-red-500 pl-1">{errors.phoneNumber.message}</p>}
                                 </div>
                             </div>
 
@@ -987,7 +914,8 @@ export default function ProfilePage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-slate-700">Age</Label>
-                                    <Input type="number" {...register("age", { valueAsNumber: true })} className="h-10 rounded-md border-slate-200 focus:border-blue-500 focus:ring-blue-500" />
+                                    <Input type="number" {...register("age", { valueAsNumber: true })} className={`h-10 rounded-md border-slate-200 focus:border-blue-500 focus:ring-blue-500 ${errors.age ? 'border-red-500' : ''}`} />
+                                    {errors.age && <p className="text-[10px] font-bold text-red-500">{errors.age.message}</p>}
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-slate-700">Gender</Label>
@@ -1004,7 +932,8 @@ export default function ProfilePage() {
                             {user.role === "PROFESSOR" && (
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium text-slate-700">Portfolio Website</Label>
-                                    <Input {...register("website")} className="h-10 rounded-md border-slate-200 focus:border-blue-500 focus:ring-blue-500" placeholder="https://..." />
+                                    <Input {...register("website")} className={`h-10 rounded-md border-slate-200 focus:border-blue-500 focus:ring-blue-500 ${errors.website ? 'border-red-500' : ''}`} placeholder="https://..." />
+                                    {errors.website && <p className="text-[10px] font-bold text-red-500">{errors.website.message}</p>}
                                 </div>
                             )}
                         </div>
@@ -1110,7 +1039,8 @@ export default function ProfilePage() {
                                             <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                                                 <TrendingUp className="h-4 w-4 text-primary" /> GPA
                                             </Label>
-                                            <Input type="number" step="0.01" {...register("gpa", { valueAsNumber: true })} className="h-11 rounded-xl border-slate-200" placeholder="3.8" />
+                                            <Input type="number" step="0.01" {...register("gpa", { valueAsNumber: true })} className={`h-11 rounded-xl border-slate-200 ${errors.gpa ? 'border-red-500 bg-red-50/10' : ''}`} placeholder="3.8" />
+                                            {errors.gpa && <p className="text-[10px] font-bold text-red-500 pl-1">{errors.gpa.message}</p>}
                                         </div>
                                         <div className="space-y-2 col-span-1">
                                             <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -1155,9 +1085,10 @@ export default function ProfilePage() {
                                 <Label className="text-sm font-medium text-slate-700">Personal Bio</Label>
                                 <Textarea
                                     {...register("bio")}
-                                    className="rounded-md border-slate-200 min-h-[180px] focus:border-blue-500 focus:ring-blue-500"
+                                    className={`rounded-md border-slate-200 min-h-[180px] focus:border-blue-500 focus:ring-blue-500 ${errors.bio ? 'border-red-500' : ''}`}
                                     placeholder="Share your goals, research interests, or academic journey..."
                                 />
+                                {errors.bio && <p className="text-[10px] font-bold text-red-500 pl-1">{errors.bio.message}</p>}
                                 <p className="text-xs text-slate-500">Write a compelling biography that highlights your achievements and future aspirations.</p>
                             </div>
                         </div>

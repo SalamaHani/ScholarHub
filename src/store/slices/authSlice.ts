@@ -51,6 +51,7 @@ export interface User {
     certifications?: any[];
     progressMessage?: string;
     progressStatus?: string;
+    officeLocation?: string;
 }
 
 export interface AuthState {
@@ -104,6 +105,7 @@ function normalizeUser(rawUser: any): User {
         position: rawUser.position || profile.position,
         specialization: rawUser.specialization || profile.specialization,
         website: rawUser.website || profile.website,
+        profileCompleteness: rawUser.profileCompleteness ?? profile.profileCompleteness ?? 0,
         isVerified: rawUser.isVerified ?? profile.isVerified ?? rawUser.isProfessorVerified,
         experience: (() => {
             const exp = rawUser.experience || profile.experience;

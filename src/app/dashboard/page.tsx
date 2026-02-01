@@ -24,25 +24,34 @@ import {
     User,
     Loader2,
     Star,
-    Trash2
+    Trash2,
+    MessageSquare,
+    CheckCircle,
+    Pencil,
+    Send
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useAuth, User as AuthUser } from "@/hooks/use-auth";
 import { useApplications } from "@/hooks/useApplications";
 import { useScholarships, useScholarship } from "@/hooks/useScholarships";
+import { useTestimonials } from "@/hooks/useTestimonials";
 import { ScholarshipForm } from "@/components/scholarships/scholarship-form";
+import { TestimonialForm } from "@/components/testimonials/testimonial-form";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-    DialogClose
+    DialogClose,
+    DialogFooter
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
@@ -56,11 +65,13 @@ const ROLES = {
 export default function DashboardPage() {
     const { user, isLoading: isAuthLoading } = useAuth();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [isCreateTestimonialOpen, setIsCreateTestimonialOpen] = useState(false);
 
     // Determine context for scholarship hooks
     const role = user?.role?.toUpperCase() || ROLES.STUDENT;
 
-    const { myApplications } = useApplications();
+    const { myApplications, evaluate } = useApplications();
+    const { list: testimonialsList, create: createTestimonial, update: updateTestimonial, remove: removeTestimonial } = useTestimonials();
 
     // Professional data fetching based on role
     const {
@@ -76,11 +87,15 @@ export default function DashboardPage() {
         ? professorList.data
         : professorList.data?.scholarships || professorList.data?.data || [];
 
+    const professorTestimonials = Array.isArray(testimonialsList.data)
+        ? testimonialsList.data
+        : testimonialsList.data?.testimonials || testimonialsList.data?.data || [];
+
     const pendingScholarships = Array.isArray(adminPendingList.data)
         ? adminPendingList.data
         : adminPendingList.data?.scholarships || adminPendingList.data?.data || [];
 
-    const isDataLoading = isAuthLoading || professorList.isLoading || adminPendingList.isLoading || myApplications.isLoading;
+    const isDataLoading = isAuthLoading || professorList.isLoading || adminPendingList.isLoading || myApplications.isLoading || testimonialsList.isLoading;
 
     if (isAuthLoading) {
         return (
@@ -139,6 +154,30 @@ export default function DashboardPage() {
                                 </DialogContent>
                             </Dialog>
                         )}
+                        {role === ROLES.PROFESSOR && (
+                            <Dialog open={isCreateTestimonialOpen} onOpenChange={setIsCreateTestimonialOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" className="gap-2 bg-white">
+                                        <MessageSquare className="h-4 w-4" />
+                                        New Testimonial
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle>Create New Testimonial</DialogTitle>
+                                    </DialogHeader>
+                                    <TestimonialForm
+                                        onSubmit={async (data) => {
+                                            await createTestimonial.mutateAsync(data);
+                                        }}
+                                        onSuccess={() => {
+                                            setIsCreateTestimonialOpen(false);
+                                        }}
+                                        onCancel={() => setIsCreateTestimonialOpen(false)}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+                        )}
                         <Button variant="outline" className="bg-white gap-2 relative">
                             <Bell className="h-4 w-4" />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
@@ -179,8 +218,18 @@ export default function DashboardPage() {
                         <Tabs defaultValue="main" className="w-full">
                             <TabsList className="bg-white border rounded-xl p-1 h-12 mb-6">
                                 <TabsTrigger value="main" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-6">
-                                    {role === ROLES.STUDENT ? "My Applications" : role === ROLES.PROFESSOR ? "Manage My Posts" : "Approvals Needed"}
+                                    {role === ROLES.STUDENT ? "My Applications" : role === ROLES.PROFESSOR ? "Scholarships" : "Approvals Needed"}
                                 </TabsTrigger>
+                                {role === ROLES.PROFESSOR && (
+                                    <>
+                                        <TabsTrigger value="applications" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-6">
+                                            Applications
+                                        </TabsTrigger>
+                                        <TabsTrigger value="testimonials" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-6">
+                                            Testimonials
+                                        </TabsTrigger>
+                                    </>
+                                )}
                                 {role === ROLES.STUDENT && (
                                     <TabsTrigger value="external" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-6">
                                         External Scholarships
@@ -220,6 +269,9 @@ export default function DashboardPage() {
                                     </div>
                                 ) : role === ROLES.PROFESSOR ? (
                                     <div className="space-y-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h3 className="text-lg font-bold">Your Posted Hubs</h3>
+                                        </div>
                                         {professorScholarships.length > 0 ? (
                                             professorScholarships.map((s: any) => (
                                                 <ScholarshipManageRow
@@ -258,6 +310,61 @@ export default function DashboardPage() {
                                     </div>
                                 )}
                             </TabsContent>
+
+                            {role === ROLES.PROFESSOR && (
+                                <TabsContent value="applications" className="space-y-4 outline-none">
+                                    <div className="flex flex-col gap-4">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-lg font-bold">Received Applications</h3>
+                                            <Badge variant="outline">{myApplications.data?.length || 0} Total</Badge>
+                                        </div>
+                                        {myApplications.data?.length ? (
+                                            myApplications.data.map((app: any) => (
+                                                <ApplicationEvaluateRow
+                                                    key={app.id}
+                                                    application={app}
+                                                    onEvaluate={(status, evaluation) => evaluate.mutate({ id: app.id, status, evaluation })}
+                                                    isSubmitting={evaluate.isPending}
+                                                />
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-20 bg-white rounded-3xl border border-dashed">
+                                                <Users className="h-10 w-10 text-slate-300 mx-auto mb-4" />
+                                                <p className="text-slate-500 font-medium">No applications received yet.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </TabsContent>
+                            )}
+
+                            {role === ROLES.PROFESSOR && (
+                                <TabsContent value="testimonials" className="space-y-4 outline-none">
+                                    <div className="flex flex-col gap-4">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-lg font-bold">Your Success Stories</h3>
+                                            <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsCreateTestimonialOpen(true)}>
+                                                <Plus className="h-3 w-3" /> Add New
+                                            </Button>
+                                        </div>
+                                        {professorTestimonials.length > 0 ? (
+                                            professorTestimonials.map((t: any) => (
+                                                <TestimonialManageRow
+                                                    key={t.id}
+                                                    testimonial={t}
+                                                    onUpdate={(data) => updateTestimonial.mutate({ id: t.id, data })}
+                                                    onDelete={() => removeTestimonial.mutate(t.id)}
+                                                    isProcessing={updateTestimonial.isPending || removeTestimonial.isPending}
+                                                />
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-20 bg-white rounded-3xl border border-dashed">
+                                                <MessageSquare className="h-10 w-10 text-slate-300 mx-auto mb-4" />
+                                                <p className="text-slate-500 font-medium">Capture your impact by adding testimonials.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </TabsContent>
+                            )}
 
                             <TabsContent value="external" className="space-y-4 outline-none">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -559,6 +666,145 @@ function ExternalScholarshipCard({ title, provider, amount }: any) {
                 <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">{provider}</span>
                     <span className="text-xs font-bold text-emerald-600">{amount}</span>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) {
+    const [isEvalOpen, setIsEvalOpen] = useState(false);
+    const [evaluationText, setEvaluationText] = useState(application.evaluation || "");
+
+    return (
+        <Card className="hover:border-primary/50 transition-colors bg-white shadow-none border group">
+            <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-1">
+                    <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center border shrink-0 overflow-hidden">
+                        {application.student?.avatar ? (
+                            <img src={application.student.avatar} alt={application.student.name} className="h-full w-full object-cover" />
+                        ) : (
+                            <User className="h-6 w-6 text-slate-400" />
+                        )}
+                    </div>
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm">{application.student?.name || "Anonymous Student"}</h4>
+                            <Badge variant="outline" className="text-[9px] uppercase">{application.status}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Applied for: <span className="text-primary font-medium">{application.scholarship?.title}</span></p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Dialog open={isEvalOpen} onOpenChange={setIsEvalOpen}>
+                        <DialogTrigger asChild>
+                            <Button size="sm" variant="gradient" className="h-8 text-xs font-bold">Review Application</Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>Evaluate Application</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div className="space-y-1">
+                                        <p className="text-muted-foreground">Applicant</p>
+                                        <p className="font-bold">{application.student?.name}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-muted-foreground">GPA</p>
+                                        <p className="font-bold">{application.student?.gpa || "N/A"}</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Professor Evaluation / Comments</Label>
+                                    <Textarea
+                                        placeholder="Add your feedback here..."
+                                        rows={5}
+                                        value={evaluationText}
+                                        onChange={(e) => setEvaluationText(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter className="gap-2">
+                                <Button
+                                    variant="outline"
+                                    className="text-rose-600 hover:bg-rose-50 border-rose-100"
+                                    onClick={() => {
+                                        onEvaluate("REJECTED", evaluationText);
+                                        setIsEvalOpen(false);
+                                    }}
+                                    disabled={isSubmitting}
+                                >
+                                    Reject
+                                </Button>
+                                <Button
+                                    variant="gradient"
+                                    onClick={() => {
+                                        onEvaluate("ACCEPTED", evaluationText);
+                                        setIsEvalOpen(false);
+                                    }}
+                                    disabled={isSubmitting}
+                                >
+                                    Accept Applicant
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function TestimonialManageRow({ testimonial, onUpdate, onDelete, isProcessing }: any) {
+    const [isEditOpen, setIsEditOpen] = useState(false);
+
+    return (
+        <Card className="hover:border-primary/50 transition-colors bg-white shadow-none border group">
+            <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-1">
+                    <div className="h-10 w-10 rounded-lg bg-primary/5 flex items-center justify-center border shrink-0">
+                        <MessageSquare className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-bold truncate line-clamp-1">{testimonial.author}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{testimonial.role}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                        <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                                <Pencil className="h-3 w-3" />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>Edit Testimonial</DialogTitle>
+                            </DialogHeader>
+                            <TestimonialForm
+                                initialData={testimonial}
+                                onSubmit={async (data) => {
+                                    await onUpdate(data);
+                                }}
+                                onSuccess={() => setIsEditOpen(false)}
+                                onCancel={() => setIsEditOpen(false)}
+                            />
+                        </DialogContent>
+                    </Dialog>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-rose-600 hover:bg-rose-50"
+                        onClick={() => {
+                            if (window.confirm("Delete this testimonial?")) {
+                                onDelete();
+                            }
+                        }}
+                        disabled={isProcessing}
+                    >
+                        <Trash2 className="h-3 w-3" />
+                    </Button>
                 </div>
             </CardContent>
         </Card>
