@@ -390,7 +390,7 @@ export default function ProfilePage() {
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="h-12 w-12 text-primary animate-spin" />
-                    <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Loading Profile...</p>
+                    <p className="text-slate-400 font-bold tracking-widest text-xs">Loading Profile...</p>
                 </div>
             </div>
         );
@@ -545,7 +545,7 @@ export default function ProfilePage() {
                                                 )}
                                                 <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <Camera className="h-8 w-8 text-white mb-2" />
-                                                    <span className="text-[10px] font-bold text-white uppercase tracking-wider">Update Photo</span>
+                                                    <span className="text-[10px] font-bold text-white tracking-wider">Update Photo</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -998,7 +998,7 @@ export default function ProfilePage() {
                                             </Label>
                                             <div className="relative">
                                                 <Input type="number" {...register("experience")} className="h-11 rounded-xl border-slate-200 pr-16" placeholder="10" />
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-bold uppercase tracking-widest text-[10px]">Years</span>
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-bold tracking-widest text-[10px]">Years</span>
                                             </div>
                                         </div>
                                         <div className="space-y-2">

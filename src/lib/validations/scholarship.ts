@@ -18,7 +18,7 @@ export const scholarshipSchema = z.object({
     questions: z.array(z.object({
         id: z.string(),
         question: z.string(),
-        type: z.enum(["TEXT", "MULTIPLE_CHOICE"]),
+        type: z.enum(["TEXT", "MULTIPLE_CHOICE", "DOCUMENT"]),
         options: z.array(z.string()).optional()
     })).optional(),
 });

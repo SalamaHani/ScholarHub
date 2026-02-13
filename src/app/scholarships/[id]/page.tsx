@@ -16,7 +16,8 @@ import {
     Bookmark,
     Share2,
     AlertCircle,
-    Loader2
+    Loader2,
+    HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -160,6 +161,39 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                         {scholarship.documents && (
                             <InfoCard title="Required Documents" icon={FileText} content={scholarship.documents} />
                         )}
+
+                        {scholarship.questions && scholarship.questions.length > 0 && (
+                            <Card className="border-none shadow-sm overflow-hidden">
+                                <CardHeader className="bg-white border-b">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                                            <HelpCircle className="h-5 w-5" />
+                                        </div>
+                                        <CardTitle className="text-xl">Application Questions</CardTitle>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="pt-6 bg-white/50 space-y-4">
+                                    <p className="text-sm text-muted-foreground mb-4">
+                                        You will be asked to answer the following questions during the application process:
+                                    </p>
+                                    <div className="space-y-3">
+                                        {scholarship.questions.map((q: any, idx: number) => (
+                                            <div key={q.id} className="flex gap-4 p-4 rounded-2xl bg-white border border-slate-100">
+                                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">
+                                                    {idx + 1}
+                                                </span>
+                                                <div className="space-y-1">
+                                                    <p className="text-sm font-bold text-slate-800">{q.question}</p>
+                                                    <Badge variant="outline" className="text-[10px] tracking-widest opacity-60">
+                                                        {q.type === 'MULTIPLE_CHOICE' ? 'Multiple Choice' : 'Text Answer'}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
 
                     <div className="space-y-6">
@@ -167,7 +201,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                             <div className="h-2 bg-gradient-to-r from-primary to-blue-600" />
                             <CardContent className="p-8 space-y-8">
                                 <div className="space-y-3">
-                                    <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Deadline</div>
+                                    <div className="text-xs font-bold tracking-widest text-muted-foreground">Deadline</div>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-primary/10 rounded-xl">
@@ -290,7 +324,7 @@ function DetailItem({ label, value, isBadge, isTag }: any) {
 
     return (
         <div className="space-y-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
+            <span className="text-[10px] font-bold tracking-widest text-muted-foreground">{label}</span>
             <div className="flex flex-wrap gap-1.5">
                 {values.length > 0 ? (
                     values.map((v: string) => (

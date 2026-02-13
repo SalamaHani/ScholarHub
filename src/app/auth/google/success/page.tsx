@@ -1,0 +1,118 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/store/slices/authSlice";
+import { toast } from "@/hooks/use-toast";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+
+/**
+ * Google OAuth Success Page
+ * Handles storing auth data after successful Google authentication
+ */
+export default function GoogleAuthSuccessPage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const dispatch = useDispatch();
+    const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+
+    useEffect(() => {
+        const processAuth = async () => {
+            try {
+                const token = searchParams.get("token");
+                const userStr = searchParams.get("user");
+
+                // Validate required parameters
+                if (!token || !userStr) {
+                    setStatus("error");
+                    toast({
+                        title: "Authentication failed",
+                        description: "Missing authentication data from server",
+                        variant: "destructive",
+                    });
+
+                    setTimeout(() => router.push("/auth/login"), 2000);
+                    return;
+                }
+
+                // Validate token format (basic check)
+                if (token.length < 20) {
+                    throw new Error("Invalid token format");
+                }
+
+                // Parse and validate user data
+                let user;
+                try {
+                    user = JSON.parse(decodeURIComponent(userStr));
+                } catch (parseError) {
+                    throw new Error("Invalid user data format");
+                }
+
+                // Validate user object has required fields
+                if (!user.id || !user.email || !user.role) {
+                    throw new Error("Incomplete user data");
+                }
+
+                // Store credentials in Redux and localStorage
+                dispatch(setCredentials({ user, token }));
+
+                setStatus("success");
+                toast({
+                    title: "Welcome to ScholarHub!",
+                    description: `Successfully signed in as ${user.name || user.email}`,
+                });
+
+                // Redirect to dashboard after brief delay
+                setTimeout(() => router.push("/"), 1000);
+            } catch (error) {
+                console.error("Google auth success page error:", error);
+                setStatus("error");
+
+                const errorMessage = error instanceof Error
+                    ? error.message
+                    : "Failed to process authentication data";
+
+                toast({
+                    title: "Authentication failed",
+                    description: errorMessage,
+                    variant: "destructive",
+                });
+
+                setTimeout(() => router.push("/auth/login"), 2000);
+            }
+        };
+
+        processAuth();
+    }, [searchParams, dispatch, router]);
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-white to-blue-50">
+            <div className="text-center space-y-4 max-w-md px-4">
+                {status === "loading" && (
+                    <>
+                        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+                        <h2 className="text-xl font-bold text-zinc-900">Completing authentication...</h2>
+                        <p className="text-sm text-zinc-500">Please wait while we sign you in</p>
+                    </>
+                )}
+
+                {status === "success" && (
+                    <>
+                        <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
+                        <h2 className="text-xl font-bold text-zinc-900">Success!</h2>
+                        <p className="text-sm text-zinc-500">Redirecting to your dashboard...</p>
+                    </>
+                )}
+
+                {status === "error" && (
+                    <>
+                        <XCircle className="h-12 w-12 text-red-500 mx-auto" />
+                        <h2 className="text-xl font-bold text-zinc-900">Authentication Failed</h2>
+                        <p className="text-sm text-zinc-500">Redirecting back to login...</p>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}

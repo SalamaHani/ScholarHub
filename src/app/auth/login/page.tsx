@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Mail,
     ArrowRight,
     Eye,
     EyeOff,
     Github,
-    Chrome
+    Chrome,
+    AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,11 +19,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginInput } from "@/lib/validations/auth";
 import { useAuth } from "@/hooks/use-auth";
+import { useSearchParams } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
     const { login } = useAuth();
     const isLoading = login.isPending;
+    const searchParams = useSearchParams();
 
     const {
         register,
@@ -32,8 +37,43 @@ export default function LoginPage() {
         resolver: zodResolver(loginSchema),
     });
 
+    // Check for OAuth errors from URL parameters
+    useEffect(() => {
+        const error = searchParams.get("error");
+        if (error) {
+            const errorMessages: Record<string, string> = {
+                google_auth_failed: "Google authentication failed. Please try again.",
+                token_exchange_failed: "Failed to verify Google account. Please try again.",
+                user_info_failed: "Could not retrieve your Google account information.",
+                oauth_failed: "Authentication failed. Please try again.",
+                auth_failed: "Authentication error occurred. Please try again.",
+            };
+
+            toast({
+                title: "Authentication Failed",
+                description: errorMessages[error] || "An error occurred during login. Please try again.",
+                variant: "destructive",
+            });
+        }
+    }, [searchParams]);
+
     const onSubmit = (data: LoginInput) => {
         login.mutate(data);
+    };
+
+    const handleGoogleLogin = () => {
+        try {
+            setGoogleLoading(true);
+            const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+            window.location.href = `${backendUrl}/auth/google`;
+        } catch (error) {
+            setGoogleLoading(false);
+            toast({
+                title: "Error",
+                description: "Failed to initiate Google login. Please try again.",
+                variant: "destructive",
+            });
+        }
     };
 
     return (
@@ -130,19 +170,25 @@ export default function LoginPage() {
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-zinc-200" />
                 </div>
-                <div className="relative flex justify-center text-[10px] items-center uppercase font-bold tracking-widest text-zinc-400">
+                <div className="relative flex justify-center text-[10px] items-center font-bold tracking-widest text-zinc-400">
                     <span className="bg-white px-3">Or continue with</span>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="h-12 border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 font-semibold shadow-sm transition-all active:scale-95">
+                <Button variant="outline" className="h-12 border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 font-semibold shadow-sm transition-all active:scale-95" disabled>
                     <Github className="h-4 w-4 mr-2" />
                     GitHub
                 </Button>
-                <Button variant="outline" className="h-12 border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 font-semibold shadow-sm transition-all active:scale-95">
-                    <Chrome className="h-4 w-4 mr-2" />
-                    Google
+                <Button
+                    variant="outline"
+                    className="h-12 border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 font-semibold shadow-sm transition-all active:scale-95"
+                    onClick={handleGoogleLogin}
+                    type="button"
+                    disabled={googleLoading || isLoading}
+                >
+                    <Chrome className={`h-4 w-4 mr-2 ${googleLoading ? "animate-spin" : ""}`} />
+                    {googleLoading ? "Redirecting..." : "Google"}
                 </Button>
             </div>
         </motion.div>

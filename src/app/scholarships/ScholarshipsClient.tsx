@@ -75,27 +75,6 @@ export default function ScholarshipsClient() {
                             that match your profile.
                         </p>
                     </div>
-
-                    <Dialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="gradient" className="gap-2 shadow-lg shadow-primary/20">
-                                <Plus className="h-4 w-4" />
-                                Post Scholarship
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                                <DialogTitle>Post New Scholarship</DialogTitle>
-                            </DialogHeader>
-                            <ScholarshipForm
-                                onSuccess={() => {
-                                    setIsPostDialogOpen(false);
-                                    list.refetch();
-                                }}
-                                onCancel={() => setIsPostDialogOpen(false)}
-                            />
-                        </DialogContent>
-                    </Dialog>
                 </div>
 
                 {/* Search & Filters */}

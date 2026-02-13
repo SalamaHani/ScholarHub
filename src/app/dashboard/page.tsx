@@ -114,7 +114,7 @@ export default function DashboardPage() {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
                     <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-primary font-bold tracking-wider uppercase text-xs">
+                        <div className="flex items-center gap-2 text-primary font-bold tracking-wider text-xs">
                             <LayoutDashboard className="h-4 w-4" />
                             {role} Portal
                         </div>
@@ -394,7 +394,7 @@ export default function DashboardPage() {
                                         <p className="font-bold">{user?.name || "User"}</p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <Badge variant="secondary" className="text-[10px]">{user?.role}</Badge>
-                                            <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
+                                            <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold tracking-wider">
                                                 <CheckCircle2 className="h-3 w-3" />
                                                 Verified
                                             </div>
@@ -581,7 +581,7 @@ function ApprovalRequestRow({ scholarship, onApprove, onReject, isProcessing }: 
                     </div>
                     <div className="space-y-1">
                         <h4 className="font-bold text-sm group-hover:text-primary transition-colors">{scholarship.title}</h4>
-                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                        <p className="text-[10px] text-muted-foreground font-medium tracking-wider">
                             By {scholarship.organization || "Private Donor"} • {scholarship.fundingType}
                         </p>
                     </div>
@@ -700,7 +700,7 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <h4 className="font-bold text-base tracking-tight">{application.student?.name || "Anonymous Student"}</h4>
-                            <Badge variant="secondary" className="text-[9px] font-black uppercase tracking-widest px-2 py-0 h-4">
+                            <Badge variant="secondary" className="text-[9px] font-black tracking-widest px-2 py-0 h-4">
                                 {application.status}
                             </Badge>
                         </div>
@@ -735,7 +735,7 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                                             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                                                 <MessageSquare className="h-4 w-4 text-primary" />
                                             </div>
-                                            <h3 className="text-sm font-black uppercase tracking-tight text-primary">Applicant Responses</h3>
+                                            <h3 className="text-sm font-black tracking-tight text-primary">Applicant Responses</h3>
                                         </div>
                                         <div className="grid gap-3">
                                             {(() => {
@@ -746,7 +746,7 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                                                     return questions.map((q: any) => (
                                                         <div key={q.id} className="p-4 rounded-3xl bg-zinc-50 border border-zinc-100 space-y-2 group/ans hover:bg-white hover:border-primary/20 transition-all">
                                                             <div className="flex items-start justify-between gap-4">
-                                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">{q.question}</p>
+                                                                <p className="text-[10px] font-black text-slate-400 tracking-[0.1em]">{q.question}</p>
                                                                 <Badge variant="outline" className="h-4 text-[8px] bg-white">{q.type}</Badge>
                                                             </div>
                                                             <p className="text-sm font-semibold text-slate-900 leading-relaxed italic">
@@ -774,7 +774,18 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                             <DialogFooter className="gap-2">
                                 <Button
                                     variant="outline"
-                                    className="text-rose-600 hover:bg-rose-50 border-rose-100"
+                                    className="text-amber-600 hover:bg-amber-50 border-amber-100 font-bold"
+                                    onClick={() => {
+                                        onEvaluate("UNDER_REVIEW", evaluationText);
+                                        setIsEvalOpen(false);
+                                    }}
+                                    disabled={isSubmitting}
+                                >
+                                    Under Review
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="text-rose-600 hover:bg-rose-50 border-rose-100 font-bold"
                                     onClick={() => {
                                         onEvaluate("REJECTED", evaluationText);
                                         setIsEvalOpen(false);
@@ -785,6 +796,7 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                                 </Button>
                                 <Button
                                     variant="gradient"
+                                    className="font-bold"
                                     onClick={() => {
                                         onEvaluate("ACCEPTED", evaluationText);
                                         setIsEvalOpen(false);
@@ -814,7 +826,7 @@ function TestimonialManageRow({ testimonial, onUpdate, onDelete, isProcessing }:
                     </div>
                     <div>
                         <p className="text-sm font-bold truncate line-clamp-1">{testimonial.author}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{testimonial.role}</p>
+                        <p className="text-[10px] text-muted-foreground tracking-widest">{testimonial.role}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">

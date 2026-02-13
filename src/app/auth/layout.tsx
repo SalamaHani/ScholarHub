@@ -87,7 +87,7 @@ export default function AuthLayout({
                                 <footer className="flex items-center gap-4 pt-4">
                                     <div className={`h-12 w-12 rounded-full border-2 border-white/50 overflow-hidden bg-gradient-to-tr ${current.gradient} shadow-xl animate-pulse`} />
                                     <div className="text-sm">
-                                        <div className="font-black text-white uppercase tracking-widest text-[10px]">{current.author}</div>
+                                        <div className="font-black text-white tracking-widest text-[10px]">{current.author}</div>
                                         <div className="text-white/60 font-medium italic">{current.role}</div>
                                     </div>
                                 </footer>
@@ -129,7 +129,7 @@ export default function AuthLayout({
                 </div>
 
                 <div className="absolute bottom-6 left-0 right-0 text-center">
-                    <p className="text-[10px] text-zinc-400 font-medium tracking-widest uppercase">
+                    <p className="text-[10px] text-zinc-400 font-medium tracking-widest">
                         © 2026 ScholarHub • Academic Excellence
                     </p>
                 </div>

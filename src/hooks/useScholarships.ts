@@ -31,7 +31,7 @@ export interface Scholarship {
     status: "PENDING" | "APPROVED" | "REJECTED";
     rejectionReason?: string;
     views: number;
-    questions?: Array<{ id: string; question: string; type: "TEXT" | "MULTIPLE_CHOICE"; options?: string[] }>;
+    questions?: Array<{ id: string; question: string; type: "TEXT" | "MULTIPLE_CHOICE" | "DOCUMENT"; options?: string[] }>;
     createdAt: string;
     updatedAt: string;
 }
@@ -71,9 +71,12 @@ export const useScholarships = (filters?: ScholarshipFilters) => {
     });
     // 1. Admin List Scholarships
 
-    // 2. Create Scholarship
+    // 2. Create Scholarship (Professor/Admin only)
     const create = useMutation({
         mutationFn: async (scholarshipData: Partial<Scholarship>) => {
+            if (!user || (user.role !== "PROFESSOR" && user.role !== "ADMIN")) {
+                throw new Error("Only professors and admins can create scholarships");
+            }
             const { data } = await api.post<any>("/scholarships", scholarshipData);
             return data.data?.scholarship || data.scholarship || data.data || data;
         },
@@ -90,9 +93,12 @@ export const useScholarships = (filters?: ScholarshipFilters) => {
         },
     });
 
-    // 3. Update Scholarship
+    // 3. Update Scholarship (Professor/Admin only)
     const update = useMutation({
         mutationFn: async ({ id, data: scholarshipData }: { id: string; data: Partial<Scholarship> }) => {
+            if (!user || (user.role !== "PROFESSOR" && user.role !== "ADMIN")) {
+                throw new Error("Only professors and admins can update scholarships");
+            }
             const { data } = await api.put<any>(`/scholarships/${id}`, scholarshipData);
             return data.data?.scholarship || data.scholarship || data.data || data;
         },
@@ -110,9 +116,12 @@ export const useScholarships = (filters?: ScholarshipFilters) => {
         },
     });
 
-    // 4. Delete Scholarship
+    // 4. Delete Scholarship (Admin only)
     const remove = useMutation({
         mutationFn: async (id: string) => {
+            if (!user || user.role !== "ADMIN") {
+                throw new Error("Only admins can delete scholarships");
+            }
             await api.delete(`/scholarships/${id}`);
         },
         onSuccess: () => {
@@ -154,6 +163,9 @@ export const useScholarships = (filters?: ScholarshipFilters) => {
 
     const approve = useMutation({
         mutationFn: async (id: string) => {
+            if (!user || user.role !== "ADMIN") {
+                throw new Error("Only admins can approve scholarships");
+            }
             const { data } = await api.put<any>(`/scholarships/${id}/approve`);
             return data.data || data;
         },
@@ -173,6 +185,9 @@ export const useScholarships = (filters?: ScholarshipFilters) => {
 
     const reject = useMutation({
         mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+            if (!user || user.role !== "ADMIN") {
+                throw new Error("Only admins can reject scholarships");
+            }
             const { data } = await api.put<any>(`/scholarships/${id}/reject`, { reason });
             return data.data || data;
         },
@@ -190,9 +205,12 @@ export const useScholarships = (filters?: ScholarshipFilters) => {
         },
     });
 
-    // 9. Toggle Featured (Admin)
+    // 9. Toggle Featured (Admin only)
     const toggleFeatured = useMutation({
         mutationFn: async (id: string) => {
+            if (!user || user.role !== "ADMIN") {
+                throw new Error("Only admins can toggle featured status");
+            }
             await api.put(`/scholarships/${id}/feature`);
         },
         onSuccess: (data, id) => {

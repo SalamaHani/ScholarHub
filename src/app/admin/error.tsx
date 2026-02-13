@@ -45,7 +45,7 @@ export default function AdminError({
                         <div className="flex gap-3">
                             <AlertCircle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
                             <div className="space-y-1">
-                                <p className="text-xs font-bold uppercase tracking-widest text-rose-900/60">Technical Error</p>
+                                <p className="text-xs font-bold tracking-widest text-rose-900/60">Technical Error</p>
                                 <p className="text-sm font-mono text-rose-800 break-all bg-white/50 p-2 rounded-lg mt-1 border border-rose-200">
                                     {error.message || "An unknown system error occurred."}
                                 </p>

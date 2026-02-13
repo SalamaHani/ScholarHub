@@ -25,7 +25,7 @@ export default function SavedPage() {
             <div className="container max-w-5xl">
                 {/* Header */}
                 <div className="space-y-4 mb-8">
-                    <div className="flex items-center gap-2 text-primary font-bold tracking-wider uppercase text-[10px]">
+                    <div className="flex items-center gap-2 text-primary font-bold tracking-wider text-[10px]">
                         <Bookmark className="h-4 w-4" />
                         My Bookmarks
                     </div>

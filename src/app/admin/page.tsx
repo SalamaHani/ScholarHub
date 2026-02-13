@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
     LayoutDashboard,
@@ -19,15 +19,12 @@ import {
     Clock,
     Eye,
     Shield,
-    UserX,
     Loader2,
     Send,
-    Filter,
     MoreVertical,
     Building2,
     TrendingUp,
     Star,
-    ChevronDown,
     RefreshCw,
     Calendar,
     ExternalLink,
@@ -40,7 +37,13 @@ import {
     ShieldOff,
     FileText,
     Quote,
-    User as UserIcon
+    Upload,
+    Download,
+    User as UserIcon,
+    Check,
+    X,
+    HelpCircle,
+    Save
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,12 +78,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { User, useUsers } from "@/hooks/useUsers";
-import { Scholarship, useScholarships } from "@/hooks/useScholarships";
+import { Scholarship, useScholarships, useScholarship } from "@/hooks/useScholarships";
 import { useApplications } from "@/hooks/useApplications";
 import { useCategories, CategoryInput } from "@/hooks/useCategories";
 import { useNotifications, SendNotificationInput } from "@/hooks/useNotifications";
 import { useTestimonials, Testimonial } from "@/hooks/useTestimonials";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { ScholarshipForm } from "@/components/scholarships/scholarship-form";
 
@@ -120,7 +124,7 @@ export default function AdminDashboardPage() {
                     className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8"
                 >
                     <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-primary font-bold tracking-wider uppercase text-xs">
+                        <div className="flex items-center gap-2 text-primary font-bold tracking-wider text-xs">
                             <Shield className="h-4 w-4" />
                             Admin Control Panel
                         </div>
@@ -254,22 +258,22 @@ function OverviewSection() {
     const { allApplications } = useApplications();
     const { list: categoriesList } = useCategories();
 
-    const users = Array.isArray(usersList.data) ? usersList.data : usersList.data?.users || [];
-    const scholarships = Array.isArray(scholarshipsList.data) ? scholarshipsList.data : scholarshipsList.data?.scholarships || [];
-    const pendingScholarships = adminPendingList.data || [];
-    const applications = Array.isArray(allApplications.data) ? allApplications.data : allApplications.data?.applications || [];
-    const categories = Array.isArray(categoriesList.data) ? categoriesList.data : categoriesList.data?.categories || [];
+    const users = useMemo(() => Array.isArray(usersList.data) ? usersList.data : usersList.data?.users || [], [usersList.data]);
+    const scholarships = useMemo(() => Array.isArray(scholarshipsList.data) ? scholarshipsList.data : scholarshipsList.data?.scholarships || [], [scholarshipsList.data]);
+    const pendingScholarships = useMemo(() => adminPendingList.data || [], [adminPendingList.data]);
+    const applications = useMemo(() => Array.isArray(allApplications.data) ? allApplications.data : allApplications.data?.applications || [], [allApplications.data]);
+    const categories = useMemo(() => Array.isArray(categoriesList.data) ? categoriesList.data : categoriesList.data?.categories || [], [categoriesList.data]);
 
-    const stats = [
+    const stats = useMemo(() => [
         { label: "Total Users", value: users.length || "0", icon: Users, color: "primary", trend: "+12%" },
         { label: "Scholarships", value: scholarships.length || "0", icon: GraduationCap, color: "success", trend: "+8%" },
         { label: "Pending Approvals", value: pendingScholarships.length || "0", icon: Clock, color: "warning", trend: "" },
         { label: "Applications", value: applications.length || "0", icon: FileText, color: "info", trend: "+24%" },
         { label: "Categories", value: categories.length || "0", icon: FolderOpen, color: "secondary", trend: "" },
         { label: "Active Alerts", value: "3", icon: AlertCircle, color: "destructive", trend: "" },
-    ];
+    ], [users.length, scholarships.length, pendingScholarships.length, applications.length, categories.length]);
 
-    const activity = [
+    const activity = useMemo(() => [
         ...users.slice(0, 3).map((u: any) => ({
             action: `New ${(u.role || "USER").toLowerCase()} registered`,
             user: u.email,
@@ -284,7 +288,7 @@ function OverviewSection() {
             displayTime: new Date(s.createdAt).toLocaleDateString(),
             type: s.status === "APPROVED" ? "success" : s.status === "PENDING" ? "warning" : "destructive"
         }))
-    ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5);
+    ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5), [users, scholarships]);
 
     return (
         <motion.div
@@ -406,9 +410,9 @@ function UsersSection() {
     const [viewingUser, setViewingUser] = useState<any | null>(null);
     const [editingUser, setEditingUser] = useState<any | null>(null);
 
-    const users = Array.isArray(list.data) ? list.data : list.data?.users || [];
+    const users = useMemo(() => Array.isArray(list.data) ? list.data : list.data?.users || [], [list.data]);
 
-    const getUserStats = (userId: string) => {
+    const getUserStats = useCallback((userId: string) => {
         const apps = Array.isArray(allApplications.data) ? allApplications.data : allApplications.data?.applications || [];
         const userApps = apps.filter((app: any) => app.studentId === userId).length;
 
@@ -416,18 +420,18 @@ function UsersSection() {
         const userScholarships = scholarships.filter((s: any) => (s.professorId === userId || s.userId === userId)).length;
 
         return { userApps, userScholarships };
-    };
+    }, [allApplications.data, scholarshipsList.data]);
 
-    const filteredUsers = users.filter((user: any) => {
+    const filteredUsers = useMemo(() => users.filter((user: any) => {
         const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.email?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRole = roleFilter === "all" || user.role === roleFilter;
         return matchesSearch && matchesRole;
-    });
+    }), [users, searchTerm, roleFilter]);
 
-    const handleRoleChange = async (userId: string, newRole: string) => {
+    const handleRoleChange = useCallback(async (userId: string, newRole: string) => {
         await updateRole.mutateAsync({ id: userId, role: newRole });
-    };
+    }, [updateRole]);
 
     return (
         <motion.div
@@ -668,9 +672,9 @@ function UsersSection() {
                                 </div>
                                 <div className="flex items-center gap-6">
                                     <div className="relative group">
-                                        <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-3xl font-bold text-primary border-4 border-white shadow-xl transition-transform group-hover:scale-105 duration-300">
+                                        <div className="relative h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-3xl font-bold text-primary border-4 border-white shadow-xl transition-transform group-hover:scale-105 duration-300 overflow-hidden">
                                             {viewingUser.avatar ? (
-                                                <img src={viewingUser.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                                                <Image src={viewingUser.avatar} alt="" fill className="rounded-full object-cover" />
                                             ) : (
                                                 viewingUser.firstName?.charAt(0) || viewingUser.name?.charAt(0) || "U"
                                             )}
@@ -686,7 +690,7 @@ function UsersSection() {
                                             {viewingUser.firstName ? `${viewingUser.firstName} ${viewingUser.lastName}` : (viewingUser.name || "Unknown Member")}
                                         </h2>
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <Badge variant="secondary" className="px-2 py-0.5 font-bold uppercase tracking-wider text-[10px]">
+                                            <Badge variant="secondary" className="px-2 py-0.5 font-bold tracking-wider text-[10px]">
                                                 {viewingUser.role}
                                             </Badge>
                                             {viewingUser.role === "PROFESSOR" ? (
@@ -713,186 +717,316 @@ function UsersSection() {
                             </div>
                             <div className="p-8 space-y-8 max-h-[60vh] overflow-y-auto">
                                 {/* Basic Info */}
-                                <div className="space-y-4">
-                                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                        <UserIcon className="h-4 w-4" />
-                                        Personal Information
-                                    </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                                        <div className="space-y-1">
-                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Email Address</Label>
-                                            <p className="text-sm font-medium flex items-center gap-2 break-all">
-                                                <Mail className="h-3.5 w-3.5 text-primary/60" />
-                                                {viewingUser.email}
-                                            </p>
-                                        </div>
-                                        {(viewingUser.phone || viewingUser.profile?.phone) && (
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Phone Number</Label>
-                                                <p className="text-sm font-medium flex items-center gap-2">
-                                                    <Phone className="h-3.5 w-3.5 text-primary/60" />
-                                                    {viewingUser.phone || viewingUser.profile?.phone}
-                                                </p>
-                                            </div>
-                                        )}
-                                        <div className="space-y-1">
-                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Member Since</Label>
-                                            <p className="text-sm font-medium flex items-center gap-2">
-                                                <Calendar className="h-3.5 w-3.5 text-primary/60" />
-                                                {new Date(viewingUser.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
-                                            </p>
-                                        </div>
-                                        {(viewingUser.country || viewingUser.profile?.country) && (
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Location</Label>
-                                                <p className="text-sm font-medium flex items-center gap-2">
-                                                    <MapPin className="h-3.5 w-3.5 text-primary/60" />
-                                                    {viewingUser.country || viewingUser.profile?.country}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                                {(() => {
+                                    const profile = viewingUser.role === 'PROFESSOR' ? viewingUser.professorProfile : viewingUser.studentProfile;
+                                    const country = viewingUser.country || viewingUser.profile?.country || profile?.country;
+                                    const city = viewingUser.city || viewingUser.profile?.city || profile?.city;
+                                    const age = viewingUser.age || viewingUser.profile?.age || profile?.age;
+                                    const gender = viewingUser.gender || viewingUser.profile?.gender || profile?.gender;
+                                    const phone = viewingUser.phone || viewingUser.profile?.phone || profile?.phoneNumber;
+                                    const bio = viewingUser.bio || viewingUser.profile?.bio || profile?.bio;
 
-                                {/* Academic Profile - For Students/Professors */}
-                                {(viewingUser.university || viewingUser.profile?.university) && (
-                                    <div className="space-y-4 pt-4 border-t">
-                                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                            <GraduationCap className="h-4 w-4" />
-                                            Academic Profile
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{viewingUser.role === 'PROFESSOR' ? 'Institution' : 'University'}</Label>
-                                                <p className="text-sm font-medium flex items-center gap-2">
-                                                    <Building2 className="h-3.5 w-3.5 text-primary/60" />
-                                                    {viewingUser.role === 'PROFESSOR'
-                                                        ? (viewingUser.institution || viewingUser.professorProfile?.institution)
-                                                        : (viewingUser.university || viewingUser.studentProfile?.university)}
-                                                </p>
-                                            </div>
-                                            {(viewingUser.department || viewingUser.profile?.department || viewingUser.professorProfile?.department) && (
-                                                <div className="space-y-1">
-                                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Department</Label>
-                                                    <p className="text-sm font-medium">
-                                                        {viewingUser.department || viewingUser.profile?.department || viewingUser.professorProfile?.department}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {viewingUser.role === 'PROFESSOR' ? (
-                                                <>
-                                                    {(viewingUser.position || viewingUser.professorProfile?.position) && (
+                                    return (
+                                        <div className="space-y-8">
+                                            {/* Personal Info Expanded */}
+                                            <div className="space-y-4">
+                                                <h3 className="text-sm font-bold tracking-widest text-muted-foreground flex items-center gap-2">
+                                                    <UserIcon className="h-4 w-4" />
+                                                    Profile Details
+                                                </h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Email Address</Label>
+                                                        <p className="text-sm font-medium flex items-center gap-2 break-all">
+                                                            <Mail className="h-3.5 w-3.5 text-primary/60" />
+                                                            {viewingUser.email}
+                                                        </p>
+                                                    </div>
+                                                    {phone && (
                                                         <div className="space-y-1">
-                                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Academic Position</Label>
-                                                            <p className="text-sm font-medium">
-                                                                {viewingUser.position || viewingUser.professorProfile?.position}
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                    {(viewingUser.specialization || viewingUser.professorProfile?.specialization) && (
-                                                        <div className="space-y-1">
-                                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Specialization</Label>
-                                                            <p className="text-sm font-medium">
-                                                                {viewingUser.specialization || viewingUser.professorProfile?.specialization}
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    {(viewingUser.fieldOfStudy || viewingUser.profile?.fieldOfStudy || viewingUser.studentProfile?.fieldOfStudy) && (
-                                                        <div className="space-y-1">
-                                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Major / Field</Label>
+                                                            <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Phone Number</Label>
                                                             <p className="text-sm font-medium flex items-center gap-2">
-                                                                <Award className="h-3.5 w-3.5 text-primary/60" />
-                                                                {viewingUser.fieldOfStudy || viewingUser.profile?.fieldOfStudy || viewingUser.studentProfile?.fieldOfStudy}
+                                                                <Phone className="h-3.5 w-3.5 text-primary/60" />
+                                                                {phone}
                                                             </p>
                                                         </div>
                                                     )}
-                                                    {(viewingUser.gpa || viewingUser.profile?.gpa || viewingUser.studentProfile?.gpa) && (
+                                                    {(country || city) && (
                                                         <div className="space-y-1">
-                                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Academic Score (GPA)</Label>
-                                                            <p className="text-sm font-bold text-primary">
-                                                                {viewingUser.gpa || viewingUser.profile?.gpa || viewingUser.studentProfile?.gpa}
+                                                            <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Location</Label>
+                                                            <p className="text-sm font-medium flex items-center gap-2">
+                                                                <MapPin className="h-3.5 w-3.5 text-primary/60" />
+                                                                {city ? `${city}, ` : ""}{country || "Not specified"}
                                                             </p>
                                                         </div>
                                                     )}
-                                                </>
-                                            )}
-                                            {(viewingUser.degreeLevel || viewingUser.profile?.degreeLevel || viewingUser.studentProfile?.currentDegree) && (
-                                                <div className="space-y-1">
-                                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{viewingUser.role === 'PROFESSOR' ? 'Highest Degree' : 'Level of Study'}</Label>
-                                                    <p className="text-sm font-medium uppercase text-[11px] bg-muted w-fit px-2 py-0.5 rounded-full border">
-                                                        {viewingUser.degreeLevel || viewingUser.profile?.degreeLevel || viewingUser.studentProfile?.currentDegree}
-                                                    </p>
+                                                    {(age || gender) && (
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Demographics</Label>
+                                                            <p className="text-sm font-medium flex items-center gap-2">
+                                                                <Hash className="h-3.5 w-3.5 text-primary/60" />
+                                                                {gender || "Unknown"} {age ? `• ${age} Years Old` : ""}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Member Since</Label>
+                                                        <p className="text-sm font-medium flex items-center gap-2">
+                                                            <Calendar className="h-3.5 w-3.5 text-primary/60" />
+                                                            {new Date(viewingUser.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Academic/Professional Identity */}
+                                            {(viewingUser.university || profile?.university || profile?.institution) && (
+                                                <div className="space-y-4 pt-6 border-t">
+                                                    <h3 className="text-sm font-bold tracking-widest text-muted-foreground flex items-center gap-2">
+                                                        <GraduationCap className="h-4 w-4" />
+                                                        Academic Profile
+                                                    </h3>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">{viewingUser.role === 'PROFESSOR' ? 'Institution' : 'University'}</Label>
+                                                            <p className="text-sm font-medium flex items-center gap-2">
+                                                                <Building2 className="h-3.5 w-3.5 text-primary/60" />
+                                                                {viewingUser.role === 'PROFESSOR'
+                                                                    ? (profile?.institution || viewingUser.institution)
+                                                                    : (profile?.university || viewingUser.university)}
+                                                            </p>
+                                                        </div>
+                                                        {viewingUser.role === 'PROFESSOR' ? (
+                                                            <>
+                                                                {(profile?.position || viewingUser.position) && (
+                                                                    <div className="space-y-1">
+                                                                        <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Academic Position</Label>
+                                                                        <p className="text-sm font-medium">
+                                                                            {profile?.position || viewingUser.position}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                                {(profile?.specialization || viewingUser.specialization) && (
+                                                                    <div className="space-y-1">
+                                                                        <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Specialization</Label>
+                                                                        <p className="text-sm font-medium">
+                                                                            {profile?.specialization || viewingUser.specialization}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                {(profile?.fieldOfStudy || viewingUser.fieldOfStudy) && (
+                                                                    <div className="space-y-1">
+                                                                        <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Major / Field</Label>
+                                                                        <p className="text-sm font-medium flex items-center gap-2">
+                                                                            <Award className="h-3.5 w-3.5 text-primary/60" />
+                                                                            {profile?.fieldOfStudy || viewingUser.fieldOfStudy}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                                {(profile?.gpa || viewingUser.gpa) && (
+                                                                    <div className="space-y-1">
+                                                                        <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Academic Score (GPA)</Label>
+                                                                        <p className="text-sm font-bold text-primary">
+                                                                            {profile?.gpa || viewingUser.gpa}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                                {(profile?.currentDegree || viewingUser.degreeLevel) && (
+                                                                    <div className="space-y-1">
+                                                                        <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Level of Study</Label>
+                                                                        <p className="text-sm font-medium text-[11px] bg-muted w-fit px-2 py-0.5 rounded-full border">
+                                                                            {profile?.currentDegree || viewingUser.degreeLevel}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                                {(profile?.graduationYear || viewingUser.graduationYear) && (
+                                                                    <div className="space-y-1">
+                                                                        <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Expected Graduation</Label>
+                                                                        <p className="text-sm font-medium">
+                                                                            Class of {profile?.graduationYear || viewingUser.graduationYear}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                        {(profile?.department || viewingUser.department) && (
+                                                            <div className="space-y-1">
+                                                                <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Department</Label>
+                                                                <p className="text-sm font-medium">
+                                                                    {profile?.department || viewingUser.department}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
-                                            {viewingUser.role === 'STUDENT' && (viewingUser.graduationYear || viewingUser.profile?.graduationYear) && (
-                                                <div className="space-y-1">
-                                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Expected Graduation</Label>
-                                                    <p className="text-sm font-medium">
-                                                        Class of {viewingUser.graduationYear || viewingUser.profile?.graduationYear}
-                                                    </p>
+
+                                            {/* Skills & bio */}
+                                            {(bio || profile?.skills || profile?.languages) && (
+                                                <div className="space-y-6 pt-6 border-t">
+                                                    {bio && (
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[10px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                                                                <Quote className="h-3 w-3" />
+                                                                Biography
+                                                            </Label>
+                                                            <p className="text-[11px] leading-relaxed text-muted-foreground italic bg-muted/30 p-3 rounded-xl border border-dashed text-center">
+                                                                &ldquo;{bio}&rdquo;
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    {profile?.skills && (
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Expertise & Skills</Label>
+                                                            <div className="flex flex-wrap gap-1.5">
+                                                                {(typeof profile.skills === 'string' ? profile.skills.split(',') : (Array.isArray(profile.skills) ? profile.skills : [])).map((skill: any, idx: number) => {
+                                                                    const skillText = typeof skill === 'string' ? skill.trim() : (skill?.name || String(skill));
+                                                                    return <Badge key={idx} variant="secondary" className="text-[9px] h-5 bg-blue-50 text-blue-700 border-blue-100">{skillText}</Badge>;
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {profile?.languages && (
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Languages</Label>
+                                                            <div className="flex flex-wrap gap-1.5">
+                                                                {(typeof profile.languages === 'string' ? profile.languages.split(',') : (Array.isArray(profile.languages) ? profile.languages : [])).map((lang: any, idx: number) => {
+                                                                    const langText = typeof lang === 'string' ? lang.trim() : (lang?.name || String(lang));
+                                                                    return <Badge key={idx} variant="outline" className="text-[9px] h-5 bg-emerald-50 text-emerald-700 border-emerald-100">{langText}</Badge>;
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
-                                        </div>
-                                    </div>
-                                )}
 
-                                {/* Platform Activity Statistics */}
-                                {viewingUser && (
-                                    <div className="space-y-4 pt-4 border-t">
-                                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                            <TrendingUp className="h-4 w-4" />
-                                            Platform Activity
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex flex-col items-center justify-center text-center">
-                                                <p className="text-[10px] font-black uppercase text-primary/60 tracking-tighter">Applications</p>
-                                                <p className="text-3xl font-black text-primary">{getUserStats(viewingUser.id).userApps}</p>
+                                            {/* Professional History */}
+                                            {(profile?.experience || profile?.certifications) && (
+                                                <div className="space-y-6 pt-6 border-t">
+                                                    {profile?.experience && (
+                                                        <div className="space-y-3">
+                                                            <Label className="text-[10px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                                                                <Building2 className="h-3 w-3" />
+                                                                Professional Experience
+                                                            </Label>
+                                                            <div className="space-y-3">
+                                                                {(Array.isArray(profile.experience) ? profile.experience : [profile.experience]).map((exp: any, idx: number) => {
+                                                                    if (typeof exp === 'string') return <p key={idx} className="text-xs text-muted-foreground bg-muted/20 p-3 rounded-xl">{exp}</p>;
+                                                                    return (
+                                                                        <div key={idx} className="bg-muted/20 p-3 rounded-xl space-y-1">
+                                                                            <div className="flex justify-between items-start">
+                                                                                <p className="text-xs font-bold text-primary">{exp.title || "Experience Item"}</p>
+                                                                                <p className="text-[10px] text-muted-foreground font-medium">{exp.startDate} {exp.endDate ? ` - ${exp.endDate}` : ""}</p>
+                                                                            </div>
+                                                                            <p className="text-[11px] font-medium leading-none">{exp.organization || exp.company}</p>
+                                                                            {exp.description && <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{exp.description}</p>}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {profile?.certifications && (
+                                                        <div className="space-y-3">
+                                                            <Label className="text-[10px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                                                                <Award className="h-3 w-3" />
+                                                                Training & Certifications
+                                                            </Label>
+                                                            <div className="space-y-2">
+                                                                {(Array.isArray(profile.certifications) ? profile.certifications : [profile.certifications]).map((cert: any, idx: number) => {
+                                                                    if (typeof cert === 'string') return <p key={idx} className="text-xs text-muted-foreground bg-muted/20 p-3 rounded-xl">{cert}</p>;
+                                                                    return (
+                                                                        <div key={idx} className="bg-muted/20 p-3 rounded-xl space-y-1">
+                                                                            <div className="flex justify-between items-start">
+                                                                                <p className="text-xs font-bold text-primary">{cert.title || cert.name || "Certification"}</p>
+                                                                                <p className="text-[10px] text-muted-foreground font-medium">{cert.date || cert.year}</p>
+                                                                            </div>
+                                                                            <p className="text-[11px] font-medium leading-none">{cert.organization || cert.issuer}</p>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Documents */}
+                                            {profile?.documents && profile.documents.length > 0 && (
+                                                <div className="space-y-3 pt-6 border-t">
+                                                    <Label className="text-[10px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                                                        <FileText className="h-3 w-3" />
+                                                        Verified Documents
+                                                    </Label>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                        {(Array.isArray(profile.documents) ? profile.documents : [profile.documents]).map((doc: any, idx: number) => {
+                                                            const docName = typeof doc === 'string' ? doc.split('/').pop() : (doc.name || "Document");
+                                                            const docUrl = typeof doc === 'string' ? doc : doc.url;
+                                                            return (
+                                                                <a
+                                                                    key={idx}
+                                                                    href={docUrl}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 hover:bg-primary/10 border border-primary/10 transition-colors group"
+                                                                >
+                                                                    <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center shadow-sm text-primary group-hover:scale-110 transition-transform">
+                                                                        <ExternalLink className="h-4 w-4" />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-[11px] font-bold truncate pr-2">{docName}</p>
+                                                                        <p className="text-[9px] text-muted-foreground opacity-70">Open in New Tab</p>
+                                                                    </div>
+                                                                </a>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Platform Activity Statistics */}
+                                            <div className="space-y-4 pt-6 border-t">
+                                                <h3 className="text-sm font-bold tracking-widest text-muted-foreground flex items-center gap-2">
+                                                    <TrendingUp className="h-4 w-4" />
+                                                    Platform Activity
+                                                </h3>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex flex-col items-center justify-center text-center">
+                                                        <p className="text-[10px] font-black text-primary/60 tracking-tighter">Applications</p>
+                                                        <p className="text-3xl font-black text-primary">{getUserStats(viewingUser.id).userApps}</p>
+                                                    </div>
+                                                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex flex-col items-center justify-center text-center">
+                                                        <p className="text-[10px] font-black text-emerald-600/60 tracking-tighter">Scholarships</p>
+                                                        <p className="text-3xl font-black text-emerald-600">{getUserStats(viewingUser.id).userScholarships}</p>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex flex-col items-center justify-center text-center">
-                                                <p className="text-[10px] font-black uppercase text-emerald-600/60 tracking-tighter">Scholarships</p>
-                                                <p className="text-3xl font-black text-emerald-600">{getUserStats(viewingUser.id).userScholarships}</p>
+
+                                            {/* System Info */}
+                                            <div className="pt-6 border-t opacity-60">
+                                                <div className="flex justify-between items-center text-[9px] font-bold text-muted-foreground tracking-widest">
+                                                    <span>System Metadata</span>
+                                                    <Hash className="h-3 w-3" />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4 mt-2">
+                                                    <div className="bg-muted/10 p-2 rounded-lg border border-dashed">
+                                                        <p className="opacity-50">Last Update</p>
+                                                        <p className="text-[10px]">{new Date(viewingUser.updatedAt).toLocaleDateString()}</p>
+                                                    </div>
+                                                    <div className="bg-muted/10 p-2 rounded-lg border border-dashed text-right">
+                                                        <p className="opacity-50">Email Verif.</p>
+                                                        <p className={cn("text-[10px]", viewingUser.isEmailVerified ? "text-emerald-600" : "text-amber-600")}>
+                                                            {viewingUser.isEmailVerified ? "Verified" : "Pending"}
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
-
-                                {/* Biography */}
-                                {(viewingUser.bio || viewingUser.profile?.bio) && (
-                                    <div className="space-y-4 pt-4 border-t">
-                                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                            <FileText className="h-4 w-4" />
-                                            Professional Bio
-                                        </h3>
-                                        <div className="p-4 rounded-xl bg-muted/40 text-[11px] leading-relaxed text-muted-foreground italic border border-dashed text-center">
-                                            "{viewingUser.bio || viewingUser.profile?.bio}"
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* System Info */}
-                                <div className="space-y-4 pt-4 border-t">
-                                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                        <Hash className="h-4 w-4" />
-                                        System Metadata
-                                    </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="bg-muted/30 p-3 rounded-xl border">
-                                            <Label className="text-[9px] font-bold text-muted-foreground uppercase">Last Activity Update</Label>
-                                            <p className="text-xs font-medium text-muted-foreground mt-1">
-                                                {new Date(viewingUser.updatedAt).toLocaleString()}
-                                            </p>
-                                        </div>
-                                        <div className="bg-muted/30 p-3 rounded-xl border">
-                                            <Label className="text-[9px] font-bold text-muted-foreground uppercase">Verification Status</Label>
-                                            <p className={cn("text-xs font-bold mt-1", viewingUser.isVerified ? "text-emerald-600" : "text-amber-600")}>
-                                                {viewingUser.isVerified ? "Fully Verified Access" : "Awaiting Verification"}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
+                                    );
+                                })()}
                             </div>
                             <DialogFooter className="p-6 bg-muted/20 border-t flex flex-row gap-3">
                                 <Button variant="outline" className="flex-1 shadow-sm h-11" onClick={() => setViewingUser(null)}>
@@ -958,11 +1092,14 @@ function UserEditDialog({ user, open, onOpenChange, onUpdate, isLoading }: {
                 degreeLevel: user.degreeLevel || user.profile?.degreeLevel || "BACHELOR",
                 currentDegree: user.currentDegree || user.profile?.currentDegree || "BACHELOR",
                 gpa: user.gpa || user.profile?.gpa || "",
-                graduationYear: user.graduationYear || user.profile?.graduationYear || "",
-                country: user.country || user.profile?.country || "",
-                bio: user.bio || user.profile?.bio || "",
-                phone: user.phone || user.profile?.phone || "",
-                department: user.department || user.profile?.department || "",
+                graduationYear: user.graduationYear || user.profile?.graduationYear || user.studentProfile?.graduationYear || "",
+                country: user.country || user.profile?.country || user.studentProfile?.country || "",
+                city: user.city || user.profile?.city || user.studentProfile?.city || "",
+                age: user.age || user.profile?.age || user.studentProfile?.age || "",
+                gender: user.gender || user.profile?.gender || user.studentProfile?.gender || "",
+                bio: user.bio || user.profile?.bio || user.studentProfile?.bio || "",
+                phone: user.phone || user.profile?.phone || user.studentProfile?.phoneNumber || "",
+                department: user.department || user.profile?.department || user.professorProfile?.department || "",
             });
         }
     }, [user]);
@@ -977,7 +1114,7 @@ function UserEditDialog({ user, open, onOpenChange, onUpdate, isLoading }: {
             <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden">
                 <form onSubmit={handleSubmit} className="flex flex-col max-h-[90vh]">
                     <DialogHeader className="p-6 pb-2 border-b">
-                        <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter text-primary">Edit User Profile</DialogTitle>
+                        <DialogTitle className="text-2xl font-black italic tracking-tighter text-primary">Edit User Profile</DialogTitle>
                         <DialogDescription>
                             Modify administrative and academic data for this member.
                         </DialogDescription>
@@ -987,7 +1124,7 @@ function UserEditDialog({ user, open, onOpenChange, onUpdate, isLoading }: {
                         <div className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label className="text-xs font-bold uppercase text-primary/70">First Name</Label>
+                                    <Label className="text-xs font-bold text-primary/70">First Name</Label>
                                     <Input
                                         value={formData.firstName}
                                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
@@ -995,7 +1132,7 @@ function UserEditDialog({ user, open, onOpenChange, onUpdate, isLoading }: {
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label className="text-xs font-bold uppercase text-primary/70">Last Name</Label>
+                                    <Label className="text-xs font-bold text-primary/70">Last Name</Label>
                                     <Input
                                         value={formData.lastName}
                                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
@@ -1006,7 +1143,7 @@ function UserEditDialog({ user, open, onOpenChange, onUpdate, isLoading }: {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label className="text-xs font-bold uppercase text-primary/70">University</Label>
+                                    <Label className="text-xs font-bold text-primary/70">University</Label>
                                     <Input
                                         value={formData.university}
                                         onChange={(e) => setFormData({ ...formData, university: e.target.value })}
@@ -1014,7 +1151,7 @@ function UserEditDialog({ user, open, onOpenChange, onUpdate, isLoading }: {
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label className="text-xs font-bold uppercase text-primary/70">Degree Level</Label>
+                                    <Label className="text-xs font-bold text-primary/70">Degree Level</Label>
                                     <Select
                                         value={formData.degreeLevel}
                                         onValueChange={(v) => setFormData({ ...formData, degreeLevel: v })}
@@ -1033,7 +1170,7 @@ function UserEditDialog({ user, open, onOpenChange, onUpdate, isLoading }: {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label className="text-xs font-bold uppercase text-primary/70">Department</Label>
+                                    <Label className="text-xs font-bold text-primary/70">Department</Label>
                                     <Input
                                         value={formData.department}
                                         onChange={(e) => setFormData({ ...formData, department: e.target.value })}
@@ -1041,7 +1178,7 @@ function UserEditDialog({ user, open, onOpenChange, onUpdate, isLoading }: {
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label className="text-xs font-bold uppercase text-primary/70">Current Degree</Label>
+                                    <Label className="text-xs font-bold text-primary/70">Current Degree</Label>
                                     <Select
                                         value={formData.currentDegree}
                                         onValueChange={(v) => setFormData({ ...formData, currentDegree: v })}
@@ -1060,7 +1197,7 @@ function UserEditDialog({ user, open, onOpenChange, onUpdate, isLoading }: {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label className="text-xs font-bold uppercase text-primary/70">GPA</Label>
+                                    <Label className="text-xs font-bold text-primary/70">GPA</Label>
                                     <Input
                                         value={formData.gpa}
                                         onChange={(e) => setFormData({ ...formData, gpa: e.target.value })}
@@ -1069,7 +1206,62 @@ function UserEditDialog({ user, open, onOpenChange, onUpdate, isLoading }: {
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label className="text-xs font-bold uppercase text-primary/70">Phone</Label>
+                                    <Label className="text-xs font-bold text-primary/70">Graduation Year</Label>
+                                    <Input
+                                        value={formData.graduationYear}
+                                        onChange={(e) => setFormData({ ...formData, graduationYear: e.target.value })}
+                                        className="rounded-xl border-primary/10 h-11 focus-visible:ring-primary"
+                                        placeholder="e.g. 2025"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label className="text-xs font-bold text-primary/70">Country</Label>
+                                    <Input
+                                        value={formData.country}
+                                        onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                                        className="rounded-xl border-primary/10 h-11 focus-visible:ring-primary"
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label className="text-xs font-bold text-primary/70">City</Label>
+                                    <Input
+                                        value={formData.city}
+                                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                                        className="rounded-xl border-primary/10 h-11 focus-visible:ring-primary"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="grid gap-2">
+                                    <Label className="text-xs font-bold text-primary/70">Age</Label>
+                                    <Input
+                                        value={formData.age}
+                                        onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                                        className="rounded-xl border-primary/10 h-11 focus-visible:ring-primary"
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label className="text-xs font-bold text-primary/70">Gender</Label>
+                                    <Select
+                                        value={formData.gender}
+                                        onValueChange={(v) => setFormData({ ...formData, gender: v })}
+                                    >
+                                        <SelectTrigger className="rounded-xl border-primary/10 h-11 focus:ring-primary">
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="MALE">Male</SelectItem>
+                                            <SelectItem value="FEMALE">Female</SelectItem>
+                                            <SelectItem value="OTHER">Other</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label className="text-xs font-bold text-primary/70">Phone</Label>
                                     <Input
                                         value={formData.phone}
                                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -1079,7 +1271,7 @@ function UserEditDialog({ user, open, onOpenChange, onUpdate, isLoading }: {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label className="text-xs font-bold uppercase text-primary/70">Bio</Label>
+                                <Label className="text-xs font-bold text-primary/70">Bio</Label>
                                 <Textarea
                                     value={formData.bio}
                                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
@@ -1111,18 +1303,21 @@ function ScholarshipsSection() {
     const { list, adminPendingList, approve, reject, remove, toggleFeatured } = useScholarships();
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
-    const [editingScholarship, setEditingScholarship] = useState<Scholarship | null>(null);
+    const [editingScholarshipId, setEditingScholarshipId] = useState<string | null>(null);
     const [viewingScholarship, setViewingScholarship] = useState<Scholarship | null>(null);
 
-    const scholarships = Array.isArray(list.data) ? list.data : list.data?.scholarships || [];
-    const pendingScholarships = adminPendingList.data || [];
+    // Fetch full scholarship data with questions when editing
+    const { data: editingScholarship, isLoading: isLoadingEdit } = useScholarship(editingScholarshipId || "");
 
-    const filteredScholarships = scholarships.filter((s: any) => {
+    const scholarships = useMemo(() => Array.isArray(list.data) ? list.data : list.data?.scholarships || [], [list.data]);
+    const pendingScholarships = useMemo(() => adminPendingList.data || [], [adminPendingList.data]);
+
+    const filteredScholarships = useMemo(() => scholarships.filter((s: any) => {
         const matchesSearch = s.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             s.organization?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === "all" || s.status === statusFilter;
         return matchesSearch && matchesStatus;
-    });
+    }), [scholarships, searchTerm, statusFilter]);
 
     return (
         <motion.div
@@ -1317,7 +1512,7 @@ function ScholarshipsSection() {
                                                             <Eye className="h-4 w-4 mr-2" />
                                                             Detailed View
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => setEditingScholarship(s)}>
+                                                        <DropdownMenuItem onClick={() => setEditingScholarshipId(s.id)}>
                                                             <Pencil className="h-4 w-4 mr-2" />
                                                             Edit Data
                                                         </DropdownMenuItem>
@@ -1418,19 +1613,19 @@ function ScholarshipsSection() {
                                 {/* Quick Stats */}
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div className="p-4 rounded-2xl bg-muted/40 border border-muted-foreground/10 space-y-1">
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Country</p>
+                                        <p className="text-[10px] font-bold text-muted-foreground tracking-widest">Country</p>
                                         <p className="font-bold truncate">{viewingScholarship.country}</p>
                                     </div>
                                     <div className="p-4 rounded-2xl bg-muted/40 border border-muted-foreground/10 space-y-1">
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Deadline</p>
+                                        <p className="text-[10px] font-bold text-muted-foreground tracking-widest">Deadline</p>
                                         <p className="font-bold text-rose-600">{new Date(viewingScholarship.deadline).toLocaleDateString()}</p>
                                     </div>
                                     <div className="p-4 rounded-2xl bg-muted/40 border border-muted-foreground/10 space-y-1">
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Level</p>
+                                        <p className="text-[10px] font-bold text-muted-foreground tracking-widest">Level</p>
                                         <p className="font-bold truncate">{Array.isArray(viewingScholarship.degreeLevel) ? viewingScholarship.degreeLevel.join(", ") : viewingScholarship.degreeLevel}</p>
                                     </div>
                                     <div className="p-4 rounded-2xl bg-muted/40 border border-muted-foreground/10 space-y-1">
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</p>
+                                        <p className="text-[10px] font-bold text-muted-foreground tracking-widest">Status</p>
                                         <Badge variant={viewingScholarship.status === "APPROVED" ? "success" : viewingScholarship.status === "PENDING" ? "warning" : "destructive"}>
                                             {viewingScholarship.status}
                                         </Badge>
@@ -1439,11 +1634,11 @@ function ScholarshipsSection() {
 
                                 {viewingScholarship.status === "REJECTED" && viewingScholarship.rejectionReason && (
                                     <div className="p-6 rounded-3xl bg-rose-50 border border-rose-100 space-y-2">
-                                        <h3 className="text-sm font-bold uppercase tracking-widest text-rose-600 flex items-center gap-2">
+                                        <h3 className="text-sm font-bold tracking-widest text-rose-600 flex items-center gap-2">
                                             <XCircle className="h-4 w-4" />
                                             Rejection Reason
                                         </h3>
-                                        <p className="text-rose-700/80 leading-relaxed italic">"{viewingScholarship.rejectionReason}"</p>
+                                        <p className="text-rose-700/80 leading-relaxed italic">&ldquo;{viewingScholarship.rejectionReason}&rdquo;</p>
                                     </div>
                                 )}
 
@@ -1477,7 +1672,7 @@ function ScholarshipsSection() {
 
                                     <div className="space-y-8">
                                         <section className="space-y-4 p-6 rounded-3xl bg-primary/5 border border-primary/10">
-                                            <h3 className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                                            <h3 className="text-sm font-bold tracking-widest text-primary flex items-center gap-2">
                                                 <Star className="h-4 w-4" />
                                                 Benefits
                                             </h3>
@@ -1485,7 +1680,7 @@ function ScholarshipsSection() {
                                         </section>
 
                                         <section className="space-y-4">
-                                            <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                            <h3 className="text-sm font-bold tracking-widest text-muted-foreground flex items-center gap-2">
                                                 <FolderOpen className="h-4 w-4" />
                                                 Fields of Study
                                             </h3>
@@ -1497,6 +1692,43 @@ function ScholarshipsSection() {
                                         </section>
                                     </div>
                                 </div>
+                                {/* Scholarship Questions Section */}
+                                {viewingScholarship.questions && viewingScholarship.questions.length > 0 && (
+                                    <div className="space-y-6 pt-6 border-t border-dashed">
+                                        <h3 className="text-lg font-bold flex items-center gap-2">
+                                            <HelpCircle className="h-5 w-5 text-primary" />
+                                            Application Questions
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {viewingScholarship.questions.map((q: any, idx: number) => (
+                                                <div key={q.id || idx} className="p-6 rounded-3xl bg-white border shadow-sm space-y-3 relative overflow-hidden">
+                                                    <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />
+                                                    <div className="flex items-center justify-between">
+                                                        <Badge variant="outline" className="text-[9px] font-black tracking-widest">
+                                                            {q.type === 'MULTIPLE_CHOICE' ? 'Multiple Choice' : q.type === 'DOCUMENT' ? 'Document Upload' : 'Text Response'}
+                                                        </Badge>
+                                                        <span className="text-[10px] font-bold text-muted-foreground opacity-50">Q{idx + 1}</span>
+                                                    </div>
+                                                    <p className="font-bold text-sm leading-relaxed">{q.question}</p>
+
+                                                    {q.type === 'MULTIPLE_CHOICE' && q.options && q.options.length > 0 && (
+                                                        <div className="space-y-1.5 pt-2">
+                                                            <p className="text-[9px] font-bold text-muted-foreground tracking-widest">Available Options:</p>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {q.options.map((opt: string, optIdx: number) => (
+                                                                    <div key={optIdx} className="flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-50 border text-[11px] font-medium">
+                                                                        <div className="h-2 w-2 rounded-full bg-primary/40" />
+                                                                        {opt}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <DialogFooter className="p-8 pt-0 flex gap-4">
@@ -1534,7 +1766,7 @@ function ScholarshipsSection() {
                                     className="px-8"
                                     onClick={() => {
                                         setViewingScholarship(null);
-                                        setEditingScholarship(viewingScholarship);
+                                        setEditingScholarshipId(viewingScholarship.id);
                                     }}
                                 >
                                     <Pencil className="h-4 w-4 mr-2" />
@@ -1547,22 +1779,33 @@ function ScholarshipsSection() {
             </Dialog>
 
             {/* Editing Scholarship Dialog */}
-            <Dialog open={!!editingScholarship} onOpenChange={(open) => !open && setEditingScholarship(null)}>
+            < Dialog open={!!editingScholarshipId} onOpenChange={(open) => !open && setEditingScholarshipId(null)}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-bold">Edit Scholarship</DialogTitle>
+                        <p className="text-muted-foreground text-sm">Modify questions, answers, and scholarship details</p>
                     </DialogHeader>
                     <div className="py-4">
-                        {editingScholarship && (
+                        {isLoadingEdit ? (
+                            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                                <p className="text-muted-foreground font-medium">Loading scholarship data...</p>
+                            </div>
+                        ) : editingScholarship ? (
                             <ScholarshipForm
                                 initialData={editingScholarship}
-                                onSuccess={() => setEditingScholarship(null)}
-                                onCancel={() => setEditingScholarship(null)}
+                                onSuccess={() => setEditingScholarshipId(null)}
+                                onCancel={() => setEditingScholarshipId(null)}
                             />
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                                <AlertCircle className="h-10 w-10 text-amber-500" />
+                                <p className="text-muted-foreground font-medium">Unable to load scholarship data</p>
+                            </div>
                         )}
                     </div>
                 </DialogContent>
-            </Dialog>
+            </Dialog >
         </motion.div >
     );
 }
@@ -1571,19 +1814,33 @@ function ScholarshipsSection() {
 // APPLICATIONS SECTION
 // ============================================
 function ApplicationsSection() {
-    const { allApplications, evaluate } = useApplications();
+    const { allApplications, evaluate, remove, update } = useApplications();
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [viewingApplication, setViewingApplication] = useState<any>(null);
+    const [evaluatingApplication, setEvaluatingApplication] = useState<any>(null);
+    const [evaluationNotes, setEvaluationNotes] = useState("");
+    const [targetStatus, setTargetStatus] = useState("");
 
-    const applications = Array.isArray(allApplications.data) ? allApplications.data : allApplications.data?.applications || [];
+    // Update evaluation states when viewing or evaluating a new application
+    useEffect(() => {
+        const app = evaluatingApplication || viewingApplication;
+        if (app) {
+            setEvaluationNotes(app.evaluationNotes || "");
+            setTargetStatus(app.status || "PENDING");
+        }
+    }, [viewingApplication, evaluatingApplication]);
 
-    const filteredApplications = applications.filter((app: any) => {
-        const matchesSearch = app.student?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const applications = useMemo(() => Array.isArray(allApplications.data) ? allApplications.data : allApplications.data?.applications || [], [allApplications.data]);
+
+    const filteredApplications = useMemo(() => applications.filter((app: any) => {
+        const studentName = app.user ? `${app.user.firstName || ""} ${app.user.lastName || ""}`.trim() : "Unknown";
+        const matchesSearch = studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            app.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             app.scholarship?.title?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === "all" || app.status === statusFilter;
         return matchesSearch && matchesStatus;
-    });
+    }), [applications, searchTerm, statusFilter]);
 
     return (
         <motion.div
@@ -1653,12 +1910,16 @@ function ApplicationsSection() {
                                     <tr key={app.id} className="border-b hover:bg-muted/30 transition-colors">
                                         <td className="p-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600">
-                                                    {app.student?.name?.charAt(0) || "S"}
+                                                <div className="relative h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 overflow-hidden border">
+                                                    {app.user?.avatar ? (
+                                                        <Image src={app.user.avatar} alt="" fill className="object-cover" />
+                                                    ) : (
+                                                        app.user?.firstName?.charAt(0) || "S"
+                                                    )}
                                                 </div>
                                                 <div>
-                                                    <p className="font-semibold">{app.student?.name || "Unknown"}</p>
-                                                    <p className="text-sm text-muted-foreground">{app.student?.email}</p>
+                                                    <p className="font-semibold">{app.user ? `${app.user.firstName || ""} ${app.user.lastName || ""}`.trim() : "Unknown"}</p>
+                                                    <p className="text-sm text-muted-foreground">{app.user?.email}</p>
                                                 </div>
                                             </div>
                                         </td>
@@ -1685,57 +1946,79 @@ function ApplicationsSection() {
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    className="h-8"
-                                                    onClick={() => setViewingApplication(app)}
+                                                    className="h-8 bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary group"
+                                                    onClick={() => setEvaluatingApplication(app)}
                                                 >
-                                                    <Eye className="h-4 w-4 mr-1" />
-                                                    View
+                                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 group-hover:scale-110 transition-transform" />
+                                                    Evaluate
                                                 </Button>
-                                                {app.status === "PENDING" && (
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                                <MoreVertical className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <ConfirmActionDialog
-                                                                title="Accept Application"
-                                                                description={`Are you sure you want to accept this application? The student will be notified.`}
-                                                                onConfirm={() => evaluate.mutate({ id: app.id, status: "ACCEPTED" })}
-                                                                isLoading={evaluate.isPending}
-                                                                variant="success"
-                                                                icon={CheckCircle2}
-                                                                trigger={
-                                                                    <DropdownMenuItem
-                                                                        onSelect={(e) => e.preventDefault()}
-                                                                        className="text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50"
-                                                                    >
-                                                                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                                                                        Accept
-                                                                    </DropdownMenuItem>
-                                                                }
-                                                            />
-                                                            <ConfirmActionDialog
-                                                                title="Reject Application"
-                                                                description={`Are you sure you want to reject this application?`}
-                                                                onConfirm={() => evaluate.mutate({ id: app.id, status: "REJECTED" })}
-                                                                isLoading={evaluate.isPending}
-                                                                variant="destructive"
-                                                                icon={XCircle}
-                                                                trigger={
-                                                                    <DropdownMenuItem
-                                                                        onSelect={(e) => e.preventDefault()}
-                                                                        className="text-destructive focus:text-destructive focus:bg-rose-50"
-                                                                    >
-                                                                        <XCircle className="h-4 w-4 mr-2" />
-                                                                        Reject
-                                                                    </DropdownMenuItem>
-                                                                }
-                                                            />
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                )}
+
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-48">
+                                                        <DropdownMenuItem onClick={() => setViewingApplication(app)}>
+                                                            <Eye className="h-4 w-4 mr-2" />
+                                                            View Full Details
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => setEvaluatingApplication(app)}>
+                                                            <Pencil className="h-4 w-4 mr-2" />
+                                                            Update Status
+                                                        </DropdownMenuItem>
+
+                                                        <DropdownMenuSeparator />
+
+                                                        {app.status === "PENDING" && (
+                                                            <>
+                                                                <ConfirmActionDialog
+                                                                    title="Accept Application"
+                                                                    description="Are you sure you want to accept this application? The student will be notified."
+                                                                    onConfirm={() => evaluate.mutate({ id: app.id, status: "ACCEPTED" })}
+                                                                    isLoading={evaluate.isPending}
+                                                                    variant="success"
+                                                                    icon={CheckCircle2}
+                                                                    trigger={
+                                                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50 cursor-pointer">
+                                                                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                                                                            Quick Accept
+                                                                        </DropdownMenuItem>
+                                                                    }
+                                                                />
+                                                                <ConfirmActionDialog
+                                                                    title="Reject Application"
+                                                                    description="Are you sure you want to reject this application?"
+                                                                    onConfirm={() => evaluate.mutate({ id: app.id, status: "REJECTED" })}
+                                                                    isLoading={evaluate.isPending}
+                                                                    variant="destructive"
+                                                                    icon={XCircle}
+                                                                    trigger={
+                                                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive focus:bg-rose-50 cursor-pointer">
+                                                                            <XCircle className="h-4 w-4 mr-2" />
+                                                                            Quick Reject
+                                                                        </DropdownMenuItem>
+                                                                    }
+                                                                />
+                                                                <DropdownMenuSeparator />
+                                                            </>
+                                                        )}
+
+                                                        <ConfirmDeleteDialog
+                                                            title="Delete Application"
+                                                            description="Are you sure you want to delete this application? This action cannot be undone."
+                                                            onConfirm={() => remove.mutate(app.id)}
+                                                            isLoading={remove.isPending}
+                                                            trigger={
+                                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive focus:bg-rose-50 cursor-pointer">
+                                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                                    Permanent Remove
+                                                                </DropdownMenuItem>
+                                                            }
+                                                        />
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </div>
                                         </td>
                                     </tr>
@@ -1752,12 +2035,16 @@ function ApplicationsSection() {
                         <div className="flex flex-col">
                             <div className="p-8 bg-primary/5 border-b space-y-4">
                                 <div className="flex items-center gap-4">
-                                    <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center text-2xl font-bold text-blue-600 border-4 border-white shadow-lg">
-                                        {viewingApplication.student?.name?.charAt(0) || "S"}
+                                    <div className="relative h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center text-2xl font-bold text-blue-600 border-4 border-white shadow-lg overflow-hidden">
+                                        {viewingApplication.user?.avatar ? (
+                                            <Image src={viewingApplication.user.avatar} alt="" fill className="object-cover" />
+                                        ) : (
+                                            viewingApplication.user?.firstName?.charAt(0) || "S"
+                                        )}
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl font-bold">{viewingApplication.student?.name}</h2>
-                                        <p className="text-muted-foreground">{viewingApplication.student?.email}</p>
+                                        <h2 className="text-2xl font-bold">{viewingApplication.user ? `${viewingApplication.user.firstName || ""} ${viewingApplication.user.lastName || ""}`.trim() : "Unknown Student"}</h2>
+                                        <p className="text-muted-foreground">{viewingApplication.user?.email}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -1770,7 +2057,7 @@ function ApplicationsSection() {
 
                             <div className="p-8 space-y-8">
                                 <section className="space-y-4">
-                                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                    <h3 className="text-sm font-bold tracking-widest text-muted-foreground flex items-center gap-2">
                                         <GraduationCap className="h-4 w-4" />
                                         Scholarship Information
                                     </h3>
@@ -1780,23 +2067,323 @@ function ApplicationsSection() {
                                     </div>
                                 </section>
 
+                                {viewingApplication.user?.studentProfile && (
+                                    <section className="space-y-4">
+                                        <h3 className="text-sm font-bold tracking-widest text-muted-foreground flex items-center gap-2">
+                                            <UserIcon className="h-4 w-4" />
+                                            Student Profile
+                                        </h3>
+                                        <div className="space-y-6">
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                <div className="p-3 rounded-xl bg-muted/40 border space-y-1">
+                                                    <p className="text-[9px] font-bold text-muted-foreground tracking-widest leading-none">University</p>
+                                                    <p className="font-bold text-xs truncate">{viewingApplication.user.studentProfile.university || "N/A"}</p>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-muted/40 border space-y-1">
+                                                    <p className="text-[9px] font-bold text-muted-foreground tracking-widest leading-none">GPA</p>
+                                                    <p className="font-bold text-xs text-primary">{viewingApplication.user.studentProfile.gpa || "N/A"}</p>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-muted/40 border space-y-1">
+                                                    <p className="text-[9px] font-bold text-muted-foreground tracking-widest leading-none">Degree</p>
+                                                    <p className="font-bold text-xs truncate">{viewingApplication.user.studentProfile.currentDegree || "N/A"}</p>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-muted/40 border space-y-1">
+                                                    <p className="text-[9px] font-bold text-muted-foreground tracking-widest leading-none">Graduation</p>
+                                                    <p className="font-bold text-xs">{viewingApplication.user.studentProfile.graduationYear || "N/A"}</p>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-muted/40 border space-y-1">
+                                                    <p className="text-[9px] font-bold text-muted-foreground tracking-widest leading-none">Country</p>
+                                                    <p className="font-bold text-xs truncate">{viewingApplication.user.studentProfile.country || "N/A"}</p>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-muted/40 border space-y-1">
+                                                    <p className="text-[9px] font-bold text-muted-foreground tracking-widest leading-none">City</p>
+                                                    <p className="font-bold text-xs truncate">{viewingApplication.user.studentProfile.city || "N/A"}</p>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-muted/40 border space-y-1">
+                                                    <p className="text-[9px] font-bold text-muted-foreground tracking-widest leading-none">Age / Gender</p>
+                                                    <p className="font-bold text-xs truncate">
+                                                        {viewingApplication.user.studentProfile.age || "N/A"} / {viewingApplication.user.studentProfile.gender || "N/A"}
+                                                    </p>
+                                                </div>
+                                                <div className="p-3 rounded-xl bg-muted/40 border space-y-1">
+                                                    <p className="text-[9px] font-bold text-muted-foreground tracking-widest leading-none">Phone</p>
+                                                    <p className="font-bold text-xs truncate">{viewingApplication.user.studentProfile.phoneNumber || viewingApplication.user.phone || "N/A"}</p>
+                                                </div>
+                                            </div>
+
+                                            {viewingApplication.user.studentProfile.bio && (
+                                                <div className="space-y-1">
+                                                    <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Bio / Introduction</Label>
+                                                    <p className="p-3 bg-white border rounded-xl text-xs text-muted-foreground leading-relaxed italic border-dashed">
+                                                        &ldquo;{viewingApplication.user.studentProfile.bio}&rdquo;
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {viewingApplication.user.studentProfile.skills && (
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Skills</Label>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {(typeof viewingApplication.user.studentProfile.skills === 'string' ? viewingApplication.user.studentProfile.skills.split(',') : (Array.isArray(viewingApplication.user.studentProfile.skills) ? viewingApplication.user.studentProfile.skills : [])).map((skill: any, idx: number) => {
+                                                                const skillText = typeof skill === 'string' ? skill.trim() : (skill?.name || String(skill));
+                                                                return <Badge key={idx} variant="secondary" className="text-[9px] h-5 bg-blue-50 text-blue-700 border-blue-100">{skillText}</Badge>;
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {viewingApplication.user.studentProfile.languages && (
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-bold text-muted-foreground tracking-wider">Languages</Label>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {(typeof viewingApplication.user.studentProfile.languages === 'string' ? viewingApplication.user.studentProfile.languages.split(',') : (Array.isArray(viewingApplication.user.studentProfile.languages) ? viewingApplication.user.studentProfile.languages : [])).map((lang: any, idx: number) => {
+                                                                const langText = typeof lang === 'string' ? lang.trim() : (lang?.name || String(lang));
+                                                                return <Badge key={idx} variant="outline" className="text-[9px] h-5">{langText}</Badge>;
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {viewingApplication.user.studentProfile.experience && (
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                                                        <Building2 className="h-3 w-3" />
+                                                        Experience
+                                                    </Label>
+                                                    <div className="space-y-2">
+                                                        {(Array.isArray(viewingApplication.user.studentProfile.experience) ? viewingApplication.user.studentProfile.experience : [viewingApplication.user.studentProfile.experience]).map((exp: any, idx: number) => {
+                                                            if (typeof exp === 'string') return <p key={idx} className="text-xs text-muted-foreground bg-muted/20 p-3 rounded-xl">{exp}</p>;
+                                                            return (
+                                                                <div key={idx} className="bg-muted/20 p-3 rounded-xl space-y-1">
+                                                                    <div className="flex justify-between items-start">
+                                                                        <p className="text-xs font-bold text-primary">{exp.title || "Position"}</p>
+                                                                        <p className="text-[10px] text-muted-foreground font-medium">{exp.startDate} - {exp.endDate || "Present"}</p>
+                                                                    </div>
+                                                                    <p className="text-[11px] font-medium leading-none">{exp.organization || exp.company || "Experience Item"}</p>
+                                                                    {exp.location && <p className="text-[9px] text-muted-foreground italic">{exp.location}</p>}
+                                                                    {exp.description && <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{exp.description}</p>}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {viewingApplication.user.studentProfile.certifications && (
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                                                        <Award className="h-3 w-3" />
+                                                        Certifications
+                                                    </Label>
+                                                    <div className="space-y-2">
+                                                        {(Array.isArray(viewingApplication.user.studentProfile.certifications) ? viewingApplication.user.studentProfile.certifications : [viewingApplication.user.studentProfile.certifications]).map((cert: any, idx: number) => {
+                                                            if (typeof cert === 'string') return <p key={idx} className="text-xs text-muted-foreground bg-muted/20 p-3 rounded-xl">{cert}</p>;
+                                                            return (
+                                                                <div key={idx} className="bg-muted/20 p-3 rounded-xl space-y-1">
+                                                                    <div className="flex justify-between items-start">
+                                                                        <p className="text-xs font-bold text-primary">{cert.title || cert.name || "Certification"}</p>
+                                                                        <p className="text-[10px] text-muted-foreground font-medium">{cert.date || cert.year || cert.issueDate}</p>
+                                                                    </div>
+                                                                    <p className="text-[11px] font-medium leading-none">{cert.organization || cert.issuer}</p>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {viewingApplication.user.studentProfile.documents && (
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                                                        <FileText className="h-3 w-3" />
+                                                        Supporting Documentation
+                                                    </Label>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                        {(Array.isArray(viewingApplication.user.studentProfile.documents) ? viewingApplication.user.studentProfile.documents : [viewingApplication.user.studentProfile.documents]).map((doc: any, idx: number) => {
+                                                            const docName = typeof doc === 'string' ? doc.split('/').pop() : (doc.name || "Document");
+                                                            const docUrl = typeof doc === 'string' ? doc : doc.url;
+                                                            return (
+                                                                <a
+                                                                    key={idx}
+                                                                    href={docUrl}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 hover:bg-primary/10 border border-primary/10 transition-colors group"
+                                                                >
+                                                                    <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center shadow-sm text-primary group-hover:scale-110 transition-transform">
+                                                                        <ExternalLink className="h-4 w-4" />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-[11px] font-bold truncate pr-2">{docName}</p>
+                                                                        <p className="text-[9px] text-muted-foreground opacity-70">Open in New Tab</p>
+                                                                    </div>
+                                                                </a>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </section>
+                                )}
+
                                 {viewingApplication.answers && (
                                     <section className="space-y-4">
-                                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                        <h3 className="text-sm font-bold tracking-widest text-muted-foreground flex items-center gap-2">
                                             <MessageSquare className="h-4 w-4" />
                                             Scholarship Questions & Answers
                                         </h3>
                                         <div className="space-y-3">
                                             {(() => {
                                                 try {
-                                                    const answers = JSON.parse(viewingApplication.answers);
+                                                    const answers = typeof viewingApplication.answers === 'string' ? JSON.parse(viewingApplication.answers) : viewingApplication.answers;
                                                     const questions = viewingApplication.scholarship?.questions || [];
-                                                    return questions.map((q: any) => (
-                                                        <div key={q.id} className="p-4 rounded-2xl bg-white border shadow-sm space-y-2">
-                                                            <p className="text-[10px] font-black uppercase text-primary tracking-wider">{q.question}</p>
-                                                            <p className="text-sm font-medium leading-relaxed italic">"{answers[q.id] || "No answer provided"}"</p>
+                                                    const questionsMap = new Map(questions.map((q: any) => [q.id, q]));
+
+                                                    // Resolve a question object from various formats
+                                                    const resolveQuestion = (questionOrId: any): any => {
+                                                        if (typeof questionOrId === 'object' && questionOrId?.question) return questionOrId;
+                                                        if (typeof questionOrId === 'string') {
+                                                            const found = questionsMap.get(questionOrId);
+                                                            if (found) return found;
+                                                            return { id: questionOrId, question: questionOrId, type: "TEXT" };
+                                                        }
+                                                        return { question: "Untitled Question", type: "TEXT" };
+                                                    };
+
+                                                    // Helper for structured Q&A display
+                                                    const renderQuestionAnswer = (q: any, studentAnswer: any, index: number) => (
+                                                        <div key={q.id || index} className="p-5 rounded-[2rem] bg-white border border-slate-100 shadow-sm space-y-4 relative overflow-hidden group">
+                                                            <div className="absolute top-0 left-0 w-1.5 h-full bg-primary/20 group-hover:bg-primary transition-colors" />
+
+                                                            <div className="space-y-1">
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-[10px] font-black text-slate-400 tracking-[0.2em]">Question {index + 1}</span>
+                                                                    <Badge variant="outline" className="text-[8px] font-bold tracking-widest px-1.5 py-0 h-4 border-slate-200 text-slate-400">
+                                                                        {q.type === 'MULTIPLE_CHOICE' ? 'Choice' : q.type === 'DOCUMENT' ? 'File' : 'Text'}
+                                                                    </Badge>
+                                                                </div>
+                                                                <p className="font-bold text-sm text-slate-800 leading-tight">
+                                                                    {q.question}
+                                                                </p>
+                                                            </div>
+
+                                                            <div className="space-y-2">
+                                                                <span className="text-[9px] font-bold text-primary tracking-wider pl-1">Student Answer:</span>
+                                                                <div className="bg-slate-50/80 rounded-2xl p-4 border border-dashed border-slate-200 relative">
+                                                                    {q.type === 'DOCUMENT' && studentAnswer ? (
+                                                                        <div className="flex flex-col gap-2">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    try {
+                                                                                        const url = studentAnswer.startsWith('http')
+                                                                                            ? studentAnswer
+                                                                                            : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'}${studentAnswer}`;
+                                                                                        window.open(url, '_blank', 'noopener,noreferrer');
+                                                                                    } catch (error) {
+                                                                                        console.error('Error opening document:', error);
+                                                                                        alert('Unable to open document. The file may not be available.');
+                                                                                    }
+                                                                                }}
+                                                                                className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
+                                                                            >
+                                                                                <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors">
+                                                                                    <FileText className="h-4 w-4" />
+                                                                                    <span className="text-sm font-medium">View Document</span>
+                                                                                    <ExternalLink className="h-3 w-3" />
+                                                                                </div>
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={async () => {
+                                                                                    try {
+                                                                                        const url = studentAnswer.startsWith('http')
+                                                                                            ? studentAnswer
+                                                                                            : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'}${studentAnswer}`;
+
+                                                                                        const response = await fetch(url);
+                                                                                        if (!response.ok) throw new Error('Download failed');
+
+                                                                                        const blob = await response.blob();
+                                                                                        const downloadUrl = window.URL.createObjectURL(blob);
+                                                                                        const link = document.createElement('a');
+                                                                                        link.href = downloadUrl;
+                                                                                        link.download = `document-${Date.now()}`;
+                                                                                        document.body.appendChild(link);
+                                                                                        link.click();
+                                                                                        document.body.removeChild(link);
+                                                                                        window.URL.revokeObjectURL(downloadUrl);
+                                                                                    } catch (error) {
+                                                                                        console.error('Error downloading document:', error);
+                                                                                        alert('Unable to download document. The file may not be available.');
+                                                                                    }
+                                                                                }}
+                                                                                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                                                                            >
+                                                                                <div className="flex items-center gap-2 px-3 py-2 bg-muted hover:bg-muted/80 rounded-lg transition-colors">
+                                                                                    <Download className="h-4 w-4" />
+                                                                                    <span className="text-sm font-medium">Download Document</span>
+                                                                                </div>
+                                                                            </button>
+                                                                            <div className="text-xs text-muted-foreground pl-1 break-all">
+                                                                                File: {studentAnswer.split('/').pop() || 'document'}
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="flex gap-2 text-sm font-medium text-slate-700 leading-relaxed italic pr-2">
+                                                                            &ldquo;{studentAnswer || "No answer provided"}&rdquo;
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            {q.type === 'MULTIPLE_CHOICE' && q.options && q.options.length > 0 && (
+                                                                <div className="space-y-1.5 pt-1">
+                                                                    <p className="text-[9px] font-bold text-slate-400 tracking-widest pl-1">Available Context (Options):</p>
+                                                                    <div className="flex flex-wrap gap-1.5">
+                                                                        {q.options.map((opt: string, optIdx: number) => (
+                                                                            <div
+                                                                                key={optIdx}
+                                                                                className={cn(
+                                                                                    "px-2 py-0.5 rounded-lg text-[10px] font-medium border transition-all",
+                                                                                    opt === studentAnswer
+                                                                                        ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm"
+                                                                                        : "bg-white border-slate-100 text-slate-400 opacity-60"
+                                                                                )}
+                                                                            >
+                                                                                {opt}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    ));
+                                                    );
+
+                                                    // Handle array of answers: [{questionId, answer}, ...] or [{question, answer}, ...]
+                                                    if (Array.isArray(answers)) {
+                                                        return answers.map((a: any, idx: number) => {
+                                                            const questionRef = a.questionId || a.question;
+                                                            const questionObj = resolveQuestion(questionRef);
+                                                            return renderQuestionAnswer(questionObj, a.answer, idx);
+                                                        });
+                                                    }
+
+                                                    // Object format: {questionId: answer}
+                                                    // If questions are populated from scholarship, use them
+                                                    if (questions.length > 0) {
+                                                        return questions.map((q: any, idx: number) => {
+                                                            const studentAnswer = answers[q.id];
+                                                            return renderQuestionAnswer(q, studentAnswer, idx);
+                                                        });
+                                                    }
+
+                                                    // Fallback: questions not populated, render from answer keys
+                                                    return Object.entries(answers).map(([questionId, studentAnswer]: [string, any], idx: number) => {
+                                                        const questionObj = resolveQuestion(questionId);
+                                                        return renderQuestionAnswer(questionObj, studentAnswer, idx);
+                                                    });
                                                 } catch (e) {
                                                     return <p className="text-xs text-muted-foreground italic">Could not parse answers.</p>;
                                                 }
@@ -1804,10 +2391,191 @@ function ApplicationsSection() {
                                         </div>
                                     </section>
                                 )}
+
                             </div>
 
-                            <DialogFooter className="p-8 bg-muted/20 border-t">
-                                <Button variant="outline" className="w-full" onClick={() => setViewingApplication(null)}>Close</Button>
+                            <DialogFooter className="p-6 bg-white border-t flex flex-row gap-3">
+                                <Button
+                                    variant="outline"
+                                    className="flex-1 h-12 font-bold tracking-widest text-[10px]"
+                                    onClick={() => setViewingApplication(null)}
+                                >
+                                    Close Window
+                                </Button>
+                                <ConfirmDeleteDialog
+                                    title="Delete Application"
+                                    description="Are you sure you want to permanently delete this application? This action is irreversible."
+                                    onConfirm={async () => {
+                                        await remove.mutateAsync(viewingApplication.id);
+                                        setViewingApplication(null);
+                                    }}
+                                    isLoading={remove.isPending}
+                                    trigger={
+                                        <Button
+                                            variant="destructive"
+                                            className="flex-1 h-12 font-bold tracking-widest text-[10px] shadow-lg shadow-rose-200 bg-rose-600 hover:bg-rose-700"
+                                            disabled={remove.isPending}
+                                        >
+                                            {remove.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                                            Remove Record
+                                        </Button>
+                                    }
+                                />
+                            </DialogFooter>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!evaluatingApplication} onOpenChange={(open) => !open && setEvaluatingApplication(null)}>
+                <DialogContent className="sm:max-w-[500px] border-none shadow-2xl p-0 overflow-hidden">
+                    {evaluatingApplication && (
+                        <div className="flex flex-col">
+                            <div className="p-6 bg-gradient-to-br from-primary/10 to-transparent border-b">
+                                <DialogHeader>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                                            <Pencil className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <DialogTitle className="text-xl font-bold tracking-tight">Update Application Status</DialogTitle>
+                                    </div>
+                                    <DialogDescription className="text-[10px] font-medium italic">
+                                        Manage status for {evaluatingApplication.user?.firstName}&apos;s application to &ldquo;{evaluatingApplication.scholarship?.title}&rdquo;
+                                    </DialogDescription>
+                                </DialogHeader>
+                            </div>
+
+                            <div className="p-6 space-y-6">
+                                <div className="space-y-3">
+                                    <Label className="text-[10px] font-black tracking-widest text-slate-400">Select Achievement Status</Label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {["PENDING", "UNDER_REVIEW", "ACCEPTED", "REJECTED"].map((status) => (
+                                            <Button
+                                                key={status}
+                                                type="button"
+                                                variant={targetStatus === status ? "default" : "outline"}
+                                                className={cn(
+                                                    "h-11 font-bold text-[10px] tracking-widest uppercase rounded-xl transition-all border-slate-200",
+                                                    targetStatus === status && status === "ACCEPTED" && "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-200",
+                                                    targetStatus === status && status === "REJECTED" && "bg-rose-600 hover:bg-rose-700 text-white border-none shadow-lg shadow-rose-200",
+                                                    targetStatus === status && status === "UNDER_REVIEW" && "bg-amber-500 hover:bg-amber-600 text-white border-none shadow-lg shadow-amber-200",
+                                                    targetStatus === status && status === "PENDING" && "bg-slate-700 hover:bg-slate-800 text-white border-none shadow-lg shadow-slate-200"
+                                                )}
+                                                onClick={() => setTargetStatus(status)}
+                                            >
+                                                {status.replace("_", " ")}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-[10px] font-black tracking-widest text-slate-400">Decision Notes & Feedback</Label>
+                                        <Badge variant="outline" className="text-[9px] font-medium border-slate-200 text-slate-400">
+                                            <Mail className="h-2.5 w-2.5 mr-1" />
+                                            Email Notification
+                                        </Badge>
+                                    </div>
+                                    <Textarea
+                                        placeholder="Write feedback for the student... This will be included in the email notification."
+                                        value={evaluationNotes}
+                                        onChange={(e) => setEvaluationNotes(e.target.value)}
+                                        className="min-h-[140px] bg-slate-50 border-slate-200 focus:border-primary transition-all rounded-2xl resize-none text-sm p-4 font-medium"
+                                    />
+                                    <p className="text-[9px] text-muted-foreground italic text-center">
+                                        The student will be notified immediately upon status change.
+                                    </p>
+                                </div>
+
+                                {/* Answers Review for Evaluator */}
+                                {evaluatingApplication.answers && (
+                                    <div className="space-y-3 pt-4 border-t border-dashed">
+                                        <div className="flex items-center gap-2">
+                                            <MessageSquare className="h-3 w-3 text-primary" />
+                                            <Label className="text-[10px] font-black tracking-widest text-slate-400">Review Student Answers</Label>
+                                        </div>
+                                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                                            {(() => {
+                                                try {
+                                                    const answers = typeof evaluatingApplication.answers === 'string' ? JSON.parse(evaluatingApplication.answers) : evaluatingApplication.answers;
+                                                    const questions = evaluatingApplication.scholarship?.questions || [];
+                                                    const questionsMap = new Map(questions.map((q: any) => [q.id, q]));
+
+                                                    const resolveQ = (id: string) => (questionsMap.get(id) as any)?.question || id;
+
+                                                    // Array format
+                                                    if (Array.isArray(answers)) {
+                                                        return answers.map((a: any, idx: number) => {
+                                                            const qRef = a.questionId || a.question;
+                                                            const qText = typeof qRef === 'object' ? qRef.question : resolveQ(qRef);
+                                                            return (
+                                                                <div key={idx} className="p-3 rounded-xl bg-white border border-slate-100 space-y-1">
+                                                                    <p className="text-[9px] font-bold text-primary/70 leading-tight">{qText}</p>
+                                                                    <p className="text-xs font-medium text-slate-700 italic">&ldquo;{a.answer || "No answer"}&rdquo;</p>
+                                                                </div>
+                                                            );
+                                                        });
+                                                    }
+
+                                                    // Object format with populated questions
+                                                    if (questions.length > 0) {
+                                                        return questions.map((q: any) => (
+                                                            <div key={q.id} className="p-3 rounded-xl bg-white border border-slate-100 space-y-1">
+                                                                <p className="text-[9px] font-bold text-primary/70 leading-tight">{q.question}</p>
+                                                                <p className="text-xs font-medium text-slate-700 italic">&ldquo;{answers[q.id] || "No answer"}&rdquo;</p>
+                                                            </div>
+                                                        ));
+                                                    }
+
+                                                    // Fallback: render from answer keys
+                                                    return Object.entries(answers).map(([qId, ans]: [string, any], idx: number) => (
+                                                        <div key={idx} className="p-3 rounded-xl bg-white border border-slate-100 space-y-1">
+                                                            <p className="text-[9px] font-bold text-primary/70 leading-tight">{resolveQ(qId)}</p>
+                                                            <p className="text-xs font-medium text-slate-700 italic">&ldquo;{(ans as string) || "No answer"}&rdquo;</p>
+                                                        </div>
+                                                    ));
+                                                } catch (e) {
+                                                    return <p className="text-[10px] text-muted-foreground">Could not load answers.</p>;
+                                                }
+                                            })()}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <DialogFooter className="p-6 bg-slate-50/50 border-t flex gap-3">
+                                <Button
+                                    variant="ghost"
+                                    className="flex-1 rounded-xl font-bold text-xs"
+                                    onClick={() => setEvaluatingApplication(null)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="gradient"
+                                    className="flex-[2] rounded-xl font-black tracking-widest text-[10px] shadow-xl shadow-primary/20 h-11"
+                                    onClick={() => {
+                                        evaluate.mutate({
+                                            id: evaluatingApplication.id,
+                                            status: targetStatus,
+                                            evaluation: evaluationNotes
+                                        }, {
+                                            onSuccess: () => {
+                                                setEvaluatingApplication(null);
+                                                setEvaluationNotes("");
+                                            }
+                                        });
+                                    }}
+                                    disabled={evaluate.isPending}
+                                >
+                                    {evaluate.isPending ? (
+                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                    ) : (
+                                        <Save className="h-4 w-4 mr-2" />
+                                    )}
+                                    Commit Changes
+                                </Button>
                             </DialogFooter>
                         </div>
                     )}
@@ -1825,7 +2593,7 @@ function CategoriesSection() {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<any>(null);
 
-    const categories = Array.isArray(list.data) ? list.data : list.data?.categories || [];
+    const categories = useMemo(() => Array.isArray(list.data) ? list.data : list.data?.categories || [], [list.data]);
 
     return (
         <motion.div
@@ -1953,7 +2721,6 @@ function CategoriesSection() {
 // ============================================
 function NotificationsSection() {
     const { sendNotification, sendEmail } = useNotifications();
-    const [notificationType, setNotificationType] = useState<"notification" | "email">("notification");
 
     return (
         <motion.div
@@ -2326,7 +3093,7 @@ function StatCard({ label, value, icon: Icon, color, trend }: {
                     )}
                 </div>
                 <div className="space-y-1">
-                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{label}</p>
+                    <p className="text-[11px] font-bold text-muted-foreground tracking-widest">{label}</p>
                     <h3 className="text-2xl font-black tracking-tight">{value}</h3>
                 </div>
             </CardContent>
@@ -2448,23 +3215,23 @@ function TestimonialsSection() {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null);
 
-    const testimonials = Array.isArray(list.data) ? list.data : list.data?.testimonials || [];
+    const testimonials = useMemo(() => Array.isArray(list.data) ? list.data : list.data?.testimonials || [], [list.data]);
 
-    const filteredTestimonials = testimonials.filter((t: any) => {
+    const filteredTestimonials = useMemo(() => testimonials.filter((t: any) => {
         const matchesSearch = t.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             t.quote?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             t.role?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? t.isActive : !t.isActive);
         return matchesSearch && matchesStatus;
-    });
+    }), [testimonials, searchTerm, statusFilter]);
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = useCallback(async (id: string) => {
         await remove.mutateAsync(id);
-    };
+    }, [remove]);
 
-    const handleToggleStatus = async (t: Testimonial) => {
+    const handleToggleStatus = useCallback(async (t: Testimonial) => {
         await update.mutateAsync({ id: t.id, data: { isActive: !t.isActive } });
-    };
+    }, [update]);
 
     return (
         <motion.div
@@ -2515,11 +3282,11 @@ function TestimonialsSection() {
                     <table className="w-full">
                         <thead className="bg-slate-50 border-b border-slate-100">
                             <tr>
-                                <th className="text-left p-5 font-black uppercase tracking-widest text-[10px] text-slate-400">Contributor</th>
-                                <th className="text-left p-5 font-black uppercase tracking-widest text-[10px] text-slate-400">Insight & Quote</th>
-                                <th className="text-left p-5 font-black uppercase tracking-widest text-[10px] text-slate-400">Status</th>
-                                <th className="text-left p-5 font-black uppercase tracking-widest text-[10px] text-slate-400">Created</th>
-                                <th className="text-right p-5 font-black uppercase tracking-widest text-[10px] text-slate-400">Actions</th>
+                                <th className="text-left p-5 font-black tracking-widest text-[10px] text-slate-400">Contributor</th>
+                                <th className="text-left p-5 font-black tracking-widest text-[10px] text-slate-400">Insight & Quote</th>
+                                <th className="text-left p-5 font-black tracking-widest text-[10px] text-slate-400">Status</th>
+                                <th className="text-left p-5 font-black tracking-widest text-[10px] text-slate-400">Created</th>
+                                <th className="text-right p-5 font-black tracking-widest text-[10px] text-slate-400">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 text-slate-900">
@@ -2532,9 +3299,9 @@ function TestimonialsSection() {
                                 >
                                     <td className="p-5">
                                         <div className="flex items-center gap-4">
-                                            <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-slate-100 to-slate-200 flex items-center justify-center border-2 border-white shadow-sm overflow-hidden">
+                                            <div className="relative h-10 w-10 rounded-2xl bg-gradient-to-tr from-slate-100 to-slate-200 flex items-center justify-center border-2 border-white shadow-sm overflow-hidden">
                                                 {t.avatar ? (
-                                                    <img src={t.avatar} alt={t.author} className="h-full w-full object-cover" />
+                                                    <Image src={t.avatar} alt={t.author} fill className="object-cover" />
                                                 ) : (
                                                     <UserIcon className="h-5 w-5 text-slate-400" />
                                                 )}
@@ -2556,7 +3323,7 @@ function TestimonialsSection() {
                                     <td className="p-5">
                                         <Badge
                                             variant={t.isActive ? "success" : "secondary"}
-                                            className="rounded-full px-3 py-0.5 text-[9px] font-black tracking-widest uppercase border-none"
+                                            className="rounded-full px-3 py-0.5 text-[9px] font-black tracking-widest border-none"
                                         >
                                             {t.isActive ? "Live" : "Archived"}
                                         </Badge>
@@ -2700,7 +3467,7 @@ function TestimonialDialog({
                 <form onSubmit={handleSubmit} className="p-8 space-y-5">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contributor Name</Label>
+                            <Label className="text-[10px] font-black tracking-widest text-slate-400">Contributor Name</Label>
                             <Input
                                 placeholder="Full Name..."
                                 className="rounded-xl border-slate-200 h-11 transition-all focus:ring-primary/20"
@@ -2710,7 +3477,7 @@ function TestimonialDialog({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Their Role / Title</Label>
+                            <Label className="text-[10px] font-black tracking-widest text-slate-400">Their Role / Title</Label>
                             <Input
                                 placeholder="e.g. Master Student..."
                                 className="rounded-xl border-slate-200 h-11 transition-all focus:ring-primary/20"
@@ -2722,7 +3489,7 @@ function TestimonialDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Avatar Image URL (Optional)</Label>
+                        <Label className="text-[10px] font-black tracking-widest text-slate-400">Avatar Image URL (Optional)</Label>
                         <Input
                             placeholder="https://..."
                             className="rounded-xl border-slate-200 h-11 transition-all focus:ring-primary/20 font-mono text-xs"
@@ -2732,7 +3499,7 @@ function TestimonialDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Their Insight & Quote</Label>
+                        <Label className="text-[10px] font-black tracking-widest text-slate-400">Their Insight & Quote</Label>
                         <Textarea
                             placeholder="Share their experience with ScholarHub..."
                             className="rounded-2xl border-slate-200 min-h-[120px] resize-none p-4 transition-all focus:ring-primary/20 leading-relaxed font-medium italic"
@@ -2759,7 +3526,7 @@ function TestimonialDialog({
                             type="submit"
                             variant="gradient"
                             disabled={isLoading}
-                            className="rounded-xl px-10 h-11 font-black uppercase tracking-widest text-[10px] shadow-xl shadow-primary/20 transition-all hover:scale-105"
+                            className="rounded-xl px-10 h-11 font-black tracking-widest text-[10px] shadow-xl shadow-primary/20 transition-all hover:scale-105"
                         >
                             {isLoading ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />

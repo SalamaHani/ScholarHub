@@ -17,11 +17,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, RegisterInput } from "@/lib/validations/auth";
 import { useAuth } from "@/hooks/use-auth";
+import { useSearchParams } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
 
 export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
     const { register: registerMutation } = useAuth();
     const [activeRole, setActiveRole] = useState<"STUDENT" | "PROFESSOR">("STUDENT");
+    const searchParams = useSearchParams();
 
     const {
         register,
@@ -39,11 +43,46 @@ export default function RegisterPage() {
         setValue("role", activeRole);
     }, [activeRole, setValue]);
 
+    // Check for OAuth errors from URL parameters
+    useEffect(() => {
+        const error = searchParams.get("error");
+        if (error) {
+            const errorMessages: Record<string, string> = {
+                google_auth_failed: "Google authentication failed. Please try again.",
+                token_exchange_failed: "Failed to verify Google account. Please try again.",
+                user_info_failed: "Could not retrieve your Google account information.",
+                oauth_failed: "Authentication failed. Please try again.",
+                auth_failed: "Authentication error occurred. Please try again.",
+            };
+
+            toast({
+                title: "Authentication Failed",
+                description: errorMessages[error] || "An error occurred during registration. Please try again.",
+                variant: "destructive",
+            });
+        }
+    }, [searchParams]);
+
     const onSubmit = (data: RegisterInput) => {
         registerMutation.mutate({
             ...data,
             name: `${data.firstName} ${data.lastName}`.trim(),
         });
+    };
+
+    const handleGoogleRegister = () => {
+        try {
+            setGoogleLoading(true);
+            const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+            window.location.href = `${backendUrl}/auth/google?role=${activeRole}`;
+        } catch (error) {
+            setGoogleLoading(false);
+            toast({
+                title: "Error",
+                description: "Failed to initiate Google registration. Please try again.",
+                variant: "destructive",
+            });
+        }
     };
 
     const isLoading = registerMutation.isPending;
@@ -158,19 +197,25 @@ export default function RegisterPage() {
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-zinc-200" />
                 </div>
-                <div className="relative flex justify-center text-[10px] items-center uppercase font-bold tracking-widest text-zinc-400">
+                <div className="relative flex justify-center text-[10px] items-center font-bold tracking-widest text-zinc-400">
                     <span className="bg-white px-3">Quick Connect</span>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" className="h-10 border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-bold shadow-sm">
+                <Button variant="outline" className="h-10 border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-bold shadow-sm" disabled>
                     <Github className="h-4 w-4 mr-2" />
                     GitHub
                 </Button>
-                <Button variant="outline" className="h-10 border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-bold shadow-sm">
-                    <Chrome className="h-4 w-4 mr-2" />
-                    Google
+                <Button
+                    variant="outline"
+                    className="h-10 border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-bold shadow-sm"
+                    onClick={handleGoogleRegister}
+                    type="button"
+                    disabled={googleLoading || isLoading}
+                >
+                    <Chrome className={`h-4 w-4 mr-2 ${googleLoading ? "animate-spin" : ""}`} />
+                    {googleLoading ? "Redirecting..." : "Google"}
                 </Button>
             </div>
 

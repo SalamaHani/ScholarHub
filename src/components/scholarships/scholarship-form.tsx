@@ -21,7 +21,7 @@ import { useScholarships, Scholarship } from "@/hooks/useScholarships";
 import { useCategories, Category } from "@/hooks/useCategories";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Info, FileText, HelpCircle, CheckCircle, ArrowRight } from "lucide-react";
+import { Info, FileText, HelpCircle, CheckCircle, ArrowRight, Upload } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface ScholarshipFormProps {
@@ -457,112 +457,188 @@ export function ScholarshipForm({ initialData, onSuccess, onCancel }: Scholarshi
                             </Button>
                         </div>
 
-                        <div className="space-y-4">
-                            {questionFields.map((field, index) => (
-                                <motion.div
-                                    key={field.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="p-6 rounded-3xl bg-white border border-primary/5 shadow-sm space-y-4 relative group hover:border-primary/20 transition-all"
-                                >
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="absolute top-4 right-4 h-8 w-8 text-muted-foreground hover:text-destructive rounded-full"
-                                        onClick={() => removeQuestion(index)}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
+                        <div className="space-y-6">
+                            <AnimatePresence>
+                                {questionFields.map((field, index) => {
+                                    const type = watch(`questions.${index}.type` as const);
+                                    return (
+                                        <motion.div
+                                            key={field.id}
+                                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                                            className="group relative overflow-hidden rounded-[2rem] border border-primary/10 bg-white p-7 shadow-sm transition-all hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5"
+                                        >
+                                            {/* Accent Gradient */}
+                                            <div className="absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b from-primary to-blue-600" />
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold uppercase tracking-wider text-primary/70">Question Title</Label>
-                                            <Input
-                                                {...register(`questions.${index}.question` as const)}
-                                                placeholder="e.g. Why do you deserve this scholarship?"
-                                                className="rounded-xl bg-zinc-50 border-none focus:ring-1 focus:ring-primary"
-                                            />
-                                            {errors.questions?.[index]?.question && (
-                                                <p className="text-[10px] font-bold text-red-500">{errors.questions[index]?.question?.message}</p>
-                                            )}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold uppercase tracking-wider text-primary/70">Input Type</Label>
-                                            <Select
-                                                value={watch(`questions.${index}.type` as const)}
-                                                onValueChange={(val: "TEXT" | "MULTIPLE_CHOICE") => {
-                                                    setValue(`questions.${index}.type` as const, val);
-                                                    if (val === "TEXT") {
-                                                        setValue(`questions.${index}.options` as const, undefined);
-                                                    } else {
-                                                        setValue(`questions.${index}.options` as const, [""]);
-                                                    }
-                                                }}
-                                            >
-                                                <SelectTrigger className="rounded-xl bg-zinc-50 border-none">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent className="rounded-xl">
-                                                    <SelectItem value="TEXT">Text Answer</SelectItem>
-                                                    <SelectItem value="MULTIPLE_CHOICE">Multiple Choice</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
+                                            <div className="flex items-start justify-between gap-4 mb-6">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary font-black">
+                                                        {index + 1}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-sm font-black text-slate-800 tracking-tighter">Question Configuration</h4>
+                                                        <p className="text-[10px] font-bold text-slate-400 tracking-widest">Configure how students respond</p>
+                                                    </div>
+                                                </div>
 
-                                    {watch(`questions.${index}.type` as const) === "MULTIPLE_CHOICE" && (
-                                        <div className="space-y-3 pt-2">
-                                            <Label className="text-xs font-bold uppercase tracking-wider text-primary/70">Options</Label>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                {watch(`questions.${index}.options` as const)?.map((_, optIndex) => (
-                                                    <div key={optIndex} className="flex gap-2 group/opt">
-                                                        <Input
-                                                            {...register(`questions.${index}.options.${optIndex}` as const)}
-                                                            placeholder={`Option ${optIndex + 1}`}
-                                                            className="rounded-xl bg-zinc-50 border-none focus:ring-1 focus:ring-primary"
-                                                        />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-10 w-10 rounded-2xl text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all"
+                                                    onClick={() => removeQuestion(index)}
+                                                >
+                                                    <X className="h-5 w-5" />
+                                                </Button>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                                <div className="lg:col-span-7 space-y-2">
+                                                    <Label className="text-[10px] font-black tracking-[0.2em] text-primary/60 ml-1">Question Text</Label>
+                                                    <Input
+                                                        {...register(`questions.${index}.question` as const)}
+                                                        placeholder="e.g. Describe your most significant academic achievement..."
+                                                        className="h-14 rounded-2xl border-primary/5 bg-slate-50/50 px-5 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all"
+                                                    />
+                                                    {errors.questions?.[index]?.question && (
+                                                        <p className="text-[10px] font-bold text-red-500 mt-1 ml-1 flex items-center gap-1">
+                                                            <AlertCircle className="h-3 w-3" />
+                                                            {errors.questions[index]?.question?.message}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                <div className="lg:col-span-5 space-y-2">
+                                                    <Label className="text-[10px] font-black tracking-[0.2em] text-primary/60 ml-1">Response Type</Label>
+                                                    <Select
+                                                        value={type}
+                                                        onValueChange={(val: "TEXT" | "MULTIPLE_CHOICE" | "DOCUMENT") => {
+                                                            setValue(`questions.${index}.type` as const, val);
+                                                            if (val === "MULTIPLE_CHOICE") {
+                                                                setValue(`questions.${index}.options` as const, ["", ""]);
+                                                            } else {
+                                                                setValue(`questions.${index}.options` as const, undefined);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <SelectTrigger className="h-14 rounded-2xl border-primary/5 bg-slate-50/50 px-5 transition-all">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-2xl border-primary/10 shadow-2xl p-2">
+                                                            <SelectItem value="TEXT" className="rounded-xl h-12">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                                                                        <FileText className="h-4 w-4" />
+                                                                    </div>
+                                                                    <span className="font-bold">Text Response</span>
+                                                                </div>
+                                                            </SelectItem>
+                                                            <SelectItem value="MULTIPLE_CHOICE" className="rounded-xl h-12">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                                                                        <CheckCircle className="h-4 w-4" />
+                                                                    </div>
+                                                                    <span className="font-bold">Multiple Choice</span>
+                                                                </div>
+                                                            </SelectItem>
+                                                            <SelectItem value="DOCUMENT" className="rounded-xl h-12">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="p-2 rounded-lg bg-amber-50 text-amber-600">
+                                                                        <Upload className="h-4 w-4" />
+                                                                    </div>
+                                                                    <span className="font-bold">Document Upload</span>
+                                                                </div>
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
+
+                                            {type === "MULTIPLE_CHOICE" && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: "auto" }}
+                                                    className="mt-6 pt-6 border-t border-slate-100 space-y-4"
+                                                >
+                                                    <div className="flex items-center justify-between px-1">
+                                                        <Label className="text-[10px] font-black tracking-[0.2em] text-primary/60">Options Selection</Label>
+                                                        <span className="text-[10px] font-bold text-slate-400">Add at least two options</span>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        {watch(`questions.${index}.options` as const)?.map((_, optIndex) => (
+                                                            <div key={optIndex} className="group/opt relative flex items-center gap-2">
+                                                                <div className="absolute left-4 z-10 text-[10px] font-black text-slate-300 group-focus-within/opt:text-primary transition-colors">
+                                                                    {String.fromCharCode(65 + optIndex)}
+                                                                </div>
+                                                                <Input
+                                                                    {...register(`questions.${index}.options.${optIndex}` as const)}
+                                                                    placeholder={`Option ${optIndex + 1}`}
+                                                                    className="h-12 rounded-xl border-primary/5 bg-slate-50/30 pl-10 pr-10 text-xs font-semibold focus:bg-white transition-all"
+                                                                />
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="absolute right-2 h-8 w-8 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover/opt:opacity-100"
+                                                                    onClick={() => {
+                                                                        const opts = watch(`questions.${index}.options` as const) || [];
+                                                                        if (opts.length > 2) {
+                                                                            setValue(`questions.${index}.options` as const, opts.filter((_, i) => i !== optIndex));
+                                                                        } else {
+                                                                            toast({ title: "Operation Denied", description: "Choice questions require at least 2 options.", variant: "destructive" });
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <X className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        ))}
+
                                                         <Button
                                                             type="button"
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-10 w-10 text-muted-foreground hover:text-destructive shrink-0 rounded-full"
+                                                            variant="outline"
+                                                            className="h-12 rounded-xl border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold text-xs gap-2 transition-all"
                                                             onClick={() => {
-                                                                const currentOptions = watch(`questions.${index}.options` as const) || [];
-                                                                if (currentOptions.length > 1) {
-                                                                    setValue(`questions.${index}.options` as const, currentOptions.filter((_, i) => i !== optIndex));
-                                                                }
+                                                                const opts = watch(`questions.${index}.options` as const) || [];
+                                                                setValue(`questions.${index}.options` as const, [...opts, ""]);
                                                             }}
                                                         >
-                                                            <X className="h-4 w-4" />
+                                                            <Plus className="h-4 w-4" />
+                                                            Add More Choice
                                                         </Button>
                                                     </div>
-                                                ))}
-                                            </div>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-[10px] h-8 gap-1.5 hover:bg-primary/5 text-primary font-bold rounded-lg"
-                                                onClick={() => {
-                                                    const currentOptions = watch(`questions.${index}.options` as const) || [];
-                                                    setValue(`questions.${index}.options` as const, [...currentOptions, ""]);
-                                                }}
-                                            >
-                                                <Plus className="h-3.5 w-3.5" />
-                                                Add Choice
-                                            </Button>
-                                        </div>
-                                    )}
-                                </motion.div>
-                            ))}
+                                                </motion.div>
+                                            )}
+                                        </motion.div>
+                                    );
+                                })}
+                            </AnimatePresence>
 
                             {questionFields.length === 0 && (
-                                <div className="text-center py-12 rounded-[2.5rem] border-2 border-dashed border-primary/10 bg-primary/5/10">
-                                    <HelpCircle className="h-10 w-10 mx-auto text-primary/20 mb-3" />
-                                    <p className="text-sm text-primary/60 font-medium">No custom questions added yet.</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Students will only need to verify their profile.</p>
-                                </div>
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex flex-col items-center justify-center py-20 rounded-[3rem] border-2 border-dashed border-primary/10 bg-gradient-to-b from-primary/5 to-transparent text-center"
+                                >
+                                    <div className="h-20 w-20 rounded-[2.5rem] bg-white shadow-xl shadow-primary/10 flex items-center justify-center mb-6 border border-primary/10">
+                                        <HelpCircle className="h-10 w-10 text-primary animate-pulse" />
+                                    </div>
+                                    <h4 className="text-xl font-black text-primary tracking-tight mb-2">Build Your Questionnaire</h4>
+                                    <p className="text-sm text-slate-500 font-medium max-w-xs mx-auto">
+                                        Design custom questions to filter applicants better. Leave empty if you only need their academic profile.
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        onClick={() => appendQuestion({ id: Date.now().toString(), question: "", type: "TEXT" })}
+                                        className="mt-8 rounded-2xl bg-primary text-white font-bold h-12 px-8 shadow-xl shadow-primary/20 hover:scale-105 transition-all"
+                                    >
+                                        Create First Question
+                                    </Button>
+                                </motion.div>
                             )}
                         </div>
                     </div>

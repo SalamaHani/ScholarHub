@@ -102,7 +102,7 @@ export function CompletenessCheckModal({ isOpen, onClose, completeness }: Comple
                     <div className="mt-8 space-y-6">
                         <div className="space-y-3">
                             <div className="flex justify-between items-end">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Strength</span>
+                                <span className="text-[10px] font-black tracking-widest text-slate-400">Current Strength</span>
                                 <span className={`text-lg font-black ${statusColor}`}>{completeness}%</span>
                             </div>
                             <Progress value={completeness} className="h-3 bg-slate-100" indicatorClassName={indicatorColor} />

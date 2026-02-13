@@ -144,7 +144,7 @@ export function Navbar() {
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-56 glass mt-1 border-primary/10">
-                                            <DropdownMenuLabel className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground px-3 py-2">
+                                            <DropdownMenuLabel className="font-bold text-[10px] tracking-wider text-muted-foreground px-3 py-2">
                                                 {user.role} Account
                                             </DropdownMenuLabel>
                                             <DropdownMenuSeparator />
