@@ -991,22 +991,11 @@ export default function ProfilePage() {
                                             <Input {...register("specialization")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Machine Learning" />
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                                <Briefcase className="h-4 w-4 text-primary" /> Years of Experience
-                                            </Label>
-                                            <div className="relative">
-                                                <Input type="number" {...register("experience")} className="h-11 rounded-xl border-slate-200 pr-16" placeholder="10" />
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-bold tracking-widest text-[10px]">Years</span>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                                <MapPin className="h-4 w-4 text-primary" /> Office Location
-                                            </Label>
-                                            <Input {...register("officeLocation")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Building A, Room 305" />
-                                        </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                            <MapPin className="h-4 w-4 text-primary" /> Office Location
+                                        </Label>
+                                        <Input {...register("officeLocation")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Building A, Room 305" />
                                     </div>
                                 </>
                             ) : (

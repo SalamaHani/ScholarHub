@@ -60,12 +60,28 @@ export async function middleware(req: NextRequest) {
 
     // Verify the token is valid
     const payload = await verifyToken(token);
-    // Role-based access control
+    if (!payload) {
+      return NextResponse.redirect(new URL("/auth/login", req.url));
+    }
+
+    // Get user data and role
+    const userData = getUserDataFromCookie(req);
     const role = getRoleFromCookie(req) || (payload as any).role?.toUpperCase();
 
     // Dashboard is only accessible to PROFESSOR and ADMIN
     if (isDashboardRoute && role === "STUDENT") {
       return NextResponse.redirect(new URL("/profile", req.url));
+    }
+
+    // Check if professor is verified before allowing dashboard access
+    if (isDashboardRoute && role === "PROFESSOR") {
+      const isVerified =
+        userData?.isVerified || userData?.isProfessorVerified || false;
+      if (!isVerified) {
+        return NextResponse.redirect(
+          new URL("/auth/pending-verification", req.url),
+        );
+      }
     }
 
     // All authenticated users can access profile and saved routes

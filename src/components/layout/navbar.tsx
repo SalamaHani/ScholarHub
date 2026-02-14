@@ -44,9 +44,14 @@ export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const pathname = usePathname();
     const router = useRouter();
     const { user, logout, isLoading: isAuthLoading } = useAuth();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -148,7 +153,7 @@ export function Navbar() {
                                                 {user.role} Account
                                             </DropdownMenuLabel>
                                             <DropdownMenuSeparator />
-                                            {user.role !== "STUDENT" && (
+                                            {mounted && user.role !== "STUDENT" && (
                                                 <>
                                                     {/* Only show Dashboard if not a professor OR if professor is verified */}
                                                     {(user.role !== "PROFESSOR" || user.isProfessorVerified || user.isVerified) && (
@@ -173,7 +178,7 @@ export function Navbar() {
                                                     <span>My Profile</span>
                                                 </Link>
                                             </DropdownMenuItem>
-                                            {user.role === "ADMIN" && (
+                                            {mounted && user.role === "ADMIN" && (
                                                 <DropdownMenuItem asChild>
                                                     <Link href="/admin" className="flex items-center gap-2 cursor-pointer w-full py-2">
                                                         <Shield className="h-4 w-4 text-amber-500" />
@@ -257,7 +262,7 @@ export function Navbar() {
                                     <div className="h-12 w-full bg-muted animate-pulse rounded-xl" />
                                 ) : user ? (
                                     <div className="space-y-2">
-                                        {user.role !== "STUDENT" && (
+                                        {mounted && user.role !== "STUDENT" && (user.role !== "PROFESSOR" || user.isProfessorVerified || user.isVerified) && (
                                             <Link
                                                 href="/dashboard"
                                                 onClick={() => setIsOpen(false)}
@@ -267,7 +272,7 @@ export function Navbar() {
                                                 Dashboard
                                             </Link>
                                         )}
-                                        {user.role === "ADMIN" && (
+                                        {mounted && user.role === "ADMIN" && (
                                             <Link
                                                 href="/admin"
                                                 onClick={() => setIsOpen(false)}
