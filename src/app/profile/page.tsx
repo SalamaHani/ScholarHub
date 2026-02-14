@@ -81,6 +81,7 @@ const DEGREE_LEVELS = [
 
 export default function ProfilePage() {
     const { user, isLoading, editProfile, updateAvatar: updateAvatarAction, refresh } = useAuth();
+    const [mounted, setMounted] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isEditingAcademic, setIsEditingAcademic] = useState(false);
     const [isEditingBio, setIsEditingBio] = useState(false);
@@ -97,6 +98,11 @@ export default function ProfilePage() {
     const [languageProficiencies, setLanguageProficiencies] = useState<{ name: string, proficiency: number, level?: string }[]>([]);
     const [experienceItems, setExperienceItems] = useState<{ title: string, organization: string, startDate: string, endDate: string, location: string, description: string }[]>([]);
     const [certificationItems, setCertificationItems] = useState<{ title: string, organization: string, issueDate: string, expiryDate?: string, credentialId?: string, credentialUrl?: string }[]>([]);
+
+    // Set mounted state
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Initialize tags when dialog opens or user loads
     useEffect(() => {
@@ -467,17 +473,17 @@ export default function ProfilePage() {
                                         <CompletenessStep label="Contact Info" completed={!!(user.phoneNumber && user.country)} />
                                         <CompletenessStep label="Location Details" completed={!!(user.city && user.zipCode)} />
                                         <CompletenessStep label="Personal Info" completed={!!(user.age && user.gender)} />
-                                        {user.role === 'STUDENT' ? (
+                                        {mounted && user.role === 'STUDENT' ? (
                                             <>
                                                 <CompletenessStep label="Academic Profile" completed={!!(user.university && user.fieldOfStudy && user.gpa)} />
                                                 <CompletenessStep label="Degree Info" completed={!!(user.degreeLevel && user.graduationYear)} />
                                             </>
-                                        ) : (
+                                        ) : mounted ? (
                                             <>
                                                 <CompletenessStep label="Institutional Profile" completed={!!(user.institution && user.department)} />
                                                 <CompletenessStep label="Academic Position" completed={!!(user.position && user.specialization)} />
                                             </>
-                                        )}
+                                        ) : null}
                                         <CompletenessStep label="Skills & Mastery" completed={(user.skills?.length ?? 0) > 0} />
                                         <CompletenessStep label="Language Proficiency" completed={(user.languages?.length ?? 0) > 0} />
                                         <CompletenessStep label="Experience" completed={(user.experience?.length ?? 0) > 0} />
@@ -555,7 +561,7 @@ export default function ProfilePage() {
                                                     <h1 className="text-4xl font-bold tracking-tight text-slate-800">{user.name || "Scholar User"}</h1>
                                                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                                                         <Badge className="bg-primary/10 text-primary border-primary/20 rounded-lg font-bold text-[10px] tracking-wide px-3 py-1">{user.role}</Badge>
-                                                        {user.role === 'PROFESSOR' ? user.isVerified ? (
+                                                        {mounted && user.role === 'PROFESSOR' ? user.isVerified ? (
                                                             <Badge variant="outline" className="w-fit text-emerald-600">
                                                                 <UserCheck className="h-3 w-3 mr-1" />
                                                                 Verified
@@ -583,7 +589,7 @@ export default function ProfilePage() {
                         </motion.div>
 
                         {/* 2. Role-Specific Primary Data Card */}
-                        {user.role === "PROFESSOR" ? (
+                        {mounted && user.role === "PROFESSOR" ? (
                             <ProfileSection title="Institutional Profile" icon={Building2} onEdit={() => setIsEditingAcademic(true)}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                     <InfoItem label="Primary Institution" value={user.institution} icon={Building2} />
@@ -594,7 +600,7 @@ export default function ProfilePage() {
                                     <InfoItem label="Certifications" value={certificationItems.length > 0 ? `${certificationItems.length} Verified Credentials` : undefined} icon={Award} />
                                 </div>
                             </ProfileSection>
-                        ) : (
+                        ) : mounted ? (
                             <ProfileSection title="Academic Profile" icon={GraduationCap} onEdit={() => setIsEditingAcademic(true)}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                     <InfoItem label="Host University" value={user.university} icon={Building2} />
@@ -607,7 +613,7 @@ export default function ProfilePage() {
                                     <InfoItem label="Certifications" value={certificationItems.length > 0 ? `${certificationItems.length} Credentials` : undefined} icon={Award} highlight />
                                 </div>
                             </ProfileSection>
-                        )}
+                        ) : null}
 
                         {/* 3. Personal Info Section */}
                         <ProfileSection title="Personal Info" icon={User} onEdit={() => setIsEditing(true)}>
@@ -620,7 +626,7 @@ export default function ProfilePage() {
                                 <InfoItem label="Zip Code" value={user.zipCode} icon={MapPin} />
                                 <InfoItem label="Age" value={user.age ? `${user.age} Years` : undefined} icon={Calendar} />
                                 <InfoItem label="Gender" value={user.gender} icon={User} />
-                                {user.role === "PROFESSOR" && (
+                                {mounted && user.role === "PROFESSOR" && (
                                     <InfoItem label="Website" value={user.website} icon={Globe} link />
                                 )}
                                 <InfoItem label="Role Status" value={user.role} icon={ShieldCheck} highlight />
@@ -632,7 +638,7 @@ export default function ProfilePage() {
                             <div className="p-8 bg-slate-50/50 rounded-3xl border border-slate-100 relative group overflow-hidden">
                                 <Quote className="h-12 w-12 text-primary/5 absolute -top-2 -left-2 rotate-12 group-hover:scale-110 transition-transform" />
                                 <p className="text-slate-600 leading-relaxed font-medium italic text-lg text-center md:text-left">
-                                    {user.bio || (user.role === "PROFESSOR"
+                                    {user.bio || (mounted && user.role === "PROFESSOR"
                                         ? "Academic professional dedicated to research and education at " + (user.institution || "their institution") + "."
                                         : "Dedicated student focused on achieving academic excellence and exploring international scholarship opportunities.")}
                                 </p>
@@ -961,7 +967,7 @@ export default function ProfilePage() {
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                            {user.role === "PROFESSOR" ? (
+                            {mounted && user.role === "PROFESSOR" ? (
                                 <>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
@@ -998,7 +1004,7 @@ export default function ProfilePage() {
                                         <Input {...register("officeLocation")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Building A, Room 305" />
                                     </div>
                                 </>
-                            ) : (
+                            ) : mounted ? (
                                 <>
                                     <div className="space-y-2">
                                         <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -1045,7 +1051,7 @@ export default function ProfilePage() {
                                         </div>
                                     </div>
                                 </>
-                            )}
+                            ) : null}
                         </div>
 
                         <div className="p-6 border-t border-slate-100 flex gap-3">
