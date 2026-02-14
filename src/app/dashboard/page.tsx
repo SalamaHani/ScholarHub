@@ -192,9 +192,9 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     {role === ROLES.STUDENT ? (
                         <>
-                            <StatCard label="My Applications" value={myApplications.data?.length || "0"} icon={BookOpen} color="primary" />
-                            <StatCard label="In Review" value={myApplications.data?.filter((a: any) => a.status === 'PENDING').length || "0"} icon={Clock} color="warning" />
-                            <StatCard label="Accepted" value={myApplications.data?.filter((a: any) => a.status === 'ACCEPTED').length || "0"} icon={CheckCircle2} color="success" />
+                            <StatCard label="My Applications" value={Array.isArray(myApplications.data) ? myApplications.data.length : "0"} icon={BookOpen} color="primary" />
+                            <StatCard label="In Review" value={Array.isArray(myApplications.data) ? myApplications.data.filter((a: any) => a.status === 'PENDING').length : "0"} icon={Clock} color="warning" />
+                            <StatCard label="Accepted" value={Array.isArray(myApplications.data) ? myApplications.data.filter((a: any) => a.status === 'ACCEPTED').length : "0"} icon={CheckCircle2} color="success" />
                             <StatCard label="Recommendations" value="15" icon={Star} color="info" />
                         </>
                     ) : role === ROLES.PROFESSOR ? (
@@ -249,7 +249,7 @@ export default function DashboardPage() {
                                     </div>
                                 ) : role === ROLES.STUDENT ? (
                                     <div className="space-y-4">
-                                        {myApplications.data?.length ? (
+                                        {Array.isArray(myApplications.data) && myApplications.data.length > 0 ? (
                                             myApplications.data.map((app: any) => (
                                                 <ApplicationRow
                                                     key={app.id}
@@ -318,9 +318,9 @@ export default function DashboardPage() {
                                     <div className="flex flex-col gap-4">
                                         <div className="flex items-center justify-between">
                                             <h3 className="text-lg font-bold">Received Applications</h3>
-                                            <Badge variant="outline">{myApplications.data?.length || 0} Total</Badge>
+                                            <Badge variant="outline">{Array.isArray(myApplications.data) ? myApplications.data.length : 0} Total</Badge>
                                         </div>
-                                        {myApplications.data?.length ? (
+                                        {Array.isArray(myApplications.data) && myApplications.data.length > 0 ? (
                                             myApplications.data.map((app: any) => (
                                                 <ApplicationEvaluateRow
                                                     key={app.id}
