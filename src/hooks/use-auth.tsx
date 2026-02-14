@@ -42,13 +42,25 @@ export const useAuth = () => {
     // Actions
     const login = useCallback(async (credentials: any) => {
         try {
-            await dispatch(loginUser(credentials)).unwrap();
+            const result = await dispatch(loginUser(credentials)).unwrap();
             toast({
                 title: "Login successful",
                 description: "Welcome back to ScholarHub!",
             });
-            await dispatch(initializeAuth())
-            router.push("/");
+            await dispatch(initializeAuth());
+
+            // Check if professor needs verification
+            const user = result.user;
+            const isProfessor = user?.role === "PROFESSOR";
+            const isVerified = user?.isProfessorVerified || user?.isVerified;
+
+            if (isProfessor && !isVerified) {
+                // Professor not verified - redirect to pending page
+                router.push("/auth/pending-verification");
+            } else {
+                // Student or verified professor - go to dashboard
+                router.push("/");
+            }
         } catch (err: any) {
             toast({
                 title: "Login failed",
@@ -61,12 +73,24 @@ export const useAuth = () => {
 
     const register = useCallback(async (userData: any) => {
         try {
-            await dispatch(registerUser(userData)).unwrap();
+            const result = await dispatch(registerUser(userData)).unwrap();
             toast({
                 title: "Registration successful",
                 description: "Your ScholarHub account has been created.",
             });
-            router.push("/");
+
+            // Check if professor needs verification
+            const user = result.user;
+            const isProfessor = user?.role === "PROFESSOR";
+            const isVerified = user?.isProfessorVerified || user?.isVerified;
+
+            if (isProfessor && !isVerified) {
+                // Professor not verified - redirect to pending page
+                router.push("/auth/pending-verification");
+            } else {
+                // Student or verified professor - go to dashboard
+                router.push("/");
+            }
         } catch (err: any) {
             toast({
                 title: "Registration failed",

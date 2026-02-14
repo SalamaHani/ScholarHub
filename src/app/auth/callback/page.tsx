@@ -7,6 +7,7 @@ import { setCredentials } from "@/store/slices/authSlice";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import api from "@/lib/axios";
+import { LoginSuccessDialog } from "@/components/auth/login-success-dialog";
 
 /**
  * OAuth Callback Page
@@ -16,6 +17,8 @@ export default function CallbackPage() {
     const router = useRouter();
     const dispatch = useDispatch();
     const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+    const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+    const [userData, setUserData] = useState<any>(null);
 
     useEffect(() => {
         const processCallback = async () => {
@@ -66,16 +69,12 @@ export default function CallbackPage() {
                 // Store credentials in Redux and localStorage
                 dispatch(setCredentials({ user, token: accessToken }));
 
+                // Store user data for dialog
+                setUserData(user);
                 setStatus("success");
-                toast({
-                    title: "Welcome to ScholarHub!",
-                    description: `Successfully signed in as ${user.name || user.email}`,
-                });
 
-                // Redirect to dashboard after brief delay
-                setTimeout(() => {
-                    router.push("/");
-                }, 1000);
+                // Show success dialog
+                setShowSuccessDialog(true);
             } catch (error) {
                 console.error("OAuth callback error:", error);
                 setStatus("error");
@@ -99,33 +98,55 @@ export default function CallbackPage() {
         processCallback();
     }, [dispatch, router]);
 
+    const handleContinue = () => {
+        if (!userData) {
+            router.push("/");
+            return;
+        }
+
+        // Check if professor needs verification
+        const isProfessor = userData.role === "PROFESSOR";
+        const isVerified = userData.isProfessorVerified || userData.isVerified;
+
+        if (isProfessor && !isVerified) {
+            // Professor not verified - show pending page
+            router.push("/auth/pending-verification");
+        } else {
+            // Student or verified professor - go to dashboard
+            router.push("/");
+        }
+    };
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-white to-blue-50">
-            <div className="text-center space-y-4 max-w-md px-4">
-                {status === "loading" && (
-                    <>
-                        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-                        <h2 className="text-xl font-bold text-zinc-900">Completing authentication...</h2>
-                        <p className="text-sm text-zinc-500">Please wait while we sign you in</p>
-                    </>
-                )}
+        <>
+            <LoginSuccessDialog
+                open={showSuccessDialog}
+                userName={userData?.name || userData?.firstName}
+                userRole={userData?.role}
+                onContinue={handleContinue}
+                autoRedirect={true}
+                redirectDelay={3000}
+            />
 
-                {status === "success" && (
-                    <>
-                        <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
-                        <h2 className="text-xl font-bold text-zinc-900">Success!</h2>
-                        <p className="text-sm text-zinc-500">Redirecting to your dashboard...</p>
-                    </>
-                )}
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-white to-blue-50">
+                <div className="text-center space-y-4 max-w-md px-4">
+                    {status === "loading" && (
+                        <>
+                            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+                            <h2 className="text-xl font-bold text-zinc-900">Completing authentication...</h2>
+                            <p className="text-sm text-zinc-500">Please wait while we sign you in</p>
+                        </>
+                    )}
 
-                {status === "error" && (
-                    <>
-                        <XCircle className="h-12 w-12 text-red-500 mx-auto" />
-                        <h2 className="text-xl font-bold text-zinc-900">Authentication Failed</h2>
-                        <p className="text-sm text-zinc-500">Redirecting back to login...</p>
-                    </>
-                )}
+                    {status === "error" && (
+                        <>
+                            <XCircle className="h-12 w-12 text-red-500 mx-auto" />
+                            <h2 className="text-xl font-bold text-zinc-900">Authentication Failed</h2>
+                            <p className="text-sm text-zinc-500">Redirecting back to login...</p>
+                        </>
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     );
 }
