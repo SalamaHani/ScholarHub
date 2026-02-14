@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
     LayoutDashboard,
@@ -38,6 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth, User as AuthUser } from "@/hooks/use-auth";
 import { useApplications } from "@/hooks/useApplications";
 import { useScholarships, useScholarship } from "@/hooks/useScholarships";
@@ -63,6 +64,7 @@ const ROLES = {
 };
 
 export default function DashboardPage() {
+    const router = useRouter();
     const { user, isLoading: isAuthLoading } = useAuth();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isCreateTestimonialOpen, setIsCreateTestimonialOpen] = useState(false);
@@ -125,7 +127,7 @@ export default function DashboardPage() {
                             {role === ROLES.STUDENT
                                 ? "Manage your applications and find new opportunities."
                                 : role === ROLES.PROFESSOR
-                                    ? "Oversee your scholarship listings and evaluate student potential."
+                                    ? "Manage your scholarship listings and applications."
                                     : "Platform administration and system oversight."}
                         </p>
                     </div>

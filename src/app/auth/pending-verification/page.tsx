@@ -52,35 +52,30 @@ export default function PendingVerificationPage() {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-2xl"
+                className="w-full max-w-xl"
             >
-                <Card className="border-2 shadow-xl">
-                    <CardContent className="p-8 md:p-12">
-                        <div className="text-center space-y-6">
-                            {/* Icon */}
-                            <div className="mx-auto w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center">
-                                <Clock className="h-10 w-10 text-amber-600" />
-                            </div>
-
+                <Card className="border shadow-lg">
+                    <CardContent className="p-6 md:p-8">
+                        <div className="text-center space-y-5">
                             {/* Title */}
-                            <div className="space-y-2">
-                                <h1 className="text-3xl font-bold text-zinc-900">
-                                    Account Pending Verification
+                            <div className="space-y-1">
+                                <h1 className="text-2xl font-bold text-zinc-900">
+                                    Pending Verification
                                 </h1>
-                                <p className="text-lg text-zinc-600">
+                                <p className="text-base text-zinc-600">
                                     Welcome, Professor {user?.firstName || user?.name}!
                                 </p>
                             </div>
 
                             {/* Status Message */}
-                            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6 text-left space-y-4">
-                                <div className="flex items-start gap-3">
-                                    <Shield className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                                    <div className="space-y-1">
-                                        <h3 className="font-semibold text-zinc-900">
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-left space-y-3">
+                                <div className="flex items-start gap-2.5">
+                                    <Shield className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                        <h3 className="font-semibold text-sm text-zinc-900">
                                             Your account is being reviewed
                                         </h3>
-                                        <p className="text-sm text-zinc-600">
+                                        <p className="text-xs text-zinc-600 mt-0.5">
                                             Our admin team is reviewing your professor account. This
                                             usually takes 24-48 hours.
                                         </p>
@@ -88,13 +83,13 @@ export default function PendingVerificationPage() {
                                 </div>
 
                                 {!isProfileComplete && (
-                                    <div className="flex items-start gap-3 pt-4 border-t border-amber-200">
-                                        <FileText className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                                        <div className="space-y-1">
-                                            <h3 className="font-semibold text-zinc-900">
+                                    <div className="flex items-start gap-2.5 pt-3 border-t border-amber-200">
+                                        <FileText className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                            <h3 className="font-semibold text-sm text-zinc-900">
                                                 Complete your profile
                                             </h3>
-                                            <p className="text-sm text-zinc-600">
+                                            <p className="text-xs text-zinc-600 mt-0.5">
                                                 While you wait, complete your profile to speed up the
                                                 verification process.
                                             </p>
@@ -104,69 +99,69 @@ export default function PendingVerificationPage() {
                             </div>
 
                             {/* Progress Steps */}
-                            <div className="bg-white border-2 border-zinc-200 rounded-xl p-6">
-                                <h3 className="font-semibold text-zinc-900 mb-4 text-left">
+                            <div className="bg-white border border-zinc-200 rounded-lg p-4">
+                                <h3 className="font-semibold text-sm text-zinc-900 mb-3 text-left">
                                     Verification Steps
                                 </h3>
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-3 text-left">
-                                        <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-                                            <CheckCircle className="h-4 w-4 text-white" />
+                                <div className="space-y-2.5">
+                                    <div className="flex items-center gap-2.5 text-left">
+                                        <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                                            <CheckCircle className="h-3 w-3 text-white" />
                                         </div>
-                                        <span className="text-sm text-zinc-600">
+                                        <span className="text-xs text-zinc-600">
                                             Account created
                                         </span>
                                     </div>
 
                                     <div
-                                        className={`flex items-center gap-3 text-left ${
+                                        className={`flex items-center gap-2.5 text-left ${
                                             isProfileComplete
                                                 ? "text-green-600"
                                                 : "text-amber-600"
                                         }`}
                                     >
                                         <div
-                                            className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                            className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
                                                 isProfileComplete
                                                     ? "bg-green-500"
                                                     : "bg-amber-500"
                                             }`}
                                         >
                                             {isProfileComplete ? (
-                                                <CheckCircle className="h-4 w-4 text-white" />
+                                                <CheckCircle className="h-3 w-3 text-white" />
                                             ) : (
-                                                <Clock className="h-4 w-4 text-white" />
+                                                <Clock className="h-3 w-3 text-white" />
                                             )}
                                         </div>
-                                        <span className="text-sm font-medium">
+                                        <span className="text-xs font-medium">
                                             {isProfileComplete
                                                 ? "Profile completed"
                                                 : "Complete your profile"}
                                         </span>
                                     </div>
 
-                                    <div className="flex items-center gap-3 text-left text-zinc-400">
-                                        <div className="w-6 h-6 rounded-full border-2 border-zinc-300 flex items-center justify-center flex-shrink-0">
-                                            <Clock className="h-4 w-4" />
+                                    <div className="flex items-center gap-2.5 text-left text-zinc-400">
+                                        <div className="w-5 h-5 rounded-full border border-zinc-300 flex items-center justify-center flex-shrink-0">
+                                            <Clock className="h-3 w-3" />
                                         </div>
-                                        <span className="text-sm">Admin verification</span>
+                                        <span className="text-xs">Admin verification</span>
                                     </div>
 
-                                    <div className="flex items-center gap-3 text-left text-zinc-400">
-                                        <div className="w-6 h-6 rounded-full border-2 border-zinc-300 flex items-center justify-center flex-shrink-0">
-                                            <CheckCircle className="h-4 w-4" />
+                                    <div className="flex items-center gap-2.5 text-left text-zinc-400">
+                                        <div className="w-5 h-5 rounded-full border border-zinc-300 flex items-center justify-center flex-shrink-0">
+                                            <CheckCircle className="h-3 w-3" />
                                         </div>
-                                        <span className="text-sm">Access granted</span>
+                                        <span className="text-xs">Access granted</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="space-y-3 pt-4">
+                            <div className="space-y-2 pt-2">
                                 {!isProfileComplete && (
                                     <Button
                                         onClick={handleCompleteProfile}
-                                        className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold"
+                                        className="w-full h-10 bg-primary hover:bg-primary/90 text-white font-semibold text-sm"
                                     >
                                         Complete Your Profile
                                         <ArrowRight className="ml-2 h-4 w-4" />
@@ -176,25 +171,19 @@ export default function PendingVerificationPage() {
                                 <Button
                                     onClick={handleLogout}
                                     variant="outline"
-                                    className="w-full h-11 border-zinc-300"
+                                    className="w-full h-9 border-zinc-300 text-sm"
                                 >
-                                    Sign Out
+                                    Back to Login
                                 </Button>
                             </div>
-
-                            {/* Help Text */}
-                            <p className="text-xs text-zinc-500 pt-4">
-                                Questions? Contact us at{" "}
-                                <a
-                                    href="mailto:support@scholarhub.com"
-                                    className="text-primary font-semibold hover:underline"
-                                >
-                                    support@scholarhub.com
-                                </a>
-                            </p>
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Footer */}
+                <p className="text-center text-xs text-zinc-500 mt-4">
+                    © {new Date().getFullYear()} ScholarHub • Academic Excellence
+                </p>
             </motion.div>
         </div>
     );

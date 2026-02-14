@@ -7,7 +7,6 @@ import { setCredentials } from "@/store/slices/authSlice";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import api from "@/lib/axios";
-import { LoginSuccessDialog } from "@/components/auth/login-success-dialog";
 
 /**
  * OAuth Callback Page
@@ -17,8 +16,6 @@ export default function CallbackPage() {
     const router = useRouter();
     const dispatch = useDispatch();
     const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-    const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-    const [userData, setUserData] = useState<any>(null);
 
     useEffect(() => {
         const processCallback = async () => {
@@ -69,12 +66,17 @@ export default function CallbackPage() {
                 // Store credentials in Redux and localStorage
                 dispatch(setCredentials({ user, token: accessToken }));
 
-                // Store user data for dialog
-                setUserData(user);
                 setStatus("success");
 
-                // Show success dialog
-                setShowSuccessDialog(true);
+                // Redirect based on professor verification status
+                const isProfessor = user.role === "PROFESSOR";
+                const isVerified = user.isProfessorVerified || user.isVerified;
+
+                if (isProfessor && !isVerified) {
+                    router.push("/auth/pending-verification");
+                } else {
+                    router.push("/dashboard");
+                }
             } catch (error) {
                 console.error("OAuth callback error:", error);
                 setStatus("error");
@@ -98,37 +100,8 @@ export default function CallbackPage() {
         processCallback();
     }, [dispatch, router]);
 
-    const handleContinue = () => {
-        if (!userData) {
-            router.push("/");
-            return;
-        }
-
-        // Check if professor needs verification
-        const isProfessor = userData.role === "PROFESSOR";
-        const isVerified = userData.isProfessorVerified || userData.isVerified;
-
-        if (isProfessor && !isVerified) {
-            // Professor not verified - show pending page
-            router.push("/auth/pending-verification");
-        } else {
-            // Student or verified professor - go to dashboard
-            router.push("/");
-        }
-    };
-
     return (
-        <>
-            <LoginSuccessDialog
-                open={showSuccessDialog}
-                userName={userData?.name || userData?.firstName}
-                userRole={userData?.role}
-                onContinue={handleContinue}
-                autoRedirect={true}
-                redirectDelay={3000}
-            />
-
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-white to-blue-50">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-white to-blue-50">
                 <div className="text-center space-y-4 max-w-md px-4">
                     {status === "loading" && (
                         <>
@@ -147,6 +120,5 @@ export default function CallbackPage() {
                     )}
                 </div>
             </div>
-        </>
     );
 }

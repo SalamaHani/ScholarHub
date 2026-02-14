@@ -149,12 +149,17 @@ export function Navbar() {
                                             </DropdownMenuLabel>
                                             <DropdownMenuSeparator />
                                             {user.role !== "STUDENT" && (
-                                                <DropdownMenuItem asChild>
-                                                    <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer w-full py-2">
-                                                        <LayoutDashboard className="h-4 w-4 text-primary" />
-                                                        <span>Dashboard</span>
-                                                    </Link>
-                                                </DropdownMenuItem>
+                                                <>
+                                                    {/* Only show Dashboard if not a professor OR if professor is verified */}
+                                                    {(user.role !== "PROFESSOR" || user.isProfessorVerified || user.isVerified) && (
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer w-full py-2">
+                                                                <LayoutDashboard className="h-4 w-4 text-primary" />
+                                                                <span>Dashboard</span>
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                </>
                                             )}
                                             <DropdownMenuItem asChild>
                                                 <Link href="/saved" className="flex items-center gap-2 cursor-pointer w-full py-2">

@@ -56,26 +56,26 @@ export function LoginSuccessDialog({
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onContinue()}>
-            <DialogContent className="sm:max-w-md border-2 shadow-2xl">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-[420px] border-2 shadow-2xl p-6">
+                <DialogHeader className="space-y-3">
                     <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                        className="mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center"
+                        className="mx-auto w-14 h-14 bg-green-100 rounded-full flex items-center justify-center"
                     >
-                        <CheckCircle className="h-8 w-8 text-green-600" />
+                        <CheckCircle className="h-7 w-7 text-green-600" />
                     </motion.div>
 
-                    <DialogTitle className="text-center text-2xl font-bold">
+                    <DialogTitle className="text-center text-xl font-bold">
                         Welcome to ScholarHub! 🎓
                     </DialogTitle>
-                    <DialogDescription className="text-center space-y-3 pt-2">
+                    <DialogDescription className="text-center space-y-2 pt-1">
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="space-y-2"
+                            className="space-y-1.5"
                         >
                             <p className="text-base font-medium text-zinc-900">
                                 {userName ? `Hello, ${userName}!` : "Login successful!"}
@@ -94,7 +94,7 @@ export function LoginSuccessDialog({
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.4 }}
-                            className="text-sm text-zinc-500 pt-2"
+                            className="text-sm text-zinc-500 pt-1"
                         >
                             You're being redirected to your dashboard...
                         </motion.p>
@@ -105,7 +105,7 @@ export function LoginSuccessDialog({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.6 }}
-                    className="flex flex-col gap-2 pt-2"
+                    className="flex flex-col gap-2 pt-1"
                 >
                     {autoRedirect && (
                         <div className="text-center text-xs text-zinc-400">
@@ -115,7 +115,7 @@ export function LoginSuccessDialog({
 
                     <Button
                         onClick={onContinue}
-                        className="w-full bg-primary hover:bg-primary/90 font-semibold"
+                        className="w-full bg-primary hover:bg-primary/90 font-semibold h-10"
                     >
                         Continue
                         <ArrowRight className="ml-2 h-4 w-4" />
