@@ -87,6 +87,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { ScholarshipForm } from "@/components/scholarships/scholarship-form";
+import { DashboardSkeleton, ScholarshipCardSkeletonGrid } from "@/components/skeletons";
 
 export default function AdminDashboardPage() {
     const { user, isLoading: isAuthLoading } = useAuth();
@@ -102,13 +103,14 @@ export default function AdminDashboardPage() {
     }, [user, isAuthLoading, router]);
 
     if (isAuthLoading || !user || user.role !== "ADMIN") {
+        if (isAuthLoading) {
+            return <DashboardSkeleton />;
+        }
         return (
             <div className="min-h-screen flex items-center justify-center bg-muted/20">
                 <div className="text-center space-y-4">
                     <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto" />
-                    <p className="text-muted-foreground font-medium">
-                        {isAuthLoading ? "Loading Admin Dashboard..." : "Redirecting..."}
-                    </p>
+                    <p className="text-muted-foreground font-medium">Redirecting...</p>
                 </div>
             </div>
         );

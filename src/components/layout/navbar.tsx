@@ -32,6 +32,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 const navLinks = [
     { href: "/", label: "Home", icon: Home },
@@ -133,10 +134,7 @@ export function Navbar() {
 
                             {user ? (
                                 <div className="flex items-center gap-4">
-                                    <Button variant="ghost" size="icon" className="relative h-9 w-9 text-muted-foreground hover:text-primary">
-                                        <Bell className="h-5 w-5" />
-                                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-                                    </Button>
+                                    <NotificationBell />
 
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>

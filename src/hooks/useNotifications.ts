@@ -23,6 +23,8 @@ export interface SendNotificationInput {
     link?: string;
     targetRole?: "STUDENT" | "PROFESSOR" | "ALL";
     targetUserIds?: string[];
+    sendPush?: boolean; // Enable push notification via Pusher Beams
+    interests?: string[]; // Pusher Beams interests to target
 }
 
 export const useNotifications = () => {
@@ -98,11 +100,23 @@ export const useNotifications = () => {
         },
     });
 
+    // 6. Get Beams auth token (for client-side Pusher Beams)
+    const getBeamsAuthToken = useMutation({
+        mutationFn: async (userId: string) => {
+            const { data } = await api.post<any>("/notifications/beams-auth", { userId });
+            return data;
+        },
+        onError: (error: any) => {
+            console.error("Failed to get Beams auth token:", error);
+        },
+    });
+
     return {
         list,
         markRead,
         markAllRead,
         sendNotification,
         sendEmail,
+        getBeamsAuthToken,
     };
 };
