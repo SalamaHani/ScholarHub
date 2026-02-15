@@ -28,7 +28,9 @@ import {
     MessageSquare,
     CheckCircle,
     Pencil,
-    Send
+    Send,
+    Download,
+    FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,6 +57,7 @@ import {
     DialogFooter
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { DashboardSkeleton, ApplicationTableSkeleton } from "@/components/skeletons";
 
 // Roles constant
 const ROLES = {
@@ -100,14 +103,7 @@ export default function DashboardPage() {
     const isDataLoading = isAuthLoading || professorList.isLoading || adminPendingList.isLoading || myApplications.isLoading || testimonialsList.isLoading;
 
     if (isAuthLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-muted/20">
-                <div className="text-center space-y-4">
-                    <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto" />
-                    <p className="text-muted-foreground font-medium">Loading your dashboard...</p>
-                </div>
-            </div>
-        );
+        return <DashboardSkeleton />;
     }
 
     return (
@@ -321,14 +317,31 @@ export default function DashboardPage() {
                                             <Badge variant="outline">{Array.isArray(myApplications.data) ? myApplications.data.length : 0} Total</Badge>
                                         </div>
                                         {Array.isArray(myApplications.data) && myApplications.data.length > 0 ? (
-                                            myApplications.data.map((app: any) => (
-                                                <ApplicationEvaluateRow
-                                                    key={app.id}
-                                                    application={app}
-                                                    onEvaluate={(status: string, evaluation: string) => evaluate.mutate({ id: app.id, status, evaluation })}
-                                                    isSubmitting={evaluate.isPending}
-                                                />
-                                            ))
+                                            <div className="bg-white rounded-xl border overflow-hidden">
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full">
+                                                        <thead className="bg-slate-50 border-b">
+                                                            <tr>
+                                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">Student</th>
+                                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">Scholarship</th>
+                                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">Applied</th>
+                                                                <th className="text-right px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-100">
+                                                            {myApplications.data.map((app: any) => (
+                                                                <ApplicationTableRow
+                                                                    key={app.id}
+                                                                    application={app}
+                                                                    onEvaluate={(status: string, evaluation: string) => evaluate.mutate({ id: app.id, status, evaluation })}
+                                                                    isSubmitting={evaluate.isPending}
+                                                                />
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
                                         ) : (
                                             <div className="text-center py-20 bg-white rounded-3xl border border-dashed">
                                                 <Users className="h-10 w-10 text-slate-300 mx-auto mb-4" />
@@ -752,7 +765,7 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                                                                 <Badge variant="outline" className="h-4 text-[8px] bg-white">{q.type}</Badge>
                                                             </div>
                                                             <p className="text-sm font-semibold text-slate-900 leading-relaxed italic">
-                                                                "{answers[q.id] || "No answer provided"}"
+                                                                &ldquo;{answers[q.id] || "No answer provided"}&rdquo;
                                                             </p>
                                                         </div>
                                                     ));
@@ -813,6 +826,320 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                 </div>
             </CardContent>
         </Card>
+    );
+}
+
+function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
+    const [isEvalOpen, setIsEvalOpen] = useState(false);
+    const [evaluationText, setEvaluationText] = useState(application.evaluation || "");
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case "ACCEPTED": return "bg-emerald-100 text-emerald-700 border-emerald-200";
+            case "REJECTED": return "bg-rose-100 text-rose-700 border-rose-200";
+            case "UNDER_REVIEW": return "bg-amber-100 text-amber-700 border-amber-200";
+            default: return "bg-slate-100 text-slate-700 border-slate-200";
+        }
+    };
+
+    return (
+        <tr className="hover:bg-slate-50 transition-colors">
+            {/* Student Column */}
+            <td className="px-6 py-4">
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                        {(application.user?.firstName || application.student?.name || "?").charAt(0)}
+                    </div>
+                    <div>
+                        <p className="font-semibold text-sm text-slate-900">
+                            {application.user?.firstName
+                                ? `${application.user.firstName} ${application.user.lastName || ''}`.trim()
+                                : (application.student?.name || "Unknown")}
+                        </p>
+                        <p className="text-xs text-slate-500">{application.user?.email || application.student?.email || ""}</p>
+                    </div>
+                </div>
+            </td>
+
+            {/* Scholarship Column */}
+            <td className="px-6 py-4">
+                <p className="font-medium text-sm text-slate-900">{application.scholarship?.title || "N/A"}</p>
+                <p className="text-xs text-slate-500">{application.scholarship?.organization || ""}</p>
+            </td>
+
+            {/* Status Column */}
+            <td className="px-6 py-4">
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusColor(application.status)}`}>
+                    {application.status}
+                </span>
+            </td>
+
+            {/* Applied Date Column */}
+            <td className="px-6 py-4">
+                <p className="text-sm text-slate-700">
+                    {new Date(application.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    })}
+                </p>
+            </td>
+
+            {/* Actions Column */}
+            <td className="px-6 py-4 text-right">
+                <Dialog open={isEvalOpen} onOpenChange={setIsEvalOpen}>
+                    <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="h-8 text-xs font-bold">
+                            <Eye className="h-3 w-3 mr-1" />
+                            Review
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Evaluate Application</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
+                            {/* Student Basic Info */}
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="space-y-1">
+                                    <p className="text-muted-foreground">Applicant</p>
+                                    <p className="font-bold">
+                                        {application.user?.firstName
+                                            ? `${application.user.firstName} ${application.user.lastName || ''}`.trim()
+                                            : (application.student?.name || "N/A")}
+                                    </p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-muted-foreground">Email</p>
+                                    <p className="font-medium text-xs">{application.user?.email || "N/A"}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-muted-foreground">GPA</p>
+                                    <p className="font-bold">{application.user?.studentProfile?.gpa || application.student?.gpa || "N/A"}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-muted-foreground">University</p>
+                                    <p className="font-medium text-xs">{application.user?.studentProfile?.university || "N/A"}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-muted-foreground">Field of Study</p>
+                                    <p className="font-medium text-xs">{application.user?.studentProfile?.fieldOfStudy || "N/A"}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-muted-foreground">Degree</p>
+                                    <p className="font-medium text-xs">{application.user?.studentProfile?.currentDegree || "N/A"}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-muted-foreground">Graduation Year</p>
+                                    <p className="font-medium text-xs">{application.user?.studentProfile?.graduationYear || "N/A"}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-muted-foreground">Location</p>
+                                    <p className="font-medium text-xs">
+                                        {application.user?.studentProfile?.city && application.user?.studentProfile?.country
+                                            ? `${application.user.studentProfile.city}, ${application.user.studentProfile.country}`
+                                            : "N/A"}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Cover Letter */}
+                            {application.coverLetter && (
+                                <div className="space-y-2 pt-4 border-t">
+                                    <Label className="text-sm font-bold text-slate-700">Cover Letter</Label>
+                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{application.coverLetter}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Additional Info */}
+                            {application.additionalInfo && (
+                                <div className="space-y-2 pt-4 border-t">
+                                    <Label className="text-sm font-bold text-slate-700">Additional Information</Label>
+                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{application.additionalInfo}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {/* Skills */}
+                            {application.user?.studentProfile?.skills && Array.isArray(application.user.studentProfile.skills) && application.user.studentProfile.skills.length > 0 && (
+                                <div className="space-y-2 pt-4 border-t">
+                                    <Label className="text-sm font-bold text-slate-700">Skills</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {application.user.studentProfile.skills.map((skill: string, idx: number) => (
+                                            <Badge key={idx} variant="secondary" className="text-xs">{skill}</Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Languages */}
+                            {application.user?.studentProfile?.languages && Array.isArray(application.user.studentProfile.languages) && application.user.studentProfile.languages.length > 0 && (
+                                <div className="space-y-2 pt-4 border-t">
+                                    <Label className="text-sm font-bold text-slate-700">Languages</Label>
+                                    <div className="grid gap-2">
+                                        {application.user.studentProfile.languages.map((lang: any, idx: number) => (
+                                            <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+                                                <span className="text-sm font-medium">{lang.name}</span>
+                                                <span className="text-xs text-slate-500">Proficiency: {lang.proficiency}%</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Experience */}
+                            {application.user?.studentProfile?.experience && Array.isArray(application.user.studentProfile.experience) && application.user.studentProfile.experience.length > 0 && (
+                                <div className="space-y-3 pt-4 border-t">
+                                    <Label className="text-sm font-bold text-slate-700">Experience</Label>
+                                    {application.user.studentProfile.experience.map((exp: any, idx: number) => (
+                                        <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+                                            <p className="font-bold text-sm">{exp.title}</p>
+                                            <p className="text-xs text-slate-600">{exp.organization} • {exp.location}</p>
+                                            <p className="text-xs text-slate-500">{exp.startDate} - {exp.endDate}</p>
+                                            {exp.description && <p className="text-xs text-slate-600 pt-1">{exp.description}</p>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Certifications */}
+                            {application.user?.studentProfile?.certifications && Array.isArray(application.user.studentProfile.certifications) && application.user.studentProfile.certifications.length > 0 && (
+                                <div className="space-y-3 pt-4 border-t">
+                                    <Label className="text-sm font-bold text-slate-700">Certifications</Label>
+                                    {application.user.studentProfile.certifications.map((cert: any, idx: number) => (
+                                        <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+                                            <p className="font-bold text-sm">{cert.title}</p>
+                                            <p className="text-xs text-slate-600">{cert.organization}</p>
+                                            <p className="text-xs text-slate-500">Issued: {cert.issueDate} {cert.expiryDate && `• Expires: ${cert.expiryDate}`}</p>
+                                            {cert.credentialId && <p className="text-xs text-slate-500">ID: {cert.credentialId}</p>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Documents */}
+                            {((application.documents && Array.isArray(application.documents) && application.documents.length > 0) ||
+                              (application.user?.studentProfile?.documents && Array.isArray(application.user.studentProfile.documents) && application.user.studentProfile.documents.length > 0)) && (
+                                <div className="space-y-3 pt-4 border-t">
+                                    <Label className="text-sm font-bold text-slate-700">Uploaded Documents</Label>
+                                    <div className="grid gap-2">
+                                        {(application.documents || application.user?.studentProfile?.documents || []).map((doc: string, idx: number) => (
+                                            <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
+                                                        <FileText className="h-4 w-4 text-primary" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-medium text-slate-900">
+                                                            {doc.split('/').pop() || `Document ${idx + 1}`}
+                                                        </p>
+                                                        <p className="text-xs text-slate-500">Application Document</p>
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="h-8 gap-2"
+                                                    onClick={() => {
+                                                        const link = document.createElement('a');
+                                                        link.href = doc.startsWith('http') ? doc : `${process.env.NEXT_PUBLIC_API_URL || ''}${doc}`;
+                                                        link.download = doc.split('/').pop() || 'document';
+                                                        link.target = '_blank';
+                                                        document.body.appendChild(link);
+                                                        link.click();
+                                                        document.body.removeChild(link);
+                                                    }}
+                                                >
+                                                    <Download className="h-3 w-3" />
+                                                    Download
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Application Answers */}
+                            {application.answers && Array.isArray(application.answers) && application.answers.length > 0 && (
+                                <div className="space-y-4 pt-6 border-t">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                            <MessageSquare className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <h3 className="text-sm font-black tracking-tight text-primary">Applicant Responses</h3>
+                                    </div>
+                                    <div className="grid gap-3">
+                                        {application.answers.map((answerObj: any) => (
+                                            <div key={answerObj.id} className="p-4 rounded-3xl bg-zinc-50 border border-zinc-100 space-y-2">
+                                                <p className="text-[10px] font-black text-slate-400 tracking-[0.1em]">
+                                                    {answerObj.question?.question || "Question"}
+                                                </p>
+                                                {answerObj.question?.type === 'DOCUMENT' ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <FileText className="h-4 w-4 text-emerald-600" />
+                                                        <p className="text-sm font-semibold text-emerald-600">{answerObj.answer || "No file uploaded"}</p>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm font-semibold text-slate-900 leading-relaxed italic">
+                                                        &ldquo;{answerObj.answer || "No answer provided"}&rdquo;
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            <div className="space-y-2">
+                                <Label>Professor Evaluation / Comments</Label>
+                                <Textarea
+                                    placeholder="Add your feedback here..."
+                                    rows={5}
+                                    value={evaluationText}
+                                    onChange={(e) => setEvaluationText(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter className="gap-2">
+                            <Button
+                                variant="outline"
+                                className="text-amber-600 hover:bg-amber-50 border-amber-100 font-bold"
+                                onClick={() => {
+                                    onEvaluate("UNDER_REVIEW", evaluationText);
+                                    setIsEvalOpen(false);
+                                }}
+                                disabled={isSubmitting}
+                            >
+                                Under Review
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="text-rose-600 hover:bg-rose-50 border-rose-100 font-bold"
+                                onClick={() => {
+                                    onEvaluate("REJECTED", evaluationText);
+                                    setIsEvalOpen(false);
+                                }}
+                                disabled={isSubmitting}
+                            >
+                                Reject
+                            </Button>
+                            <Button
+                                variant="gradient"
+                                className="font-bold"
+                                onClick={() => {
+                                    onEvaluate("ACCEPTED", evaluationText);
+                                    setIsEvalOpen(false);
+                                }}
+                                disabled={isSubmitting}
+                            >
+                                Accept Applicant
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </td>
+        </tr>
     );
 }
 

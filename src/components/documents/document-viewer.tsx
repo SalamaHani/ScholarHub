@@ -28,6 +28,7 @@ import {
 import { useDocuments } from "@/hooks/useDocuments";
 import { formatFileSize } from "@/lib/document-utils";
 import { format } from "date-fns";
+import { DocumentCardSkeletonGrid, DocumentListItemSkeleton } from "@/components/skeletons";
 
 const DOCUMENT_CATEGORIES = [
     "General",
@@ -99,8 +100,10 @@ export const DocumentViewer = ({
         return (
             <div className="space-y-3">
                 {isLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <div className="space-y-2">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <DocumentListItemSkeleton key={i} />
+                        ))}
                     </div>
                 ) : filteredDocuments.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
@@ -182,9 +185,7 @@ export const DocumentViewer = ({
 
             {/* Documents Grid */}
             {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
+                <DocumentCardSkeletonGrid count={6} />
             ) : filteredDocuments.length === 0 ? (
                 <Card>
                     <CardContent className="flex flex-col items-center justify-center py-12">

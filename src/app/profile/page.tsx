@@ -67,6 +67,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/axios";
 import { getProfileStatus, getStatusColor, getStatusStroke, getProgressMessage, getStatusIndicatorColor } from "@/lib/profileStatus";
+import { ProfileHeaderSkeleton, ProfileFormSkeleton } from "@/components/skeletons";
 
 const DEGREE_LEVELS = [
     { value: "BACHELOR", label: "Bachelor's Degree" },
@@ -393,10 +394,13 @@ export default function ProfilePage() {
 
     if (isLoading && !user) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-12 w-12 text-primary animate-spin" />
-                    <p className="text-slate-400 font-bold tracking-widest text-xs">Loading Profile...</p>
+            <div className="min-h-screen bg-slate-50 py-8">
+                <div className="container max-w-6xl space-y-6">
+                    <ProfileHeaderSkeleton />
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        <ProfileFormSkeleton />
+                        <ProfileFormSkeleton />
+                    </div>
                 </div>
             </div>
         );

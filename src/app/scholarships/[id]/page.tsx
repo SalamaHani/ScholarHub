@@ -29,6 +29,7 @@ import { useScholarship } from "@/hooks/useScholarships";
 import { useSavedScholarships, useCheckSaved } from "@/hooks/useSavedScholarships";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
+import { ScholarshipDetailSkeleton } from "@/components/skeletons";
 
 export default function ScholarshipDetailPage({ params }: { params: { id: string } }) {
     const { id } = params;
@@ -42,12 +43,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
     const isPendingSave = save.isPending || remove.isPending;
 
     if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-                <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                <p className="text-muted-foreground font-medium">Loading scholarship details...</p>
-            </div>
-        );
+        return <ScholarshipDetailSkeleton />;
     }
 
     if (error || !scholarship) {

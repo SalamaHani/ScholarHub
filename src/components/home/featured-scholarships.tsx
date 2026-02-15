@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Loader2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { ScholarshipCardSkeletonGrid } from "@/components/skeletons";
 
 export function FeaturedScholarships() {
     const { list } = useScholarships({
@@ -18,13 +19,7 @@ export function FeaturedScholarships() {
         : (rawData?.scholarships || rawData?.data || []);
 
     if (list.isLoading) {
-        return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-[300px] bg-white/50 border rounded-xl animate-pulse" />
-                ))}
-            </div>
-        );
+        return <ScholarshipCardSkeletonGrid count={3} />;
     }
 
     if (scholarships.length === 0) {

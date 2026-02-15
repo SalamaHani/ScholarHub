@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScholarshipForm } from "@/components/scholarships";
 import { Plus } from "lucide-react";
+import { ScholarshipCardSkeletonGrid } from "@/components/skeletons";
 
 export default function ScholarshipsClient() {
     const [page, setPage] = useState(1);
@@ -99,11 +100,7 @@ export default function ScholarshipsClient() {
 
                     {/* Scholarships Grid */}
                     {list.isLoading ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60">
-                            {[...Array(6)].map((_, i) => (
-                                <div key={i} className="h-[300px] bg-zinc-100 animate-pulse rounded-xl" />
-                            ))}
-                        </div>
+                        <ScholarshipCardSkeletonGrid count={6} />
                     ) : scholarships.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {scholarships.map((scholarship: any, index: number) => (

@@ -6,19 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSavedScholarships } from "@/hooks/useSavedScholarships";
+import { SavedScholarshipListSkeleton } from "@/components/skeletons";
 
 export default function SavedPage() {
     const { list, remove } = useSavedScholarships();
     // The hook now returns the flattened array directly for a cleaner API
     const savedScholarships = Array.isArray(list.data) ? list.data : [];
-
-    if (list.isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="h-10 w-10 text-primary animate-spin" />
-            </div>
-        );
-    }
 
     return (
         <div className="py-8 md:py-12">
@@ -39,7 +32,9 @@ export default function SavedPage() {
                 </div>
 
                 {/* List */}
-                {savedScholarships.length > 0 ? (
+                {list.isLoading ? (
+                    <SavedScholarshipListSkeleton count={5} />
+                ) : savedScholarships.length > 0 ? (
                     <div className="grid gap-4">
                         {savedScholarships.map((scholarship: any) => (
                             <Card key={scholarship.id} className="hover:border-primary/50 transition-all bg-white group shadow-sm">
