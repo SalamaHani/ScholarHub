@@ -111,7 +111,7 @@ export function CompletenessCheckModal({ isOpen, onClose, completeness }: Comple
                         <div className={cn("p-4 rounded-2xl border space-y-3", bgColor, "border-" + status.toLowerCase() + "-200")}>
                             <h4 className={cn("text-[10px] font-black uppercase tracking-widest", statusColor)}>Why this matters?</h4>
                             <p className="text-xs text-slate-600 leading-relaxed font-medium italic">
-                                "Institutions prioritize complete profiles. A comprehensive dossier increases your chances of approval by up to 300%."
+                                &quot;Institutions prioritize complete profiles. A comprehensive dossier increases your chances of approval by up to 300%.&quot;
                             </p>
                         </div>
                     </div>

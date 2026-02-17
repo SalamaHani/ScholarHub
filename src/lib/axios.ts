@@ -34,16 +34,18 @@ api.interceptors.response.use(
     },
     (error) => {
         // Handle 401 Unauthorized errors
+        // NOTE: Auto-logout disabled - Components handle auth errors individually
         const isAuthRequest = error.config?.url?.includes("/auth/logout") || error.config?.url?.includes("/auth/login");
 
         if (error.response?.status === 401 && !isAuthRequest) {
-            // Break the store loop by using direct cookie cleanup
-            clearAllAuthCookies();
+            // Don't auto-logout - just pass the error to the component
+            console.warn("⚠️ 401 Unauthorized - Token may be expired or invalid");
 
-            // Force redirect on client side if needed
-            if (typeof window !== "undefined") {
-                window.location.href = "/auth/login?expired=true";
-            }
+            // OPTIONAL: Uncomment to enable auto-logout on 401 errors
+            // clearAllAuthCookies();
+            // if (typeof window !== "undefined") {
+            //     window.location.href = "/auth/login?expired=true";
+            // }
         }
 
         return Promise.reject(error);

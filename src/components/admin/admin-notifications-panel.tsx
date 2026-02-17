@@ -37,7 +37,7 @@ export function AdminNotificationsPanel() {
         message: "",
         type: "INFO" as any,
         link: "",
-        targetRole: "ALL",
+        targetRole: "ALL" as "STUDENT" | "PROFESSOR" | "ALL",
         sendPush: false,
         interests: [] as string[],
     });
@@ -204,7 +204,7 @@ export function AdminNotificationsPanel() {
                                                 onValueChange={(value) =>
                                                     setNotificationData((prev) => ({
                                                         ...prev,
-                                                        targetRole: value,
+                                                        targetRole: value as "STUDENT" | "PROFESSOR" | "ALL",
                                                     }))
                                                 }
                                             >

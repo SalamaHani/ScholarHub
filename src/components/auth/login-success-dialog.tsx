@@ -96,7 +96,7 @@ export function LoginSuccessDialog({
                             transition={{ delay: 0.4 }}
                             className="text-sm text-zinc-500 pt-1"
                         >
-                            You're being redirected to your dashboard...
+                            You&apos;re being redirected to your dashboard...
                         </motion.p>
                     </DialogDescription>
                 </DialogHeader>

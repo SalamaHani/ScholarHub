@@ -70,24 +70,8 @@ export const useDocuments = (filters?: DocumentFilters) => {
         },
     });
 
-    // 2. Get Single Document
-    const getById = (id: string) => {
-        return useQuery({
-            queryKey: ["document", id],
-            queryFn: async () => {
-                const { data } = await api.get<any>(`/documents/${id}`);
-
-                if (data.success === false) {
-                    throw new Error(data.message || "Failed to fetch document");
-                }
-
-                return data.data?.document || data.document || data.data || data;
-            },
-            enabled: !!id,
-        });
-    };
-
-    // 3. Create Document (Admin only)
+    // 2. Create Document (Admin only)
+    // Note: Use useDocument(id) hook for fetching single document
     const create = useMutation({
         mutationFn: async (documentData: CreateDocumentInput) => {
             if (!user || user.role !== "ADMIN") {
@@ -227,7 +211,6 @@ export const useDocuments = (filters?: DocumentFilters) => {
         remove,
         download,
         upload,
-        getById,
     };
 };
 

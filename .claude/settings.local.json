@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(npx next lint:*)",
-      "Bash(npx shadcn@latest add:*)"
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npm install:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(PORT=3002 npm run dev:*)",
+      "Bash(curl:*)",
+      "Read(//c/Users/xtrem/Desktop/ScholarHubApi/src/routes/**)",
+      "Bash(node:*)",
+      "Bash(netstat:*)"
     ]
   }
 }

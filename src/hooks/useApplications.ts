@@ -218,8 +218,16 @@ export const useApplication = (id: string) => {
     queryKey: ["application", id],
     queryFn: async () => {
       const { data } = await api.get<any>(`/applications/${id}`);
-      return data.data || data;
+      // Normalise: { success, data: { ...app } } or { ...app } directly
+      const app = data?.data ?? data;
+      // Guard: if response is a success-false envelope, treat as not found
+      if (app && app.success === false) {
+        throw new Error(app.message || "Application not found");
+      }
+      return app;
     },
-    enabled: !!id,
+    enabled: !!id && id !== "undefined",
+    retry: 1,
+    staleTime: 30_000,
   });
 };

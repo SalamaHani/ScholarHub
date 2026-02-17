@@ -234,7 +234,6 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                                                 toast({
                                                     title: "Profile Verified",
                                                     description: "You have 80%+ profile completeness. Ready for application.",
-                                                    variant: "success",
                                                 });
                                             }
 

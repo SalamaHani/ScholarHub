@@ -2,7 +2,8 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/lib/axios";
 import {
     getCookie,
-    setCookie,
+    setAuthCookie,
+    initAuthExpiry,
     deleteCookie,
     clearAllAuthCookies
 } from "@/lib/cookies";
@@ -52,6 +53,8 @@ export interface User {
     progressMessage?: string;
     progressStatus?: string;
     officeLocation?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface AuthState {
@@ -158,11 +161,14 @@ function setAuthStorage(token: string, user: User): void {
             ? `${(user as any).firstName} ${(user as any).lastName}`
             : (user as any).firstName || user.email);
 
-    // Cookies for middleware and client access
-    setCookie("token", token);
-    setCookie("role", user.role.toUpperCase());
-    setCookie("user_name", professionalName);
-    setCookie("user_data", JSON.stringify({
+    // Anchor the 7-day expiry to login time (no reset on subsequent calls)
+    initAuthExpiry();
+
+    // Cookies for middleware and client access — all share the same fixed expiry
+    setAuthCookie("token", token);
+    setAuthCookie("role", user.role.toUpperCase());
+    setAuthCookie("user_name", professionalName);
+    setAuthCookie("user_data", JSON.stringify({
         id: user.id,
         role: user.role,
         email: user.email,

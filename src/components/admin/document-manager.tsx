@@ -18,7 +18,6 @@ import {
     FileVideo,
     FileAudio,
     FileSpreadsheet,
-    FilePdf,
     ExternalLink,
     Save,
 } from "lucide-react";
@@ -58,7 +57,7 @@ const DOCUMENT_CATEGORIES = [
 ];
 
 const getFileIcon = (fileType: string) => {
-    if (fileType.includes("pdf")) return FilePdf;
+    if (fileType.includes("pdf")) return FileText;
     if (fileType.includes("image")) return FileImage;
     if (fileType.includes("video")) return FileVideo;
     if (fileType.includes("audio")) return FileAudio;
@@ -275,7 +274,7 @@ export const DocumentManager = () => {
                 </Card>
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredDocuments.map((document) => {
+                    {filteredDocuments.map((document: Document) => {
                         const FileIcon = getFileIcon(document.fileType);
                         return (
                             <motion.div

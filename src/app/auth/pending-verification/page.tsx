@@ -25,7 +25,6 @@ export default function PendingVerificationPage() {
   useEffect(() => {
     // Wait for auth to load before redirecting
     if (isLoading) return;
-
     // Redirect if not logged in
     if (!user) {
       router.push("/auth/login");

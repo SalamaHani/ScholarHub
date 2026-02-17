@@ -8,7 +8,6 @@ import {
     Search,
     File,
     FileImage,
-    FilePdf,
     FileSpreadsheet,
     Loader2,
     ExternalLink,
@@ -41,7 +40,7 @@ const DOCUMENT_CATEGORIES = [
 ];
 
 const getFileIcon = (fileType: string) => {
-    if (fileType.includes("pdf")) return FilePdf;
+    if (fileType.includes("pdf")) return FileText;
     if (fileType.includes("image")) return FileImage;
     if (fileType.includes("spreadsheet") || fileType.includes("excel")) return FileSpreadsheet;
     return File;

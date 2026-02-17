@@ -1,52 +1,63 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Check, CheckCheck, Filter, Trash2 } from "lucide-react";
+import { Bell, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNotifications } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
 
 export default function NotificationsPage() {
-    const { list, markRead, markAllRead } = useNotifications();
+    const router = useRouter();
+    const { list, markRead } = useNotifications();
     const [filter, setFilter] = useState<"all" | "unread">("all");
 
-    const notifications = Array.isArray(list.data) ? list.data : [];
-    const unreadNotifications = notifications.filter((n: any) => !n.isRead);
-    const displayedNotifications = filter === "all" ? notifications : unreadNotifications;
+    const notifications = Array.isArray(list.data?.notifications)
+        ? list.data.notifications
+        : Array.isArray(list.data)
+        ? list.data
+        : [];
 
-    const getNotificationColor = (type: string) => {
-        switch (type) {
-            case "SCHOLARSHIP":
-                return "bg-blue-50 border-blue-200 text-blue-700";
-            case "APPLICATION":
-                return "bg-purple-50 border-purple-200 text-purple-700";
-            case "SUCCESS":
-                return "bg-emerald-50 border-emerald-200 text-emerald-700";
-            case "WARNING":
-                return "bg-amber-50 border-amber-200 text-amber-700";
-            default:
-                return "bg-slate-50 border-slate-200 text-slate-700";
+    const unreadNotifications = notifications.filter((n: any) => !n.isRead);
+    const displayedNotifications =
+        filter === "all" ? notifications : unreadNotifications;
+
+    const VALID_ROUTES = [
+        "/scholarships",
+        "/applications",
+        "/notifications",
+        "/dashboard",
+        "/profile",
+        "/saved",
+        "/documents",
+        "/deadlines",
+        "/categories",
+    ];
+
+    const isValidRoute = (link: string): boolean => {
+        try {
+            const path = link.startsWith("http") ? new URL(link).pathname : link;
+            return VALID_ROUTES.some((r) => path === r || path.startsWith(r + "/"));
+        } catch {
+            return false;
         }
     };
 
-    const getNotificationIcon = (type: string) => {
-        switch (type) {
-            case "SCHOLARSHIP":
-                return "🎓";
-            case "APPLICATION":
-                return "📝";
-            case "SUCCESS":
-                return "✅";
-            case "WARNING":
-                return "⚠️";
-            default:
-                return "ℹ️";
+    // Click a notification → mark it as read, then navigate to its link
+    const handleNotificationClick = (notification: any) => {
+        if (!notification.isRead) {
+            markRead.mutate(notification.id);
+        }
+        if (notification.link && isValidRoute(notification.link)) {
+            const path = notification.link.startsWith("http")
+                ? new URL(notification.link).pathname
+                : notification.link;
+            router.push(path);
         }
     };
 
@@ -86,26 +97,27 @@ export default function NotificationsPage() {
                             <Bell className="h-5 w-5 text-primary" />
                             <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
                         </div>
-                        <p className="text-muted-foreground">
-                            Stay updated with your scholarship journey
+                        <p className="text-muted-foreground text-sm">
+                            Click a notification to mark it as read
                         </p>
                     </div>
 
                     {unreadNotifications.length > 0 && (
-                        <Button
-                            variant="outline"
-                            onClick={() => markAllRead.mutate()}
-                            disabled={markAllRead.isPending}
-                            className="gap-2"
+                        <Badge
+                            variant="secondary"
+                            className="text-sm px-3 py-1 self-start md:self-auto"
                         >
-                            <CheckCheck className="h-4 w-4" />
-                            Mark all as read ({unreadNotifications.length})
-                        </Button>
+                            {unreadNotifications.length} unread
+                        </Badge>
                     )}
                 </div>
 
-                {/* Filters */}
-                <Tabs value={filter} onValueChange={(v) => setFilter(v as any)} className="mb-6">
+                {/* Filter tabs */}
+                <Tabs
+                    value={filter}
+                    onValueChange={(v) => setFilter(v as "all" | "unread")}
+                    className="mb-6"
+                >
                     <TabsList>
                         <TabsTrigger value="all" className="gap-2">
                             All
@@ -122,15 +134,13 @@ export default function NotificationsPage() {
                     </TabsList>
                 </Tabs>
 
-                {/* Notifications List */}
+                {/* List */}
                 {displayedNotifications.length === 0 ? (
                     <Card>
                         <CardContent className="py-16 text-center">
                             <Bell className="h-16 w-16 text-muted-foreground/20 mx-auto mb-4" />
                             <h3 className="text-lg font-semibold mb-2">
-                                {filter === "all"
-                                    ? "No notifications yet"
-                                    : "All caught up!"}
+                                {filter === "all" ? "No notifications yet" : "All caught up!"}
                             </h3>
                             <p className="text-muted-foreground text-sm">
                                 {filter === "all"
@@ -141,86 +151,115 @@ export default function NotificationsPage() {
                     </Card>
                 ) : (
                     <div className="space-y-3">
-                        {displayedNotifications.map((notification: any) => {
-                            const NotificationWrapper = notification.link ? Link : "div";
-                            const wrapperProps = notification.link
-                                ? { href: notification.link }
-                                : {};
-
-                            return (
-                                <NotificationWrapper
-                                    key={notification.id}
-                                    {...wrapperProps}
-                                >
-                                    <Card
-                                        className={cn(
-                                            "hover:shadow-md transition-all cursor-pointer group",
-                                            !notification.isRead && "border-l-4 border-l-primary bg-primary/5"
-                                        )}
-                                    >
-                                        <CardContent className="p-6">
-                                            <div className="flex items-start gap-4">
-                                                {/* Icon */}
-                                                <div className="text-3xl shrink-0">
-                                                    {getNotificationIcon(notification.type)}
-                                                </div>
-
-                                                {/* Content */}
-                                                <div className="flex-1 min-w-0 space-y-2">
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="flex-1">
-                                                            <h3 className="font-bold text-base leading-tight mb-1">
-                                                                {notification.title}
-                                                            </h3>
-                                                            <p className="text-sm text-muted-foreground leading-relaxed">
-                                                                {notification.message}
-                                                            </p>
-                                                        </div>
-                                                        <Badge
-                                                            variant="outline"
-                                                            className={cn(
-                                                                "text-xs shrink-0",
-                                                                getNotificationColor(notification.type)
-                                                            )}
-                                                        >
-                                                            {notification.type}
-                                                        </Badge>
-                                                    </div>
-
-                                                    <div className="flex items-center justify-between gap-4 pt-2">
-                                                        <p className="text-xs text-muted-foreground font-medium">
-                                                            {formatDistanceToNow(
-                                                                new Date(notification.createdAt),
-                                                                { addSuffix: true }
-                                                            )}
-                                                        </p>
-
-                                                        {!notification.isRead && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-7 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    markRead.mutate(notification.id);
-                                                                }}
-                                                                disabled={markRead.isPending}
-                                                            >
-                                                                <Check className="h-3 w-3 mr-1" />
-                                                                Mark as read
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </NotificationWrapper>
-                            );
-                        })}
+                        {displayedNotifications.map((notification: any) => (
+                            <NotificationCard
+                                key={notification.id}
+                                notification={notification}
+                                onClick={() => handleNotificationClick(notification)}
+                            />
+                        ))}
                     </div>
                 )}
+            </div>
+        </div>
+    );
+}
+
+interface NotificationCardProps {
+    notification: any;
+    onClick: () => void;
+}
+
+function NotificationCard({ notification, onClick }: NotificationCardProps) {
+    const getTypeColor = (type: string) => {
+        switch (type) {
+            case "SCHOLARSHIP": return "bg-blue-50 border-blue-200 text-blue-700";
+            case "APPLICATION":  return "bg-purple-50 border-purple-200 text-purple-700";
+            case "SUCCESS":      return "bg-emerald-50 border-emerald-200 text-emerald-700";
+            case "WARNING":      return "bg-amber-50 border-amber-200 text-amber-700";
+            default:             return "bg-slate-50 border-slate-200 text-slate-700";
+        }
+    };
+
+    const getIcon = (type: string) => {
+        switch (type) {
+            case "SCHOLARSHIP": return "🎓";
+            case "APPLICATION":  return "📝";
+            case "SUCCESS":      return "✅";
+            case "WARNING":      return "⚠️";
+            default:             return "ℹ️";
+        }
+    };
+
+    return (
+        <div
+            role="button"
+            tabIndex={0}
+            onClick={onClick}
+            onKeyDown={(e) => e.key === "Enter" && onClick()}
+            className={cn(
+                "w-full outline-none rounded-xl transition-all cursor-pointer group",
+                "border bg-card shadow-sm",
+                "hover:shadow-md hover:border-primary/40",
+                "focus-visible:ring-2 focus-visible:ring-primary/40",
+                !notification.isRead && "border-l-4 border-l-primary bg-primary/[0.02]"
+            )}
+        >
+            <div className="p-5">
+                <div className="flex items-start gap-4">
+                    {/* Type icon */}
+                    <div className="text-3xl shrink-0">{getIcon(notification.type)}</div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                                <h3 className={cn(
+                                    "text-base leading-snug mb-0.5",
+                                    notification.isRead
+                                        ? "font-semibold text-foreground/80"
+                                        : "font-bold text-foreground"
+                                )}>
+                                    {notification.title}
+                                </h3>
+                                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                                    {notification.message}
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col items-end gap-2 shrink-0">
+                                <Badge
+                                    variant="outline"
+                                    className={cn("text-xs shrink-0", getTypeColor(notification.type))}
+                                >
+                                    {notification.type}
+                                </Badge>
+                                {!notification.isRead && (
+                                    <span className="h-2 w-2 rounded-full bg-primary" />
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4 pt-1">
+                            <p className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(notification.createdAt), {
+                                    addSuffix: true,
+                                })}
+                            </p>
+
+                            {notification.isRead ? (
+                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground/60 font-medium">
+                                    <Check className="h-3 w-3" />
+                                    Read
+                                </span>
+                            ) : (
+                                <span className="text-[11px] text-primary font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                                    Click to mark as read
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
