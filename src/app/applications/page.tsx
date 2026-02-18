@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     BookOpen,
     Clock,
@@ -13,56 +13,164 @@ import {
     Building2,
     Calendar,
     FileText,
+    GraduationCap,
+    Bookmark,
+    Bell,
+    User,
+    TrendingUp,
+    ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useApplications } from "@/hooks/useApplications";
+import { cn } from "@/lib/utils";
 
+// ─── Student Sidebar Nav ──────────────────────────────────────────────────────
+const STUDENT_MENU = [
+    { href: "/applications", label: "My Applications", icon: BookOpen },
+    { href: "/scholarships",  label: "Browse Scholarships", icon: GraduationCap },
+    { href: "/saved",         label: "Saved Scholarships",  icon: Bookmark },
+    { href: "/notifications", label: "Notifications",       icon: Bell },
+    { href: "/deadlines",     label: "Deadlines",           icon: Clock },
+    { href: "/profile",       label: "My Profile",          icon: User },
+];
+
+function StudentSidebar({ counts }: { counts: Record<string, number> }) {
+    const pathname = usePathname();
+
+    return (
+        <aside className="w-64 shrink-0 hidden lg:block">
+            <Card className="sticky top-24 border-none shadow-sm overflow-hidden">
+                {/* Header */}
+                <div className="bg-primary/5 border-b px-4 py-3">
+                    <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <GraduationCap className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="text-xs font-bold tracking-wider text-primary uppercase">
+                            Student Menu
+                        </span>
+                    </div>
+                </div>
+
+                {/* Nav links */}
+                <nav className="p-2">
+                    {STUDENT_MENU.map(({ href, label, icon: Icon }) => {
+                        const isActive = pathname === href || pathname.startsWith(href + "/");
+                        return (
+                            <Link key={href} href={href}>
+                                <div className={cn(
+                                    "flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group",
+                                    isActive
+                                        ? "bg-primary text-white shadow-sm"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                )}>
+                                    <div className="flex items-center gap-2.5">
+                                        <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-white" : "text-muted-foreground group-hover:text-primary")} />
+                                        <span>{label}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        {href === "/applications" && counts.all > 0 && (
+                                            <Badge className={cn("h-5 min-w-[20px] text-[10px] px-1.5 rounded-full", isActive ? "bg-white/20 text-white" : "")}>
+                                                {counts.all}
+                                            </Badge>
+                                        )}
+                                        <ChevronRight className={cn("h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity", isActive && "opacity-100")} />
+                                    </div>
+                                </div>
+                            </Link>
+                        );
+                    })}
+                </nav>
+
+                {/* Quick stats */}
+                <div className="border-t mx-2 mt-1 pt-3 pb-2 px-2">
+                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground mb-2 px-1">QUICK STATS</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                        <div className="bg-amber-50 border border-amber-100 rounded-lg p-2 text-center">
+                            <p className="text-lg font-black text-amber-600">{counts.PENDING}</p>
+                            <p className="text-[10px] text-amber-600/80 font-medium">Pending</p>
+                        </div>
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-2 text-center">
+                            <p className="text-lg font-black text-emerald-600">{counts.ACCEPTED}</p>
+                            <p className="text-[10px] text-emerald-600/80 font-medium">Accepted</p>
+                        </div>
+                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 text-center">
+                            <p className="text-lg font-black text-blue-600">{counts.UNDER_REVIEW}</p>
+                            <p className="text-[10px] text-blue-600/80 font-medium">In Review</p>
+                        </div>
+                        <div className="bg-rose-50 border border-rose-100 rounded-lg p-2 text-center">
+                            <p className="text-lg font-black text-rose-600">{counts.REJECTED}</p>
+                            <p className="text-[10px] text-rose-600/80 font-medium">Rejected</p>
+                        </div>
+                    </div>
+                </div>
+            </Card>
+        </aside>
+    );
+}
+
+// ─── Tab config ───────────────────────────────────────────────────────────────
+const STATUS_TABS = [
+    { value: "all",          label: "All",          icon: BookOpen,     color: "text-primary"     },
+    { value: "PENDING",      label: "Pending",      icon: Clock,        color: "text-amber-500"   },
+    { value: "UNDER_REVIEW", label: "Under Review", icon: AlertCircle,  color: "text-blue-500"    },
+    { value: "ACCEPTED",     label: "Accepted",     icon: CheckCircle2, color: "text-emerald-500" },
+    { value: "REJECTED",     label: "Rejected",     icon: XCircle,      color: "text-rose-500"    },
+] as const;
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ApplicationsPage() {
     const router = useRouter();
     const { user, isLoading: isAuthLoading } = useAuth();
     const { myApplications } = useApplications();
     const [searchQuery, setSearchQuery] = useState("");
-    const [filterStatus, setFilterStatus] = useState("all");
+    const [activeTab, setActiveTab] = useState("all");
+    const [mounted, setMounted] = useState(false);
 
-    // Student-only: redirect non-students and unauthenticated users
-    React.useEffect(() => {
-        if (isAuthLoading) return;
+    useEffect(() => { setMounted(true); }, []);
+
+    useEffect(() => {
+        if (!mounted || isAuthLoading) return;
         if (!user) {
             router.replace("/auth/login");
         } else if (user.role !== "STUDENT") {
             router.replace("/dashboard");
         }
-    }, [user, isAuthLoading, router]);
+    }, [mounted, user, isAuthLoading, router]);
 
     const applications = Array.isArray(myApplications.data) ? myApplications.data : [];
     const isLoading = isAuthLoading || myApplications.isLoading;
 
-    // Filter applications
-    const filteredApplications = applications.filter((app: any) => {
-        const matchesSearch =
-            app.scholarship?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            app.scholarship?.organization?.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = filterStatus === "all" || app.status === filterStatus;
-        return matchesSearch && matchesStatus;
-    });
+    const byStatus = (status: string) =>
+        applications.filter((a: any) => status === "all" ? true : a.status === status);
 
-    // Stats
-    const stats = {
-        total: applications.length,
-        pending: applications.filter((a: any) => a.status === "PENDING").length,
-        underReview: applications.filter((a: any) => a.status === "UNDER_REVIEW").length,
-        accepted: applications.filter((a: any) => a.status === "ACCEPTED").length,
-        rejected: applications.filter((a: any) => a.status === "REJECTED").length,
+    const filtered = (status: string) =>
+        byStatus(status).filter((app: any) => {
+            const q = searchQuery.toLowerCase();
+            return (
+                app.scholarship?.title?.toLowerCase().includes(q) ||
+                app.scholarship?.organization?.toLowerCase().includes(q)
+            );
+        });
+
+    const counts: Record<string, number> = {
+        all:          applications.length,
+        PENDING:      byStatus("PENDING").length,
+        UNDER_REVIEW: byStatus("UNDER_REVIEW").length,
+        ACCEPTED:     byStatus("ACCEPTED").length,
+        REJECTED:     byStatus("REJECTED").length,
     };
 
-    // Show spinner while loading or while redirect is pending
-    if (isAuthLoading || !user || user.role !== "STUDENT") {
+    // Show spinner until mounted (prevents SSR/client hydration mismatch)
+    if (!mounted || isAuthLoading || !user || user.role !== "STUDENT") {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -73,155 +181,177 @@ export default function ApplicationsPage() {
     return (
         <div className="min-h-screen bg-muted/20">
             <div className="container px-4 py-8 md:py-12">
-                {/* Header */}
-                <div className="mb-8">
-                    <div className="flex items-center gap-2 text-primary font-bold tracking-wider text-xs mb-2">
-                        <BookOpen className="h-4 w-4" />
-                        MY APPLICATIONS
-                    </div>
-                    <h1 className="text-4xl font-extrabold tracking-tight gradient-text mb-2">
-                        Application Tracker
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Track the status of all your scholarship applications in one place.
-                    </p>
-                </div>
+                <div className="flex gap-8 items-start">
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-                    <StatCard label="Total"       value={stats.total}       icon={BookOpen}     color="primary"     />
-                    <StatCard label="Pending"     value={stats.pending}     icon={Clock}        color="warning"     />
-                    <StatCard label="Under Review" value={stats.underReview} icon={AlertCircle}  color="info"        />
-                    <StatCard label="Accepted"    value={stats.accepted}    icon={CheckCircle2} color="success"     />
-                    <StatCard label="Rejected"    value={stats.rejected}    icon={XCircle}      color="destructive" />
-                </div>
+                    {/* Sidebar */}
+                    <StudentSidebar counts={counts} />
 
-                {/* Filters */}
-                <Card className="mb-6">
-                    <CardContent className="p-4">
-                        <div className="flex flex-col md:flex-row gap-4">
-                            <div className="flex-1 relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search by scholarship name or organization..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10"
-                                />
+                    {/* Main content */}
+                    <div className="flex-1 min-w-0">
+                        {/* Header */}
+                        <div className="mb-6">
+                            <div className="flex items-center gap-2 text-primary font-bold tracking-wider text-xs mb-1">
+                                <TrendingUp className="h-4 w-4" />
+                                MY APPLICATIONS
                             </div>
-                            <div className="flex gap-2 flex-wrap">
-                                {(["all", "PENDING", "UNDER_REVIEW", "ACCEPTED", "REJECTED"] as const).map((s) => (
-                                    <Button
-                                        key={s}
-                                        variant={filterStatus === s ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => setFilterStatus(s)}
-                                    >
-                                        {s === "all" ? "All" : s === "UNDER_REVIEW" ? "Review" : s.charAt(0) + s.slice(1).toLowerCase()}
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Applications List */}
-                {isLoading ? (
-                    <div className="flex justify-center py-20">
-                        <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                    </div>
-                ) : filteredApplications.length === 0 ? (
-                    <Card>
-                        <CardContent className="py-20 text-center">
-                            <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-bold mb-2">No Applications Found</h3>
-                            <p className="text-muted-foreground mb-6">
-                                {applications.length === 0
-                                    ? "You haven't applied to any scholarships yet."
-                                    : "No applications match your search criteria."}
+                            <h1 className="text-3xl font-extrabold tracking-tight mb-1">
+                                Application Tracker
+                            </h1>
+                            <p className="text-muted-foreground text-sm">
+                                Track the status of all your scholarship applications in one place.
                             </p>
-                            {applications.length === 0 && (
-                                <Link href="/scholarships">
-                                    <Button>Browse Scholarships</Button>
-                                </Link>
-                            )}
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="space-y-4">
-                        {filteredApplications.map((app: any) => (
-                            <ApplicationCard key={app.id} application={app} />
-                        ))}
+                        </div>
+
+                        {/* Search */}
+                        <div className="relative mb-5">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search by scholarship name or organization..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10 bg-white"
+                            />
+                        </div>
+
+                        {/* Tabs */}
+                        <Tabs value={activeTab} onValueChange={setActiveTab}>
+                            <TabsList className="w-full h-auto flex flex-wrap gap-1 bg-white border rounded-xl p-1 mb-5 shadow-sm">
+                                {STATUS_TABS.map(({ value, label, icon: Icon, color }) => (
+                                    <TabsTrigger
+                                        key={value}
+                                        value={value}
+                                        className={cn(
+                                            "flex-1 min-w-[70px] gap-1.5 rounded-lg text-sm font-medium py-2",
+                                            "data-[state=active]:shadow-sm",
+                                            activeTab === value && color
+                                        )}
+                                    >
+                                        <Icon className={cn("h-4 w-4", color)} />
+                                        <span className="hidden sm:inline">{label}</span>
+                                        <Badge
+                                            variant={activeTab === value ? "default" : "secondary"}
+                                            className="ml-0.5 h-5 min-w-[20px] text-[11px] rounded-full px-1.5"
+                                        >
+                                            {counts[value]}
+                                        </Badge>
+                                    </TabsTrigger>
+                                ))}
+                            </TabsList>
+
+                            {STATUS_TABS.map(({ value }) => (
+                                <TabsContent key={value} value={value} className="mt-0 focus-visible:ring-0">
+                                    <ApplicationList
+                                        applications={filtered(value)}
+                                        isLoading={isLoading}
+                                        totalUnfiltered={applications.length}
+                                        searchQuery={searchQuery}
+                                    />
+                                </TabsContent>
+                            ))}
+                        </Tabs>
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );
 }
 
-function StatCard({ label, value, icon: Icon, color }: any) {
-    const colorMap: any = {
-        primary:     "text-primary bg-primary/10 border-primary/20",
-        success:     "text-emerald-600 bg-emerald-100 border-emerald-200",
-        warning:     "text-amber-600 bg-amber-100 border-amber-200",
-        destructive: "text-rose-600 bg-rose-100 border-rose-200",
-        info:        "text-blue-600 bg-blue-100 border-blue-200",
-    };
+// ─── Application List ─────────────────────────────────────────────────────────
+function ApplicationList({
+    applications,
+    isLoading,
+    totalUnfiltered,
+    searchQuery,
+}: {
+    applications: any[];
+    isLoading: boolean;
+    totalUnfiltered: number;
+    searchQuery: string;
+}) {
+    if (isLoading) {
+        return (
+            <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                    <Card key={i}>
+                        <CardContent className="p-6">
+                            <div className="flex items-start gap-4">
+                                <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
+                                <div className="flex-1 space-y-2">
+                                    <Skeleton className="h-5 w-3/4" />
+                                    <Skeleton className="h-4 w-1/2" />
+                                    <Skeleton className="h-3 w-40" />
+                                </div>
+                                <Skeleton className="h-8 w-24 rounded-lg" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        );
+    }
+
+    if (applications.length === 0) {
+        return (
+            <Card>
+                <CardContent className="py-16 text-center">
+                    <BookOpen className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+                    <h3 className="text-lg font-bold mb-2">No Applications Found</h3>
+                    <p className="text-muted-foreground text-sm mb-6">
+                        {totalUnfiltered === 0
+                            ? "You haven't applied to any scholarships yet."
+                            : searchQuery
+                                ? "No applications match your search."
+                                : "No applications in this category yet."}
+                    </p>
+                    {totalUnfiltered === 0 && (
+                        <Link href="/scholarships">
+                            <Button>Browse Scholarships</Button>
+                        </Link>
+                    )}
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
-        <Card className="border-none shadow-sm hover:shadow-md transition-all">
-            <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-2">
-                    <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">{label}</p>
-                        <p className="text-2xl font-bold">{value}</p>
-                    </div>
-                    <div className={`p-2 rounded-xl border ${colorMap[color]}`}>
-                        <Icon className="h-4 w-4" />
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+        <div className="space-y-3">
+            {applications.map((app: any) => (
+                <ApplicationCard key={app.id} application={app} />
+            ))}
+        </div>
     );
 }
 
-function ApplicationCard({ application }: { application: any }) {
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case "ACCEPTED":    return "success";
-            case "REJECTED":    return "destructive";
-            case "UNDER_REVIEW": return "warning";
-            case "PENDING":     return "secondary";
-            default:            return "default";
-        }
-    };
+// ─── Application Card ─────────────────────────────────────────────────────────
+const STATUS_CONFIG: Record<string, { label: string; icon: any; badge: any; border: string }> = {
+    PENDING:      { label: "Pending",      icon: Clock,        badge: "secondary",   border: "border-l-amber-400"   },
+    UNDER_REVIEW: { label: "Under Review", icon: AlertCircle,  badge: "warning",     border: "border-l-blue-500"    },
+    ACCEPTED:     { label: "Accepted",     icon: CheckCircle2, badge: "success",     border: "border-l-emerald-500" },
+    REJECTED:     { label: "Rejected",     icon: XCircle,      badge: "destructive", border: "border-l-rose-500"    },
+    DRAFT:        { label: "Draft",        icon: FileText,     badge: "outline",     border: "border-l-slate-400"   },
+    WITHDRAWN:    { label: "Withdrawn",    icon: XCircle,      badge: "outline",     border: "border-l-slate-400"   },
+};
 
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case "ACCEPTED":    return <CheckCircle2 className="h-4 w-4" />;
-            case "REJECTED":    return <XCircle className="h-4 w-4" />;
-            case "UNDER_REVIEW": return <AlertCircle className="h-4 w-4" />;
-            case "PENDING":     return <Clock className="h-4 w-4" />;
-            default:            return <FileText className="h-4 w-4" />;
-        }
-    };
+function ApplicationCard({ application }: { application: any }) {
+    const cfg = STATUS_CONFIG[application.status] ?? STATUS_CONFIG.DRAFT;
+    const StatusIcon = cfg.icon;
 
     return (
-        <Card className="hover:border-primary/50 transition-colors cursor-pointer group">
-            <CardContent className="p-6">
+        <Card className={cn("border-l-4 hover:shadow-md transition-all group", cfg.border)}>
+            <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4 flex-1">
-                        <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shrink-0 group-hover:bg-primary/20 transition-colors">
-                            <Building2 className="h-7 w-7 text-primary" />
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 shrink-0 group-hover:bg-primary/20 transition-colors">
+                            <Building2 className="h-6 w-6 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-lg mb-1 line-clamp-2 group-hover:text-primary transition-colors">
+                            <h3 className="font-bold text-base mb-0.5 line-clamp-1 group-hover:text-primary transition-colors">
                                 {application.scholarship?.title || "Scholarship"}
                             </h3>
-                            <p className="text-sm text-muted-foreground mb-3">
+                            <p className="text-sm text-muted-foreground mb-2">
                                 {application.scholarship?.organization || "Organization"}
                             </p>
-                            <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                                 <span className="flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
                                     Applied: {new Date(application.createdAt).toLocaleDateString()}
@@ -233,14 +363,15 @@ function ApplicationCard({ application }: { application: any }) {
                             </div>
                         </div>
                     </div>
-                    <div className="flex flex-col items-end gap-3">
-                        <Badge variant={getStatusColor(application.status)} className="gap-1">
-                            {getStatusIcon(application.status)}
-                            {application.status.replace(/_/g, " ")}
+
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                        <Badge variant={cfg.badge as any} className="gap-1 whitespace-nowrap">
+                            <StatusIcon className="h-3.5 w-3.5" />
+                            {cfg.label}
                         </Badge>
                         <Link href={`/applications/${application.id}`}>
-                            <Button size="sm" variant="outline" className="gap-2">
-                                <Eye className="h-3 w-3" />
+                            <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs">
+                                <Eye className="h-3.5 w-3.5" />
                                 View Details
                             </Button>
                         </Link>

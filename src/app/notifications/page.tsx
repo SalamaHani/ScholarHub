@@ -53,11 +53,16 @@ export default function NotificationsPage() {
         if (!notification.isRead) {
             markRead.mutate(notification.id);
         }
-        if (notification.link && isValidRoute(notification.link)) {
+        if (!notification.link) return;
+        if (!isValidRoute(notification.link)) return;
+
+        try {
             const path = notification.link.startsWith("http")
                 ? new URL(notification.link).pathname
                 : notification.link;
             router.push(path);
+        } catch {
+            // Malformed URL — do nothing
         }
     };
 
@@ -82,6 +87,32 @@ export default function NotificationsPage() {
                             </Card>
                         ))}
                     </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (list.isError) {
+        return (
+            <div className="py-8 md:py-12 min-h-screen bg-muted/20">
+                <div className="container max-w-4xl">
+                    <Card>
+                        <CardContent className="py-20 flex flex-col items-center text-center gap-4">
+                            <Bell className="h-16 w-16 text-muted-foreground/20 mx-auto" />
+                            <div className="space-y-1">
+                                <h3 className="text-lg font-semibold">Could not load notifications</h3>
+                                <p className="text-muted-foreground text-sm">
+                                    Something went wrong while fetching your notifications. Please try again.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => list.refetch()}
+                                className="text-sm text-primary underline underline-offset-2"
+                            >
+                                Retry
+                            </button>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         );

@@ -107,37 +107,81 @@ export default function ApplicationDetailPage({ params }: PageProps) {
 
     // Error or truly not found
     if (isError || !application || !application.id) {
+        const httpStatus = (error as any)?.response?.status;
+        const is403 = httpStatus === 403;
+        const is404 = httpStatus === 404 || !application || !application?.id;
+
+        const errorTitle = is403
+            ? "Access Denied"
+            : "Application Not Found";
+
+        const errorDescription = is403
+            ? "You don't have permission to view this application. It may belong to another user."
+            : "This application doesn't exist or may have been removed. Double-check the link and try again.";
+
+        const errorCode = is403 ? "403" : "404";
+
         return (
             <div className="min-h-screen bg-muted/20 py-8 md:py-12">
                 <div className="container max-w-3xl">
+                    {/* Back */}
                     <div className="mb-6">
                         <Link href="/applications">
-                            <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground">
+                            <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
                                 <ArrowLeft className="h-4 w-4" />
                                 My Applications
                             </Button>
                         </Link>
                     </div>
 
-                    <Card>
-                        <CardContent className="py-20 flex flex-col items-center text-center gap-4">
-                            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                                <AlertCircle className="h-8 w-8 text-muted-foreground/50" />
+                    <Card className="border-none shadow-md overflow-hidden">
+                        {/* Colored top bar */}
+                        <div className={cn("h-1.5 w-full", is403 ? "bg-amber-400" : "bg-rose-400")} />
+
+                        <CardContent className="py-16 px-8 flex flex-col items-center text-center gap-6">
+                            {/* Error code badge */}
+                            <div className={cn(
+                                "h-20 w-20 rounded-2xl flex items-center justify-center border-2",
+                                is403
+                                    ? "bg-amber-50 border-amber-200"
+                                    : "bg-rose-50 border-rose-200"
+                            )}>
+                                <span className={cn(
+                                    "text-2xl font-black tracking-tight",
+                                    is403 ? "text-amber-500" : "text-rose-500"
+                                )}>
+                                    {errorCode}
+                                </span>
                             </div>
-                            <div className="space-y-1">
-                                <h2 className="text-xl font-bold">Application not found</h2>
-                                <p className="text-sm text-muted-foreground max-w-sm">
-                                    {(error as any)?.response?.status === 403
-                                        ? "You don't have permission to view this application."
-                                        : "This application may have been removed, or the link is incorrect."}
+
+                            {/* Text */}
+                            <div className="space-y-2 max-w-sm">
+                                <h2 className="text-2xl font-extrabold tracking-tight">
+                                    {errorTitle}
+                                </h2>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                    {errorDescription}
                                 </p>
                             </div>
-                            <Link href="/applications">
-                                <Button className="mt-2 gap-2">
-                                    <ArrowLeft className="h-4 w-4" />
-                                    Back to My Applications
-                                </Button>
-                            </Link>
+
+                            {/* Divider */}
+                            <div className="w-full max-w-xs border-t border-dashed" />
+
+                            {/* Actions */}
+                            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+                                <Link href="/applications" className="flex-1">
+                                    <Button variant="default" className="w-full gap-2">
+                                        <ArrowLeft className="h-4 w-4" />
+                                        My Applications
+                                    </Button>
+                                </Link>
+                                <Link href="/scholarships" className="flex-1">
+                                    <Button variant="outline" className="w-full gap-2">
+                                        <FileText className="h-4 w-4" />
+                                        Browse Scholarships
+                                    </Button>
+                                </Link>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -274,14 +318,8 @@ export default function ApplicationDetailPage({ params }: PageProps) {
                                 </div>
                                 <div>
                                     <p className="text-xs text-muted-foreground">Submitted</p>
-                                    <p className="text-sm font-semibold">
-                                        {new Date(application.createdAt).toLocaleDateString("en-US", {
-                                            month: "short", day: "numeric", year: "numeric",
-                                        })}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {formatDistanceToNow(new Date(application.createdAt), { addSuffix: true })}
-                                    </p>
+                                    <p className="text-sm font-semibold">{safeDate(application.createdAt)}</p>
+                                    <p className="text-xs text-muted-foreground">{safeDistance(application.createdAt)}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
@@ -290,14 +328,8 @@ export default function ApplicationDetailPage({ params }: PageProps) {
                                 </div>
                                 <div>
                                     <p className="text-xs text-muted-foreground">Last Updated</p>
-                                    <p className="text-sm font-semibold">
-                                        {new Date(application.updatedAt).toLocaleDateString("en-US", {
-                                            month: "short", day: "numeric", year: "numeric",
-                                        })}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {formatDistanceToNow(new Date(application.updatedAt), { addSuffix: true })}
-                                    </p>
+                                    <p className="text-sm font-semibold">{safeDate(application.updatedAt)}</p>
+                                    <p className="text-xs text-muted-foreground">{safeDistance(application.updatedAt)}</p>
                                 </div>
                             </div>
                         </div>

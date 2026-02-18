@@ -33,19 +33,23 @@ api.interceptors.response.use(
         return response;
     },
     (error) => {
-        // Handle 401 Unauthorized errors
-        // NOTE: Auto-logout disabled - Components handle auth errors individually
-        const isAuthRequest = error.config?.url?.includes("/auth/logout") || error.config?.url?.includes("/auth/login");
+        // Handle 401 Unauthorized — session expired or invalid token
+        const isAuthRequest =
+            error.config?.url?.includes("/auth/logout") ||
+            error.config?.url?.includes("/auth/login") ||
+            error.config?.url?.includes("/auth/register");
 
         if (error.response?.status === 401 && !isAuthRequest) {
-            // Don't auto-logout - just pass the error to the component
-            console.warn("⚠️ 401 Unauthorized - Token may be expired or invalid");
-
-            // OPTIONAL: Uncomment to enable auto-logout on 401 errors
-            // clearAllAuthCookies();
-            // if (typeof window !== "undefined") {
-            //     window.location.href = "/auth/login?expired=true";
-            // }
+            // Clear all local auth state immediately
+            clearAllAuthCookies();
+            if (typeof window !== "undefined") {
+                localStorage.removeItem("scholarhub_user");
+                localStorage.removeItem("scholarhub_token");
+                // Only redirect if not already on an auth page
+                if (!window.location.pathname.startsWith("/auth")) {
+                    window.location.href = "/auth/login";
+                }
+            }
         }
 
         return Promise.reject(error);

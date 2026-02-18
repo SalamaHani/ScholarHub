@@ -84,22 +84,26 @@ export function Navbar() {
                     {/* Desktop Navigation */}
                     <div className="hidden lg:flex items-center gap-8">
                         <div className="flex items-center gap-6">
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    className={`text-sm font-medium transition-colors hover:text-primary relative group ${(pathname || "").startsWith(link.href) ? "text-primary" : "text-muted-foreground"
-                                        }`}
-                                >
-                                    {link.label}
-                                    {(pathname || "").startsWith(link.href) && (
-                                        <motion.div
-                                            layoutId="nav-underline"
-                                            className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary"
-                                        />
-                                    )}
-                                </Link>
-                            ))}
+                            {navLinks.map((link) => {
+                                const isActive = link.href === "/"
+                                    ? pathname === "/"
+                                    : (pathname || "").startsWith(link.href);
+                                return (
+                                    <Link
+                                        key={link.href}
+                                        href={link.href}
+                                        className={`text-sm font-medium transition-colors hover:text-primary relative group ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                                    >
+                                        {link.label}
+                                        {isActive && (
+                                            <motion.div
+                                                layoutId="nav-underline"
+                                                className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary"
+                                            />
+                                        )}
+                                    </Link>
+                                );
+                            })}
                         </div>
 
                         <div className="flex items-center gap-4 border-l pl-8 border-muted-foreground/20">
@@ -151,18 +155,21 @@ export function Navbar() {
                                                 {user.role} Account
                                             </DropdownMenuLabel>
                                             <DropdownMenuSeparator />
-                                            {mounted && user.role !== "STUDENT" && (
-                                                <>
-                                                    {/* Only show Dashboard if not a professor OR if professor is verified */}
-                                                    {(user.role !== "PROFESSOR" || user.isProfessorVerified || user.isVerified) && (
-                                                        <DropdownMenuItem asChild>
-                                                            <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer w-full py-2">
-                                                                <LayoutDashboard className="h-4 w-4 text-primary" />
-                                                                <span>Dashboard</span>
-                                                            </Link>
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                </>
+                                            {mounted && user.role === "PROFESSOR" && (user.isProfessorVerified || user.isVerified) && (
+                                                <DropdownMenuItem asChild>
+                                                    <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer w-full py-2">
+                                                        <LayoutDashboard className="h-4 w-4 text-primary" />
+                                                        <span>Dashboard</span>
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                            )}
+                                            {mounted && user.role === "STUDENT" && (
+                                                <DropdownMenuItem asChild>
+                                                    <Link href="/applications" className="flex items-center gap-2 cursor-pointer w-full py-2">
+                                                        <BookOpen className="h-4 w-4 text-primary" />
+                                                        <span>My Applications</span>
+                                                    </Link>
+                                                </DropdownMenuItem>
                                             )}
                                             <DropdownMenuItem asChild>
                                                 <Link href="/saved" className="flex items-center gap-2 cursor-pointer w-full py-2">
@@ -260,7 +267,7 @@ export function Navbar() {
                                     <div className="h-12 w-full bg-muted animate-pulse rounded-xl" />
                                 ) : user ? (
                                     <div className="space-y-2">
-                                        {mounted && user.role !== "STUDENT" && (user.role !== "PROFESSOR" || user.isProfessorVerified || user.isVerified) && (
+                                        {mounted && user.role === "PROFESSOR" && (user.isProfessorVerified || user.isVerified) && (
                                             <Link
                                                 href="/dashboard"
                                                 onClick={() => setIsOpen(false)}
@@ -270,6 +277,32 @@ export function Navbar() {
                                                 Dashboard
                                             </Link>
                                         )}
+                                        {mounted && user.role === "STUDENT" && (
+                                            <Link
+                                                href="/applications"
+                                                onClick={() => setIsOpen(false)}
+                                                className="flex items-center gap-4 text-lg font-bold text-muted-foreground p-4 rounded-xl hover:bg-muted"
+                                            >
+                                                <BookOpen className="h-5 w-5" />
+                                                My Applications
+                                            </Link>
+                                        )}
+                                        <Link
+                                            href="/saved"
+                                            onClick={() => setIsOpen(false)}
+                                            className="flex items-center gap-4 text-lg font-bold text-muted-foreground p-4 rounded-xl hover:bg-muted"
+                                        >
+                                            <Bookmark className="h-5 w-5" />
+                                            Saved Scholarships
+                                        </Link>
+                                        <Link
+                                            href="/profile"
+                                            onClick={() => setIsOpen(false)}
+                                            className="flex items-center gap-4 text-lg font-bold text-muted-foreground p-4 rounded-xl hover:bg-muted"
+                                        >
+                                            <User className="h-5 w-5" />
+                                            My Profile
+                                        </Link>
                                         {mounted && user.role === "ADMIN" && (
                                             <Link
                                                 href="/admin"

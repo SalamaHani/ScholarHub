@@ -15,6 +15,7 @@ import {
     FileText,
     Bookmark,
     Share2,
+    Check,
     AlertCircle,
     Loader2,
     HelpCircle
@@ -39,8 +40,30 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
     const { data: isSaved, isLoading: isCheckingSaved } = useCheckSaved(id);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     const isPendingSave = save.isPending || remove.isPending;
+
+    const handleShare = async () => {
+        const url = window.location.href;
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopied(true);
+            toast({ title: "Link copied!", description: "Scholarship link copied to clipboard." });
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // Fallback for browsers that block clipboard
+            const input = document.createElement("input");
+            input.value = url;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand("copy");
+            document.body.removeChild(input);
+            setCopied(true);
+            toast({ title: "Link copied!", description: "Scholarship link copied to clipboard." });
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
 
     if (isLoading) {
         return <ScholarshipDetailSkeleton />;
@@ -267,9 +290,17 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                                             )}
                                             {isSaved ? 'Saved' : 'Save'}
                                         </Button>
-                                        <Button variant="ghost" className="flex-1 gap-2 text-xs font-bold border hover:bg-muted/50 transition-colors">
-                                            <Share2 className="h-4 w-4 text-primary" />
-                                            Share
+                                        <Button
+                                            variant="ghost"
+                                            onClick={handleShare}
+                                            className={`flex-1 gap-2 text-xs font-bold border transition-all ${copied ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "hover:bg-muted/50"}`}
+                                        >
+                                            {copied ? (
+                                                <Check className="h-4 w-4 text-emerald-600" />
+                                            ) : (
+                                                <Share2 className="h-4 w-4 text-primary" />
+                                            )}
+                                            {copied ? "Copied!" : "Share"}
                                         </Button>
                                     </div>
                                 </div>

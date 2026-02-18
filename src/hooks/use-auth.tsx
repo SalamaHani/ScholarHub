@@ -102,16 +102,13 @@ export const useAuth = () => {
     }, [dispatch, router]);
 
     const logout = useCallback(async () => {
-        try {
-            await dispatch(logoutUser()).unwrap();
-            toast({
-                title: "Logged out",
-                description: "You have been successfully logged out.",
-            });
-            router.push("/auth/login");
-        } catch (err) {
-            console.error("Logout failed:", err);
-        }
+        // Always clear local state first — regardless of API result
+        await dispatch(logoutUser());
+        toast({
+            title: "Logged out",
+            description: "You have been successfully logged out.",
+        });
+        router.push("/auth/login");
     }, [dispatch, router]);
 
     const editProfile = useCallback(async (profileData: any) => {

@@ -43,7 +43,12 @@ import {
     Check,
     X,
     HelpCircle,
-    Save
+    Save,
+    Settings,
+    Palette,
+    Monitor,
+    Globe,
+    Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,6 +88,7 @@ import { useApplications } from "@/hooks/useApplications";
 import { useCategories, CategoryInput } from "@/hooks/useCategories";
 import { useNotifications, SendNotificationInput } from "@/hooks/useNotifications";
 import { useTestimonials, Testimonial } from "@/hooks/useTestimonials";
+import { useSettings } from "@/hooks/useSettings";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -209,6 +215,10 @@ export default function AdminDashboardPage() {
                             <MessageSquare className="h-4 w-4" />
                             Testimonials
                         </TabsTrigger>
+                        <TabsTrigger value="settings" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-4 py-2 gap-2">
+                            <Settings className="h-4 w-4" />
+                            Settings
+                        </TabsTrigger>
                     </TabsList>
 
                     {/* Overview Tab */}
@@ -244,6 +254,11 @@ export default function AdminDashboardPage() {
                     {/* Testimonials Tab */}
                     <TabsContent value="testimonials">
                         <TestimonialsSection />
+                    </TabsContent>
+
+                    {/* Settings Tab */}
+                    <TabsContent value="settings">
+                        <SettingsSection />
                     </TabsContent>
                 </Tabs>
             </div>
@@ -407,10 +422,14 @@ function UsersSection() {
     const { list, updateRole, blockUser, unblockUser, deleteUser, verifyUser, updateProfile } = useUsers();
     const { allApplications } = useApplications();
     const { list: scholarshipsList } = useScholarships();
+    const { sendEmail } = useNotifications();
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
     const [viewingUser, setViewingUser] = useState<any | null>(null);
     const [editingUser, setEditingUser] = useState<any | null>(null);
+    const [emailingUser, setEmailingUser] = useState<any | null>(null);
+    const [emailSubject, setEmailSubject] = useState("");
+    const [emailBody, setEmailBody] = useState("");
 
     const users = useMemo(() => Array.isArray(list.data) ? list.data : list.data?.users || [], [list.data]);
 
@@ -578,6 +597,17 @@ function UsersSection() {
                                                             <Pencil className="h-4 w-4 mr-2" />
                                                             Edit Profile
                                                         </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={() => {
+                                                                setEmailSubject(`Message from ScholarHub Admin`);
+                                                                setEmailBody("");
+                                                                setEmailingUser(user);
+                                                            }}
+                                                            className="text-blue-600 focus:text-blue-600 focus:bg-blue-50"
+                                                        >
+                                                            <Mail className="h-4 w-4 mr-2" />
+                                                            Send Email
+                                                        </DropdownMenuItem>
                                                         {user.role === "PROFESSOR" && !user.professorProfile?.isVerified && (
                                                             <ConfirmActionDialog
                                                                 title="Verify User"
@@ -661,6 +691,61 @@ function UsersSection() {
                     </table>
                 </div>
             </Card>
+
+            {/* Send Email Dialog — Users */}
+            <Dialog open={!!emailingUser} onOpenChange={(open) => { if (!open) { setEmailingUser(null); setEmailBody(""); } }}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-primary" />
+                            Send Email to {emailingUser?.firstName ? `${emailingUser.firstName} ${emailingUser.lastName || ""}`.trim() : (emailingUser?.name || "User")}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="space-y-1.5">
+                            <Label>To</Label>
+                            <Input value={emailingUser?.email || ""} readOnly className="bg-muted text-muted-foreground text-sm" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label>Subject</Label>
+                            <Input
+                                value={emailSubject}
+                                onChange={(e) => setEmailSubject(e.target.value)}
+                                placeholder="Email subject..."
+                                className="text-sm"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label>Message</Label>
+                            <Textarea
+                                rows={6}
+                                value={emailBody}
+                                onChange={(e) => setEmailBody(e.target.value)}
+                                placeholder={`Dear ${emailingUser?.firstName || "User"},\n\n`}
+                                className="text-sm resize-none"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <DialogClose asChild>
+                            <Button variant="outline" size="sm">Cancel</Button>
+                        </DialogClose>
+                        <Button
+                            size="sm"
+                            className="gap-1.5 font-bold"
+                            disabled={!emailingUser?.email || !emailSubject || !emailBody || sendEmail.isPending}
+                            onClick={async () => {
+                                await sendEmail.mutateAsync({ to: emailingUser.email, subject: emailSubject, body: emailBody });
+                                setEmailingUser(null);
+                                setEmailBody("");
+                            }}
+                        >
+                            {sendEmail.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                            Send Email
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={!!viewingUser} onOpenChange={(open) => !open && setViewingUser(null)}>
                 <DialogContent className="sm:max-w-[600px] border-none shadow-2xl p-0 overflow-hidden">
@@ -1817,12 +1902,16 @@ function ScholarshipsSection() {
 // ============================================
 function ApplicationsSection() {
     const { allApplications, evaluate, remove, update } = useApplications();
+    const { sendEmail } = useNotifications();
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [viewingApplication, setViewingApplication] = useState<any>(null);
     const [evaluatingApplication, setEvaluatingApplication] = useState<any>(null);
     const [evaluationNotes, setEvaluationNotes] = useState("");
     const [targetStatus, setTargetStatus] = useState("");
+    const [emailingApp, setEmailingApp] = useState<any>(null);
+    const [appEmailSubject, setAppEmailSubject] = useState("");
+    const [appEmailBody, setAppEmailBody] = useState("");
 
     // Update evaluation states when viewing or evaluating a new application
     useEffect(() => {
@@ -1970,6 +2059,17 @@ function ApplicationsSection() {
                                                             <Pencil className="h-4 w-4 mr-2" />
                                                             Update Status
                                                         </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={() => {
+                                                                setAppEmailSubject(`Re: Your Application for ${app.scholarship?.title || "Scholarship"}`);
+                                                                setAppEmailBody("");
+                                                                setEmailingApp(app);
+                                                            }}
+                                                            className="text-blue-600 focus:text-blue-600 focus:bg-blue-50"
+                                                        >
+                                                            <Mail className="h-4 w-4 mr-2" />
+                                                            Send Email
+                                                        </DropdownMenuItem>
 
                                                         <DropdownMenuSeparator />
 
@@ -2030,6 +2130,61 @@ function ApplicationsSection() {
                     </table>
                 </div>
             </Card>
+
+            {/* Send Email Dialog — Applications */}
+            <Dialog open={!!emailingApp} onOpenChange={(open) => { if (!open) { setEmailingApp(null); setAppEmailBody(""); } }}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-primary" />
+                            Send Email to {emailingApp?.user ? `${emailingApp.user.firstName || ""} ${emailingApp.user.lastName || ""}`.trim() : "Student"}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="space-y-1.5">
+                            <Label>To</Label>
+                            <Input value={emailingApp?.user?.email || ""} readOnly className="bg-muted text-muted-foreground text-sm" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label>Subject</Label>
+                            <Input
+                                value={appEmailSubject}
+                                onChange={(e) => setAppEmailSubject(e.target.value)}
+                                placeholder="Email subject..."
+                                className="text-sm"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label>Message</Label>
+                            <Textarea
+                                rows={6}
+                                value={appEmailBody}
+                                onChange={(e) => setAppEmailBody(e.target.value)}
+                                placeholder={`Dear ${emailingApp?.user?.firstName || "Student"},\n\n`}
+                                className="text-sm resize-none"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <DialogClose asChild>
+                            <Button variant="outline" size="sm">Cancel</Button>
+                        </DialogClose>
+                        <Button
+                            size="sm"
+                            className="gap-1.5 font-bold"
+                            disabled={!emailingApp?.user?.email || !appEmailSubject || !appEmailBody || sendEmail.isPending}
+                            onClick={async () => {
+                                await sendEmail.mutateAsync({ to: emailingApp.user.email, subject: appEmailSubject, body: appEmailBody });
+                                setEmailingApp(null);
+                                setAppEmailBody("");
+                            }}
+                        >
+                            {sendEmail.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                            Send Email
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={!!viewingApplication} onOpenChange={(open) => !open && setViewingApplication(null)}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
@@ -3540,5 +3695,342 @@ function TestimonialDialog({
                 </form>
             </DialogContent>
         </Dialog>
+    );
+}
+
+// ============================================
+// SETTINGS SECTION
+// ============================================
+
+const THEME_PRESETS = [
+    { name: "Ocean Blue",   primary: "217 91% 60%", hex: "#3b82f6", ring: "217 91% 60%" },
+    { name: "Forest Green", primary: "142 71% 45%", hex: "#22c55e", ring: "142 71% 45%" },
+    { name: "Royal Purple", primary: "262 80% 58%", hex: "#8b5cf6", ring: "262 80% 58%" },
+    { name: "Rose Red",     primary: "346 77% 55%", hex: "#f43f5e", ring: "346 77% 55%" },
+    { name: "Amber Gold",   primary: "38 92% 50%",  hex: "#f59e0b", ring: "38 92% 50%"  },
+    { name: "Teal",         primary: "173 58% 39%", hex: "#14b8a6", ring: "173 58% 39%" },
+    { name: "Indigo",       primary: "239 84% 67%", hex: "#6366f1", ring: "239 84% 67%" },
+    { name: "Slate",        primary: "215 25% 45%", hex: "#64748b", ring: "215 25% 45%" },
+];
+
+function applyTheme(primary: string, ring: string) {
+    const root = document.documentElement;
+    root.style.setProperty("--primary", primary);
+    root.style.setProperty("--ring", ring);
+    localStorage.setItem("scholarhub_theme_primary", primary);
+    localStorage.setItem("scholarhub_theme_ring", ring);
+}
+
+function SettingsSection() {
+    const { settings, save, isLoaded } = useSettings();
+    const [localSettings, setLocalSettings] = useState(settings);
+    const [saved, setSaved] = useState(false);
+
+    useEffect(() => {
+        if (isLoaded) setLocalSettings(settings);
+    }, [isLoaded]);
+
+    const activePreset = THEME_PRESETS.find(p => p.primary === localSettings.themePrimary) || THEME_PRESETS[0];
+
+    const handleThemeSelect = (preset: typeof THEME_PRESETS[0]) => {
+        setLocalSettings(prev => ({ ...prev, themePrimary: preset.primary, themeRing: preset.ring }));
+        applyTheme(preset.primary, preset.ring);
+    };
+
+    const handleSave = () => {
+        save(localSettings);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+        >
+            <div>
+                <h2 className="text-2xl font-bold">Platform Settings</h2>
+                <p className="text-muted-foreground">Manage appearance, project info, and system configuration.</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                {/* ── Theme Color ──────────────────────────────────────── */}
+                <Card className="border-none shadow-lg">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Palette className="h-5 w-5 text-primary" />
+                            Theme Color
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">Choose the primary color used across the entire platform.</p>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                        <div className="grid grid-cols-4 gap-3">
+                            {THEME_PRESETS.map((preset) => {
+                                const isActive = localSettings.themePrimary === preset.primary;
+                                return (
+                                    <button
+                                        key={preset.name}
+                                        onClick={() => handleThemeSelect(preset)}
+                                        title={preset.name}
+                                        className={cn(
+                                            "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all",
+                                            isActive ? "border-slate-700 scale-105 shadow-md" : "border-transparent hover:border-slate-200"
+                                        )}
+                                    >
+                                        <div
+                                            className="h-10 w-10 rounded-full shadow flex items-center justify-center"
+                                            style={{ backgroundColor: preset.hex }}
+                                        >
+                                            {isActive && <Check className="h-5 w-5 text-white" />}
+                                        </div>
+                                        <span className="text-[10px] font-semibold text-center text-muted-foreground leading-tight">
+                                            {preset.name}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Preview */}
+                        <div className="p-4 rounded-xl bg-muted/30 border space-y-3">
+                            <p className="text-[10px] font-bold tracking-widest text-muted-foreground">LIVE PREVIEW</p>
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <div
+                                    className="h-8 px-4 rounded-lg flex items-center text-xs font-bold text-white shadow-sm"
+                                    style={{ backgroundColor: activePreset.hex }}
+                                >
+                                    Primary Button
+                                </div>
+                                <div
+                                    className="h-8 px-4 rounded-lg flex items-center text-xs font-bold border-2 bg-transparent"
+                                    style={{ color: activePreset.hex, borderColor: activePreset.hex }}
+                                >
+                                    Outline
+                                </div>
+                                <Badge style={{ backgroundColor: activePreset.hex + "20", color: activePreset.hex }} className="border-0 font-bold text-xs">
+                                    Badge
+                                </Badge>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* ── Project Info ─────────────────────────────────────── */}
+                <Card className="border-none shadow-lg">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Globe className="h-5 w-5 text-primary" />
+                            Project Information
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">General details shown across the platform.</p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Platform Name</Label>
+                            <Input value={localSettings.siteName} onChange={(e) => setLocalSettings(prev => ({ ...prev, siteName: e.target.value }))} className="text-sm" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Platform Description</Label>
+                            <Textarea
+                                value={localSettings.siteDescription}
+                                onChange={(e) => setLocalSettings(prev => ({ ...prev, siteDescription: e.target.value }))}
+                                className="text-sm resize-none"
+                                rows={3}
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Support Email</Label>
+                            <Input value={localSettings.contactEmail} onChange={(e) => setLocalSettings(prev => ({ ...prev, contactEmail: e.target.value }))} type="email" className="text-sm" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* ── System Settings ──────────────────────────────────── */}
+                <Card className="border-none shadow-lg">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Monitor className="h-5 w-5 text-primary" />
+                            System Settings
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">Control platform-wide behaviour.</p>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {[
+                            { label: "Maintenance Mode", desc: "Temporarily restrict access.", value: localSettings.maintenanceMode, set: (v: boolean) => setLocalSettings(prev => ({ ...prev, maintenanceMode: v })), danger: true },
+                            { label: "Student Registrations", desc: "Allow new student sign-ups.", value: localSettings.studentsOpen, set: (v: boolean) => setLocalSettings(prev => ({ ...prev, studentsOpen: v })), danger: false },
+                            { label: "Professor Applications", desc: "Accept professor requests.", value: localSettings.professorsOpen, set: (v: boolean) => setLocalSettings(prev => ({ ...prev, professorsOpen: v })), danger: false },
+                        ].map(({ label, desc, value, set, danger }) => (
+                            <div key={label} className="flex items-center justify-between p-4 rounded-xl border bg-muted/20">
+                                <div>
+                                    <p className="text-sm font-semibold">{label}</p>
+                                    <p className="text-xs text-muted-foreground">{desc}</p>
+                                </div>
+                                <button
+                                    onClick={() => set(!value)}
+                                    className={cn(
+                                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                                        value ? (danger ? "bg-rose-500" : "bg-primary") : "bg-muted-foreground/30"
+                                    )}
+                                >
+                                    <span className={cn(
+                                        "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform",
+                                        value ? "translate-x-6" : "translate-x-1"
+                                    )} />
+                                </button>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+
+                {/* ── Security ─────────────────────────────────────────── */}
+                <Card className="border-none shadow-lg">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Lock className="h-5 w-5 text-primary" />
+                            Security & Access
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">Platform-level security configuration.</p>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div className="p-4 rounded-xl border bg-emerald-50 border-emerald-200 flex items-start gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+                            <div>
+                                <p className="text-sm font-semibold text-emerald-800">JWT Authentication Active</p>
+                                <p className="text-xs text-emerald-600 mt-0.5">Token-based auth enabled and working correctly.</p>
+                            </div>
+                        </div>
+                        <div className="p-4 rounded-xl border bg-blue-50 border-blue-200 flex items-start gap-3">
+                            <Shield className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
+                            <div>
+                                <p className="text-sm font-semibold text-blue-800">Role-Based Access Control</p>
+                                <p className="text-xs text-blue-600 mt-0.5">STUDENT / PROFESSOR / ADMIN roles enforced on all routes.</p>
+                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Admin Key Preview</Label>
+                            <Input value="••••••••••••••••••••3f9a" readOnly className="text-sm font-mono bg-muted" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* ── SEO / Metadata ────────────────────────────────────── */}
+            <div>
+                <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-primary" />
+                    SEO &amp; Metadata
+                </h3>
+                <p className="text-sm text-muted-foreground mb-5">
+                    Control what search engines and social platforms display for your site.
+                    Changes here update <code className="text-xs bg-muted px-1 py-0.5 rounded">src/app/layout.tsx</code> on next deploy.
+                </p>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Basic Meta */}
+                    <Card className="border-none shadow-lg">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-primary" />
+                                Basic Meta Tags
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Page Title <span className="text-muted-foreground font-normal">(shown in browser tab &amp; Google)</span></Label>
+                                <Input
+                                    value={localSettings.metaTitle}
+                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, metaTitle: e.target.value }))}
+                                    className="text-sm"
+                                    maxLength={70}
+                                />
+                                <p className="text-[10px] text-muted-foreground text-right">{localSettings.metaTitle.length}/70 chars</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Meta Description <span className="text-muted-foreground font-normal">(shown in search results)</span></Label>
+                                <Textarea
+                                    value={localSettings.metaDescription}
+                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, metaDescription: e.target.value }))}
+                                    className="text-sm resize-none"
+                                    rows={3}
+                                    maxLength={160}
+                                />
+                                <p className="text-[10px] text-muted-foreground text-right">{localSettings.metaDescription.length}/160 chars</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Keywords <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
+                                <Textarea
+                                    value={localSettings.metaKeywords}
+                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, metaKeywords: e.target.value }))}
+                                    className="text-sm resize-none font-mono"
+                                    rows={2}
+                                    placeholder="scholarships, students, education..."
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Open Graph / Social */}
+                    <Card className="border-none shadow-lg">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                <ExternalLink className="h-4 w-4 text-primary" />
+                                Open Graph &amp; Social Sharing
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">OG Title</Label>
+                                <Input
+                                    value={localSettings.ogTitle}
+                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, ogTitle: e.target.value }))}
+                                    className="text-sm"
+                                    maxLength={70}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">OG Description</Label>
+                                <Textarea
+                                    value={localSettings.ogDescription}
+                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, ogDescription: e.target.value }))}
+                                    className="text-sm resize-none"
+                                    rows={3}
+                                    maxLength={200}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">OG Image URL <span className="text-muted-foreground font-normal">(1200×630 recommended)</span></Label>
+                                <Input
+                                    value={localSettings.ogImage}
+                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, ogImage: e.target.value }))}
+                                    className="text-sm font-mono"
+                                    placeholder="https://yourdomain.com/og-image.png"
+                                />
+                            </div>
+                            {/* Preview card */}
+                            {(localSettings.ogTitle || localSettings.ogDescription || localSettings.ogImage) && (
+                                <div className="mt-2 rounded-xl border overflow-hidden bg-white shadow-sm">
+                                    {localSettings.ogImage && (
+                                        <div className="h-28 bg-muted flex items-center justify-center text-xs text-muted-foreground border-b" style={{ backgroundImage: `url(${localSettings.ogImage})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                                    )}
+                                    <div className="p-3">
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">scholarhub.com</p>
+                                        <p className="text-sm font-bold line-clamp-1 mt-0.5">{localSettings.ogTitle || localSettings.metaTitle}</p>
+                                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{localSettings.ogDescription || localSettings.metaDescription}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+
+            {/* Save */}
+            <div className="flex justify-end">
+                <Button className="gap-2 font-bold px-8" onClick={handleSave}>
+                    {saved ? <><Check className="h-4 w-4" /> Saved!</> : <><Save className="h-4 w-4" /> Save Settings</>}
+                </Button>
+            </div>
+        </motion.div>
     );
 }

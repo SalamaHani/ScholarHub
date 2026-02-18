@@ -30,7 +30,8 @@ import {
     Pencil,
     Send,
     Download,
-    FileText
+    FileText,
+    Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -832,6 +833,24 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
 function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
     const [isEvalOpen, setIsEvalOpen] = useState(false);
     const [evaluationText, setEvaluationText] = useState(application.evaluation || "");
+    const [isEmailOpen, setIsEmailOpen] = useState(false);
+    const [emailSubject, setEmailSubject] = useState(
+        `Re: Your Application for ${application.scholarship?.title || "Scholarship"}`
+    );
+    const [emailBody, setEmailBody] = useState("");
+
+    const studentEmail = application.user?.email || application.student?.email || "";
+    const studentName = application.user?.firstName
+        ? `${application.user.firstName} ${application.user.lastName || ""}`.trim()
+        : (application.student?.name || "Student");
+
+    const handleSendEmail = () => {
+        if (!studentEmail) return;
+        const mailto = `mailto:${studentEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        window.open(mailto, "_blank");
+        setIsEmailOpen(false);
+        setEmailBody("");
+    };
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -887,6 +906,64 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
 
             {/* Actions Column */}
             <td className="px-6 py-4 text-right">
+                <div className="flex items-center justify-end gap-2">
+                {/* Send Email Dialog */}
+                <Dialog open={isEmailOpen} onOpenChange={setIsEmailOpen}>
+                    <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="h-8 text-xs font-bold gap-1" disabled={!studentEmail}>
+                            <Mail className="h-3 w-3" />
+                            Email
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <Mail className="h-4 w-4 text-primary" />
+                                Send Email to {studentName}
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-2">
+                            <div className="space-y-1.5">
+                                <Label>To</Label>
+                                <Input value={studentEmail} readOnly className="bg-muted text-muted-foreground text-sm" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>Subject</Label>
+                                <Input
+                                    value={emailSubject}
+                                    onChange={(e) => setEmailSubject(e.target.value)}
+                                    placeholder="Email subject..."
+                                    className="text-sm"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>Message</Label>
+                                <Textarea
+                                    rows={6}
+                                    value={emailBody}
+                                    onChange={(e) => setEmailBody(e.target.value)}
+                                    placeholder={`Dear ${studentName},\n\n`}
+                                    className="text-sm resize-none"
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter className="gap-2">
+                            <DialogClose asChild>
+                                <Button variant="outline" size="sm">Cancel</Button>
+                            </DialogClose>
+                            <Button
+                                size="sm"
+                                className="gap-1.5 font-bold"
+                                onClick={handleSendEmail}
+                                disabled={!studentEmail || !emailSubject}
+                            >
+                                <Send className="h-3.5 w-3.5" />
+                                Open in Mail App
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
                 <Dialog open={isEvalOpen} onOpenChange={setIsEvalOpen}>
                     <DialogTrigger asChild>
                         <Button size="sm" variant="outline" className="h-8 text-xs font-bold">
@@ -1138,6 +1215,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+                </div>
             </td>
         </tr>
     );
