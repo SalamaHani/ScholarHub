@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Check, Loader2 } from "lucide-react";
+import { Bell, Check, Loader2, GraduationCap, FileText, CheckCircle, AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,10 @@ import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function NotificationsPage() {
+    const { t } = useTranslation();
     const router = useRouter();
     const { list, markRead } = useNotifications();
     const [filter, setFilter] = useState<"all" | "unread">("all");
@@ -100,16 +102,16 @@ export default function NotificationsPage() {
                         <CardContent className="py-20 flex flex-col items-center text-center gap-4">
                             <Bell className="h-16 w-16 text-muted-foreground/20 mx-auto" />
                             <div className="space-y-1">
-                                <h3 className="text-lg font-semibold">Could not load notifications</h3>
+                                <h3 className="text-lg font-semibold">{t.notifications.errorTitle}</h3>
                                 <p className="text-muted-foreground text-sm">
-                                    Something went wrong while fetching your notifications. Please try again.
+                                    {t.notifications.errorDesc}
                                 </p>
                             </div>
                             <button
                                 onClick={() => list.refetch()}
                                 className="text-sm text-primary underline underline-offset-2"
                             >
-                                Retry
+                                {t.notifications.retry}
                             </button>
                         </CardContent>
                     </Card>
@@ -126,10 +128,10 @@ export default function NotificationsPage() {
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <Bell className="h-5 w-5 text-primary" />
-                            <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
+                            <h1 className="text-3xl font-bold tracking-tight">{t.notifications.title}</h1>
                         </div>
                         <p className="text-muted-foreground text-sm">
-                            Click a notification to mark it as read
+                            {t.notifications.subtitle}
                         </p>
                     </div>
 
@@ -138,7 +140,7 @@ export default function NotificationsPage() {
                             variant="secondary"
                             className="text-sm px-3 py-1 self-start md:self-auto"
                         >
-                            {unreadNotifications.length} unread
+                            {unreadNotifications.length} {t.notifications.unread}
                         </Badge>
                     )}
                 </div>
@@ -151,13 +153,13 @@ export default function NotificationsPage() {
                 >
                     <TabsList>
                         <TabsTrigger value="all" className="gap-2">
-                            All
+                            {t.notifications.all}
                             <Badge variant="secondary" className="h-5 text-xs">
                                 {notifications.length}
                             </Badge>
                         </TabsTrigger>
                         <TabsTrigger value="unread" className="gap-2">
-                            Unread
+                            {t.notifications.unreadTab}
                             <Badge variant="secondary" className="h-5 text-xs">
                                 {unreadNotifications.length}
                             </Badge>
@@ -171,12 +173,12 @@ export default function NotificationsPage() {
                         <CardContent className="py-16 text-center">
                             <Bell className="h-16 w-16 text-muted-foreground/20 mx-auto mb-4" />
                             <h3 className="text-lg font-semibold mb-2">
-                                {filter === "all" ? "No notifications yet" : "All caught up!"}
+                                {filter === "all" ? t.notifications.emptyTitle : t.notifications.allCaughtUp}
                             </h3>
                             <p className="text-muted-foreground text-sm">
                                 {filter === "all"
-                                    ? "We'll notify you when something important happens"
-                                    : "You've read all your notifications"}
+                                    ? t.notifications.emptyDesc
+                                    : t.notifications.allReadDesc}
                             </p>
                         </CardContent>
                     </Card>
@@ -202,6 +204,7 @@ interface NotificationCardProps {
 }
 
 function NotificationCard({ notification, onClick }: NotificationCardProps) {
+    const { t } = useTranslation();
     const getTypeColor = (type: string) => {
         switch (type) {
             case "SCHOLARSHIP": return "bg-blue-50 border-blue-200 text-blue-700";
@@ -212,13 +215,13 @@ function NotificationCard({ notification, onClick }: NotificationCardProps) {
         }
     };
 
-    const getIcon = (type: string) => {
+    const getIconConfig = (type: string) => {
         switch (type) {
-            case "SCHOLARSHIP": return "🎓";
-            case "APPLICATION":  return "📝";
-            case "SUCCESS":      return "✅";
-            case "WARNING":      return "⚠️";
-            default:             return "ℹ️";
+            case "SCHOLARSHIP": return { Icon: GraduationCap, bg: "bg-blue-100",   color: "text-blue-600"   };
+            case "APPLICATION":  return { Icon: FileText,      bg: "bg-purple-100", color: "text-purple-600" };
+            case "SUCCESS":      return { Icon: CheckCircle,   bg: "bg-emerald-100",color: "text-emerald-600"};
+            case "WARNING":      return { Icon: AlertTriangle, bg: "bg-amber-100",  color: "text-amber-600"  };
+            default:             return { Icon: Info,          bg: "bg-slate-100",  color: "text-slate-600"  };
         }
     };
 
@@ -239,7 +242,14 @@ function NotificationCard({ notification, onClick }: NotificationCardProps) {
             <div className="p-5">
                 <div className="flex items-start gap-4">
                     {/* Type icon */}
-                    <div className="text-3xl shrink-0">{getIcon(notification.type)}</div>
+                    {(() => {
+                        const { Icon, bg, color } = getIconConfig(notification.type);
+                        return (
+                            <div className={cn("shrink-0 p-2.5 rounded-xl", bg)}>
+                                <Icon className={cn("h-5 w-5", color)} />
+                            </div>
+                        );
+                    })()}
 
                     {/* Content */}
                     <div className="flex-1 min-w-0 space-y-1.5">
@@ -281,11 +291,11 @@ function NotificationCard({ notification, onClick }: NotificationCardProps) {
                             {notification.isRead ? (
                                 <span className="flex items-center gap-1 text-[11px] text-muted-foreground/60 font-medium">
                                     <Check className="h-3 w-3" />
-                                    Read
+                                    {t.notifications.read}
                                 </span>
                             ) : (
                                 <span className="text-[11px] text-primary font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                                    Click to mark as read
+                                    {t.notifications.markAsRead}
                                 </span>
                             )}
                         </div>

@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import React from "react";
 
 import { useTestimonials, Testimonial } from "@/hooks/useTestimonials";
+import { useTranslation } from "@/hooks/useTranslation";
 
 
 const GRADIENTS = [
@@ -23,6 +24,7 @@ export default function AuthLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const { t } = useTranslation();
     const pathname = usePathname();
     const isLogin = pathname === "/auth/login";
     const { list } = useTestimonials({ limit: 10, isActive: true });
@@ -120,7 +122,7 @@ export default function AuthLayout({
                         href={isLogin ? "/auth/register" : "/auth/login"}
                         className="text-sm font-semibold text-zinc-500 hover:text-primary transition-colors flex items-center gap-1.5 px-4 py-2 rounded-full border border-zinc-200 hover:border-primary/30 hover:bg-primary/5 shadow-sm"
                     >
-                        {isLogin ? "Create an account" : "Back to Login"}
+                        {isLogin ? t.auth.createAccount : t.auth.backToLogin}
                     </Link>
                 </div>
 

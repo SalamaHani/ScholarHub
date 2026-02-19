@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useScholarships } from "@/hooks/useScholarships";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,13 +29,13 @@ function formatDeadline(deadline: string): string {
     });
 }
 
-function getDaysConfig(days: number) {
-    if (days < 0)   return { label: `Expired ${Math.abs(days)}d ago`, color: "text-slate-500 bg-slate-50 border-slate-200",       border: "border-l-slate-300"    };
-    if (days === 0) return { label: "Closes today!",                   color: "text-red-600 bg-red-50 border-red-300",             border: "border-l-red-500"      };
-    if (days <= 7)  return { label: `${days}d left`,                   color: "text-red-600 bg-red-50 border-red-200",             border: "border-l-red-400"      };
-    if (days <= 14) return { label: `${days}d left`,                   color: "text-amber-600 bg-amber-50 border-amber-200",       border: "border-l-amber-400"    };
-    if (days <= 30) return { label: `${days}d left`,                   color: "text-orange-600 bg-orange-50 border-orange-200",    border: "border-l-orange-400"   };
-    return          { label: `${days}d left`,                          color: "text-emerald-600 bg-emerald-50 border-emerald-200", border: "border-l-emerald-400"  };
+function getDaysConfig(days: number, closesToday: string, daysLeft: string, expiredDaysAgo: string) {
+    if (days < 0)   return { label: `${Math.abs(days)}${expiredDaysAgo}`, color: "text-slate-500 bg-slate-50 border-slate-200",       border: "border-l-slate-300"    };
+    if (days === 0) return { label: closesToday,                           color: "text-red-600 bg-red-50 border-red-300",             border: "border-l-red-500"      };
+    if (days <= 7)  return { label: `${days}${daysLeft}`,                  color: "text-red-600 bg-red-50 border-red-200",             border: "border-l-red-400"      };
+    if (days <= 14) return { label: `${days}${daysLeft}`,                  color: "text-amber-600 bg-amber-50 border-amber-200",       border: "border-l-amber-400"    };
+    if (days <= 30) return { label: `${days}${daysLeft}`,                  color: "text-orange-600 bg-orange-50 border-orange-200",    border: "border-l-orange-400"   };
+    return          { label: `${days}${daysLeft}`,                         color: "text-emerald-600 bg-emerald-50 border-emerald-200", border: "border-l-emerald-400"  };
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -63,8 +64,9 @@ function DeadlineSkeleton() {
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
 function DeadlineCard({ scholarship }: { scholarship: any }) {
+    const { t } = useTranslation();
     const days = getDaysLeft(scholarship.deadline);
-    const cfg = getDaysConfig(days);
+    const cfg = getDaysConfig(days, t.deadlines.closesToday, t.deadlines.daysLeft, t.deadlines.expiredDaysAgo);
     const isExpired = days < 0;
 
     return (
@@ -77,10 +79,10 @@ function DeadlineCard({ scholarship }: { scholarship: any }) {
                                 {scholarship.title}
                             </h3>
                             {!isExpired && days <= 7 && (
-                                <Badge variant="destructive" className="text-[10px] h-4 px-1.5">Urgent</Badge>
+                                <Badge variant="destructive" className="text-[10px] h-4 px-1.5">{t.deadlines.urgent}</Badge>
                             )}
                             {isExpired && (
-                                <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-slate-500">Expired</Badge>
+                                <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-slate-500">{t.deadlines.expired}</Badge>
                             )}
                         </div>
                         <p className="text-sm text-muted-foreground">{scholarship.organization}</p>
@@ -107,7 +109,7 @@ function DeadlineCard({ scholarship }: { scholarship: any }) {
                         </Badge>
                         <Link href={`/scholarships/${scholarship.id}`}>
                             <Button size="sm" variant={isExpired ? "ghost" : "outline"} className="gap-1">
-                                {isExpired ? "View" : "Apply"}
+                                {isExpired ? t.deadlines.view : t.deadlines.apply}
                                 <ArrowRight className="h-3 w-3" />
                             </Button>
                         </Link>
@@ -135,6 +137,7 @@ function EmptyState({ message }: { message: string }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DeadlinesPage() {
+    const { t } = useTranslation();
     const { list } = useScholarships();
     const [search, setSearch] = useState("");
     const [tab, setTab] = useState("upcoming");
@@ -188,12 +191,11 @@ export default function DeadlinesPage() {
                 <div className="mb-8 space-y-2">
                     <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-wider">
                         <Calendar className="h-4 w-4" />
-                        SCHOLARSHIP DEADLINES
+                        {t.deadlines.tag}
                     </div>
-                    <h1 className="text-4xl font-extrabold tracking-tight">Don't Miss a Deadline</h1>
+                    <h1 className="text-4xl font-extrabold tracking-tight">{t.deadlines.title}</h1>
                     <p className="text-muted-foreground max-w-xl">
-                        Real deadlines from all scholarships on the platform, sorted by closing date.
-                        Expired scholarships are shown separately.
+                        {t.deadlines.desc}
                     </p>
                 </div>
 
@@ -202,7 +204,7 @@ export default function DeadlinesPage() {
                     <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 mb-6">
                         <AlertCircle className="h-5 w-5 shrink-0" />
                         <p className="text-sm font-medium">
-                            <strong>{urgentCount} scholarship{urgentCount > 1 ? "s" : ""}</strong> closing within the next 14 days — apply now!
+                            <strong>{urgentCount}</strong> {t.deadlines.closingSoon}
                         </p>
                     </div>
                 )}
@@ -211,7 +213,7 @@ export default function DeadlinesPage() {
                 <div className="relative mb-6">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search by scholarship name or organization..."
+                        placeholder={t.deadlines.searchPlaceholder}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="pl-10 bg-white"
@@ -223,7 +225,7 @@ export default function DeadlinesPage() {
                     <TabsList className="w-full bg-white border rounded-xl p-1 mb-6 shadow-sm">
                         <TabsTrigger value="upcoming" className="flex-1 gap-2 rounded-lg">
                             <Clock className="h-4 w-4 text-emerald-500" />
-                            Upcoming
+                            {t.deadlines.upcoming}
                             <Badge
                                 variant={tab === "upcoming" ? "default" : "secondary"}
                                 className="h-5 min-w-[20px] text-[11px] px-1.5 rounded-full"
@@ -233,7 +235,7 @@ export default function DeadlinesPage() {
                         </TabsTrigger>
                         <TabsTrigger value="expired" className="flex-1 gap-2 rounded-lg">
                             <XCircle className="h-4 w-4 text-slate-400" />
-                            Expired
+                            {t.deadlines.expired}
                             <Badge
                                 variant={tab === "expired" ? "default" : "secondary"}
                                 className="h-5 min-w-[20px] text-[11px] px-1.5 rounded-full"
@@ -250,19 +252,19 @@ export default function DeadlinesPage() {
                             <Card>
                                 <CardContent className="py-16 text-center">
                                     <AlertCircle className="h-12 w-12 mx-auto text-destructive/30 mb-4" />
-                                    <h3 className="text-lg font-bold mb-1">Could not load deadlines</h3>
+                                    <h3 className="text-lg font-bold mb-1">{t.deadlines.errorTitle}</h3>
                                     <p className="text-sm text-muted-foreground mb-4">
-                                        Something went wrong fetching scholarships.
+                                        {t.deadlines.errorDesc}
                                     </p>
-                                    <Button variant="outline" onClick={() => list.refetch()}>Retry</Button>
+                                    <Button variant="outline" onClick={() => list.refetch()}>{t.deadlines.retry}</Button>
                                 </CardContent>
                             </Card>
                         ) : upcoming.length === 0 ? (
                             <EmptyState
                                 message={
                                     search
-                                        ? "No upcoming scholarships match your search."
-                                        : "No upcoming deadlines found."
+                                        ? t.deadlines.noUpcomingSearch
+                                        : t.deadlines.noUpcoming
                                 }
                             />
                         ) : (
@@ -279,8 +281,8 @@ export default function DeadlinesPage() {
                             <EmptyState
                                 message={
                                     search
-                                        ? "No expired scholarships match your search."
-                                        : "No expired scholarships found."
+                                        ? t.deadlines.noExpiredSearch
+                                        : t.deadlines.noExpired
                                 }
                             />
                         ) : (
@@ -294,7 +296,7 @@ export default function DeadlinesPage() {
                 <div className="mt-8 text-center">
                     <Link href="/scholarships">
                         <Button variant="outline" className="gap-2">
-                            Browse All Scholarships
+                            {t.deadlines.browseAll}
                             <ArrowRight className="h-4 w-4" />
                         </Button>
                     </Link>

@@ -6,18 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { BookOpen, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useScholarships } from "@/hooks/useScholarships";
 import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { ScholarshipForm } from "@/components/scholarships";
-import { Plus } from "lucide-react";
 import { ScholarshipCardSkeletonGrid } from "@/components/skeletons";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function ScholarshipsClient() {
+    const { t } = useTranslation();
     const [page, setPage] = useState(1);
     const initialFilters = {
         search: "",
@@ -27,7 +20,6 @@ export default function ScholarshipsClient() {
         fieldOfStudy: "",
     };
     const [filters, setFilters] = useState(initialFilters);
-    const [isPostDialogOpen, setIsPostDialogOpen] = useState(false);
 
     const { list } = useScholarships({
         page,
@@ -64,16 +56,14 @@ export default function ScholarshipsClient() {
                         <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="gap-1">
                                 <BookOpen className="h-3 w-3" />
-                                Scholarships
+                                {t.scholarships.title}
                             </Badge>
                         </div>
                         <h1 className="text-3xl md:text-4xl font-bold">
-                            Browse Scholarships
+                            {t.scholarships.browseTitle}
                         </h1>
                         <p className="text-muted-foreground max-w-2xl">
-                            Discover {pagination.totalItems || "..."} scholarship opportunities from prestigious
-                            institutions around the world. Use the filters below to find scholarships
-                            that match your profile.
+                            {t.scholarships.browseSub}
                         </p>
                     </div>
                 </div>
@@ -88,11 +78,15 @@ export default function ScholarshipsClient() {
                             {list.isLoading ? (
                                 <span className="flex items-center gap-2">
                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                    Loading scholarships...
+                                    {t.scholarships.loading}
                                 </span>
                             ) : (
                                 <>
-                                    Showing <span className="font-semibold text-foreground">{scholarships.length}</span> of <span className="font-semibold text-foreground">{pagination.totalItems}</span> scholarships
+                                    {t.scholarships.showing}{" "}
+                                    <span className="font-semibold text-foreground">{scholarships.length}</span>{" "}
+                                    {t.scholarships.of}{" "}
+                                    <span className="font-semibold text-foreground">{pagination.totalItems}</span>{" "}
+                                    {t.scholarships.scholarshipsLabel}
                                 </>
                             )}
                         </p>
@@ -117,16 +111,16 @@ export default function ScholarshipsClient() {
                                 <BookOpen className="h-6 w-6 text-zinc-400" />
                             </div>
                             <div className="space-y-1">
-                                <h3 className="text-lg font-semibold">No scholarships found</h3>
+                                <h3 className="text-lg font-semibold">{t.scholarships.noFound}</h3>
                                 <p className="text-muted-foreground text-sm max-w-[250px] mx-auto">
-                                    Try adjusting your search or filters to find what you&apos;re looking for.
+                                    {t.scholarships.noFoundSub}
                                 </p>
                             </div>
                             <Button variant="outline" size="sm" onClick={() => {
                                 setFilters(initialFilters);
                                 setPage(1);
                             }}>
-                                Reset all filters
+                                {t.scholarships.resetFilters}
                             </Button>
                         </div>
                     )}
@@ -142,7 +136,7 @@ export default function ScholarshipsClient() {
                                 className="h-9 px-3"
                             >
                                 <ChevronLeft className="h-4 w-4 mr-1" />
-                                Previous
+                                {t.scholarships.previous}
                             </Button>
 
                             <div className="hidden sm:flex items-center gap-1">
@@ -183,7 +177,7 @@ export default function ScholarshipsClient() {
                                 disabled={page === pagination.totalPages || list.isLoading}
                                 className="h-9 px-3"
                             >
-                                Next
+                                {t.scholarships.next}
                                 <ChevronRight className="h-4 w-4 ml-1" />
                             </Button>
                         </div>

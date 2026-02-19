@@ -31,8 +31,10 @@ import { useSavedScholarships, useCheckSaved } from "@/hooks/useSavedScholarship
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
 import { ScholarshipDetailSkeleton } from "@/components/skeletons";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function ScholarshipDetailPage({ params }: { params: { id: string } }) {
+    const { t } = useTranslation();
     const { id } = params;
     const { data: scholarship, isLoading, error } = useScholarship(id);
     const { save, remove } = useSavedScholarships();
@@ -49,7 +51,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
         try {
             await navigator.clipboard.writeText(url);
             setCopied(true);
-            toast({ title: "Link copied!", description: "Scholarship link copied to clipboard." });
+            toast({ title: t.scholarships.linkCopied, description: t.scholarships.linkCopiedDesc });
             setTimeout(() => setCopied(false), 2000);
         } catch {
             // Fallback for browsers that block clipboard
@@ -60,7 +62,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
             document.execCommand("copy");
             document.body.removeChild(input);
             setCopied(true);
-            toast({ title: "Link copied!", description: "Scholarship link copied to clipboard." });
+            toast({ title: t.scholarships.linkCopied, description: t.scholarships.linkCopiedDesc });
             setTimeout(() => setCopied(false), 2000);
         }
     };
@@ -76,11 +78,11 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                     <AlertCircle className="h-12 w-12 text-destructive" />
                 </div>
                 <div className="space-y-2">
-                    <h1 className="text-2xl font-bold">Scholarship Not Found</h1>
-                    <p className="text-muted-foreground">The scholarship you are looking for does not exist or has been removed.</p>
+                    <h1 className="text-2xl font-bold">{t.scholarships.notFound}</h1>
+                    <p className="text-muted-foreground">{t.scholarships.notFoundDesc}</p>
                 </div>
                 <Link href="/scholarships">
-                    <Button>Back to Scholarships</Button>
+                    <Button>{t.scholarships.backTo}</Button>
                 </Link>
             </div>
         );
@@ -92,8 +94,8 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
     const handleSaveToggle = async () => {
         if (!isAuthenticated) {
             toast({
-                title: "Authentication Required",
-                description: "Please sign in to save scholarships to your profile.",
+                title: t.scholarships.authRequired,
+                description: t.scholarships.authRequiredDesc,
                 variant: "destructive",
             });
             return;
@@ -129,7 +131,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                 <Link href="/scholarships">
                     <Button variant="ghost" className="mb-6 gap-2 text-muted-foreground hover:text-primary transition-colors">
                         <ArrowLeft className="h-4 w-4" />
-                        Back to Scholarships
+                        {t.scholarships.backTo}
                     </Button>
                 </Link>
 
@@ -137,7 +139,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                     <div className="lg:col-span-2 space-y-6">
                         <div className="space-y-4">
                             {scholarship.isFeatured && (
-                                <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">⭐ Featured Scholarship</Badge>
+                                <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">⭐ {t.scholarships.featuredScholarship}</Badge>
                             )}
                             <h1 className="text-4xl font-extrabold tracking-tight leading-tight">
                                 {scholarship.title}
@@ -160,7 +162,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
 
                         <Card className="border-none shadow-sm overflow-hidden">
                             <CardHeader className="bg-white border-b">
-                                <CardTitle className="text-xl">About This Scholarship</CardTitle>
+                                <CardTitle className="text-xl">{t.scholarships.aboutTitle}</CardTitle>
                             </CardHeader>
                             <CardContent className="pt-6 bg-white/50">
                                 <p className="text-muted-foreground leading-relaxed text-base">
@@ -170,15 +172,15 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                         </Card>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <InfoCard title="Eligibility Criteria" icon={CheckCircle} content={scholarship.eligibility} />
-                            <InfoCard title="Requirements" icon={FileText} content={scholarship.requirements} />
+                            <InfoCard title={t.scholarships.eligibility} icon={CheckCircle} content={scholarship.eligibility} />
+                            <InfoCard title={t.scholarships.requirements} icon={FileText} content={scholarship.requirements} />
                         </div>
 
                         {scholarship.benefits && (
-                            <InfoCard title="Benefits & Coverage" icon={DollarSign} content={scholarship.benefits} />
+                            <InfoCard title={t.scholarships.benefits} icon={DollarSign} content={scholarship.benefits} />
                         )}
                         {scholarship.documents && (
-                            <InfoCard title="Required Documents" icon={FileText} content={scholarship.documents} />
+                            <InfoCard title={t.scholarships.documentsRequired} icon={FileText} content={scholarship.documents} />
                         )}
 
                         {scholarship.questions && scholarship.questions.length > 0 && (
@@ -188,12 +190,12 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                                         <div className="p-2 rounded-xl bg-primary/10 text-primary">
                                             <HelpCircle className="h-5 w-5" />
                                         </div>
-                                        <CardTitle className="text-xl">Application Questions</CardTitle>
+                                        <CardTitle className="text-xl">{t.scholarships.appQuestions}</CardTitle>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="pt-6 bg-white/50 space-y-4">
                                     <p className="text-sm text-muted-foreground mb-4">
-                                        You will be asked to answer the following questions during the application process:
+                                        {t.scholarships.appQuestionsDesc}
                                     </p>
                                     <div className="space-y-3">
                                         {scholarship.questions.map((q: any, idx: number) => (
@@ -204,7 +206,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                                                 <div className="space-y-1">
                                                     <p className="text-sm font-bold text-slate-800">{q.question}</p>
                                                     <Badge variant="outline" className="text-[10px] tracking-widest opacity-60">
-                                                        {q.type === 'MULTIPLE_CHOICE' ? 'Multiple Choice' : 'Text Answer'}
+                                                        {q.type === 'MULTIPLE_CHOICE' ? t.scholarships.multipleChoice : t.scholarships.textAnswer}
                                                     </Badge>
                                                 </div>
                                             </div>
@@ -220,7 +222,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                             <div className="h-2 bg-gradient-to-r from-primary to-blue-600" />
                             <CardContent className="p-8 space-y-8">
                                 <div className="space-y-3">
-                                    <div className="text-xs font-bold tracking-widest text-muted-foreground">Deadline</div>
+                                    <div className="text-xs font-bold tracking-widest text-muted-foreground">{t.scholarships.deadline}</div>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-primary/10 rounded-xl">
@@ -235,10 +237,10 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                                 <Separator className="bg-primary/5" />
 
                                 <div className="space-y-5">
-                                    <DetailItem label="Funding Type" value={scholarship.fundingType} isBadge />
-                                    <DetailItem label="Location" value={scholarship.country} />
-                                    <DetailItem label="Degree Level" value={scholarship.degreeLevel} isTag />
-                                    <DetailItem label="Field of Study" value={scholarship.fieldOfStudy} isTag />
+                                    <DetailItem label={t.scholarships.fundingType} value={scholarship.fundingType} isBadge />
+                                    <DetailItem label={t.scholarships.location} value={scholarship.country} />
+                                    <DetailItem label={t.scholarships.degreeLevel} value={scholarship.degreeLevel} isTag />
+                                    <DetailItem label={t.scholarships.fieldOfStudy} value={scholarship.fieldOfStudy} isTag />
                                 </div>
 
                                 <Separator className="bg-primary/5" />
@@ -249,28 +251,28 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                                         size="lg"
                                         className="w-full h-14 text-base font-bold shadow-lg shadow-primary/25 group"
                                         onClick={() => {
-                                            if (!isAuthenticated) return toast({ title: "Auth Required", description: "Sign in to apply." });
+                                            if (!isAuthenticated) return toast({ title: t.scholarships.authRequired, description: t.scholarships.signInToApply });
 
                                             // Real-time Check for Professional UX
                                             const completeness = user?.profileCompleteness ?? 0;
                                             if (completeness >= 80) {
                                                 toast({
-                                                    title: "Profile Verified",
-                                                    description: "You have 80%+ profile completeness. Ready for application.",
+                                                    title: t.scholarships.profileVerified,
+                                                    description: t.scholarships.profileVerifiedDesc,
                                                 });
                                             }
 
                                             setIsModalOpen(true);
                                         }}
                                     >
-                                        Apply on ScholarHub
+                                        {t.scholarships.applyOnScholarHub}
                                         <ArrowLeft className="h-4 w-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
                                     </Button>
 
                                     {scholarship.applicationLink && (
                                         <a href={scholarship.applicationLink} target="_blank" rel="noopener noreferrer" className="block">
                                             <Button variant="outline" className="w-full h-12 gap-2 text-muted-foreground font-semibold">
-                                                Official Website
+                                                {t.scholarships.officialWebsite}
                                                 <ExternalLink className="h-4 w-4" />
                                             </Button>
                                         </a>
@@ -288,7 +290,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                                             ) : (
                                                 <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
                                             )}
-                                            {isSaved ? 'Saved' : 'Save'}
+                                            {isSaved ? t.scholarships.saved : t.scholarships.save}
                                         </Button>
                                         <Button
                                             variant="ghost"
@@ -300,7 +302,7 @@ export default function ScholarshipDetailPage({ params }: { params: { id: string
                                             ) : (
                                                 <Share2 className="h-4 w-4 text-primary" />
                                             )}
-                                            {copied ? "Copied!" : "Share"}
+                                            {copied ? t.scholarships.copied : t.scholarships.share}
                                         </Button>
                                     </div>
                                 </div>

@@ -1,52 +1,49 @@
-import Link from "next/link";
-import {
-    GraduationCap,
-    Heart,
-    Facebook,
-    Twitter,
-    Linkedin,
-    Instagram,
-    Mail,
-    MapPin
-} from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+"use client";
 
-const footerLinks = {
-    platform: [
-        { href: "/scholarships", label: "Browse Scholarships" },
-        { href: "/saved", label: "Saved Scholarships" },
-        { href: "/categories", label: "Categories" },
-        { href: "/deadlines", label: "Upcoming Deadlines" },
-    ],
-    resources: [
-        { href: "/guides", label: "Application Guides" },
-        { href: "/tips", label: "Tips & Tricks" },
-        { href: "/faq", label: "FAQ" },
-        { href: "/blog", label: "Blog" },
-    ],
-    company: [
-        { href: "/about", label: "About Us" },
-        { href: "/contact", label: "Contact" },
-        { href: "/privacy", label: "Privacy Policy" },
-        { href: "/terms", label: "Terms of Service" },
-    ],
-};
+import Link from "next/link";
+import { GraduationCap, Heart, Mail, MapPin } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const socialLinks = [
-    { href: "#", icon: Facebook, label: "Facebook" },
-    { href: "#", icon: Twitter, label: "Twitter" },
-    { href: "#", icon: Linkedin, label: "LinkedIn" },
-    { href: "#", icon: Instagram, label: "Instagram" },
+    { href: "#", letter: "f",  label: "Facebook",  color: "hover:bg-blue-600  hover:text-white" },
+    { href: "#", letter: "𝕏",  label: "Twitter/X", color: "hover:bg-zinc-900  hover:text-white" },
+    { href: "#", letter: "in", label: "LinkedIn",   color: "hover:bg-blue-700  hover:text-white" },
+    { href: "#", letter: "ig", label: "Instagram",  color: "hover:bg-pink-600  hover:text-white" },
 ];
 
 export function Footer() {
+    const { t } = useTranslation();
     const currentYear = new Date().getFullYear();
+
+    const footerLinks = {
+        platform: [
+            { href: "/scholarships", label: t.footer.links.browseScholarships },
+            { href: "/saved",        label: t.footer.links.savedScholarships   },
+            { href: "/categories",   label: t.footer.links.categories          },
+            { href: "/deadlines",    label: t.footer.links.upcomingDeadlines   },
+        ],
+        resources: [
+            { href: "/guides", label: t.footer.links.applicationGuides },
+            { href: "/tips",   label: t.footer.links.tips              },
+            { href: "/faq",    label: t.footer.links.faq               },
+            { href: "/blog",   label: t.footer.links.blog              },
+        ],
+        company: [
+            { href: "/about",   label: t.footer.links.aboutUs      },
+            { href: "/contact", label: t.footer.links.contact       },
+            { href: "/privacy", label: t.footer.links.privacyPolicy },
+            { href: "/terms",   label: t.footer.links.terms         },
+        ],
+    };
 
     return (
         <footer className="bg-muted/30 border-t">
             <div className="container py-12 md:py-16">
                 {/* Main Footer Content */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
+
                     {/* Brand Column */}
                     <div className="lg:col-span-2 space-y-4">
                         <Link href="/" className="flex items-center gap-2 group">
@@ -54,15 +51,14 @@ export function Footer() {
                             <span className="text-xl font-bold gradient-text">ScholarHub</span>
                         </Link>
                         <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
-                            Empowering students in Gaza to discover and access scholarship
-                            opportunities that open doors to academic and professional growth.
+                            {t.footer.tagline}
                         </p>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            <span>Gaza, Palestine</span>
+                            <MapPin className="h-4 w-4 shrink-0" />
+                            <span>{t.footer.location}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Mail className="h-4 w-4" />
+                            <Mail className="h-4 w-4 shrink-0" />
                             <a href="mailto:info@scholarhub.ps" className="hover:text-primary transition-colors">
                                 info@scholarhub.ps
                             </a>
@@ -73,25 +69,22 @@ export function Footer() {
                                 <a
                                     key={social.label}
                                     href={social.href}
-                                    className="p-2 rounded-full bg-muted hover:bg-primary hover:text-white transition-all duration-300"
                                     aria-label={social.label}
+                                    className={`w-9 h-9 rounded-full bg-muted flex items-center justify-center text-xs font-bold transition-all duration-300 ${social.color}`}
                                 >
-                                    <social.icon className="h-4 w-4" />
+                                    {social.letter}
                                 </a>
                             ))}
                         </div>
                     </div>
 
-                    {/* Links Columns */}
+                    {/* Platform Links */}
                     <div className="space-y-4">
-                        <h4 className="font-semibold text-foreground">Platform</h4>
+                        <h4 className="font-semibold text-foreground">{t.footer.platform}</h4>
                         <ul className="space-y-2">
                             {footerLinks.platform.map((link) => (
                                 <li key={link.href}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                                    >
+                                    <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                                         {link.label}
                                     </Link>
                                 </li>
@@ -99,15 +92,13 @@ export function Footer() {
                         </ul>
                     </div>
 
+                    {/* Resources Links */}
                     <div className="space-y-4">
-                        <h4 className="font-semibold text-foreground">Resources</h4>
+                        <h4 className="font-semibold text-foreground">{t.footer.resources}</h4>
                         <ul className="space-y-2">
                             {footerLinks.resources.map((link) => (
                                 <li key={link.href}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                                    >
+                                    <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                                         {link.label}
                                     </Link>
                                 </li>
@@ -115,15 +106,13 @@ export function Footer() {
                         </ul>
                     </div>
 
+                    {/* Company Links */}
                     <div className="space-y-4">
-                        <h4 className="font-semibold text-foreground">Company</h4>
+                        <h4 className="font-semibold text-foreground">{t.footer.company}</h4>
                         <ul className="space-y-2">
                             {footerLinks.company.map((link) => (
                                 <li key={link.href}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                                    >
+                                    <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                                         {link.label}
                                     </Link>
                                 </li>
@@ -134,12 +123,22 @@ export function Footer() {
 
                 <Separator className="my-8" />
 
-                {/* Copyright */}
+                {/* Copyright + Language Switcher */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-                    <p>© {currentYear} ScholarHub. All rights reserved.</p>
-                    <p className="flex items-center gap-1">
-                        Made with <Heart className="h-4 w-4 text-red-500 fill-red-500" /> for students in Gaza
+                    <p className="ltr" data-ltr>
+                        © {currentYear} ScholarHub. {t.footer.rights}
                     </p>
+
+                    <div className="flex items-center gap-4">
+                        {/* Language picker — users can override admin default */}
+                        <LanguageSwitcher />
+
+                        <p className="flex items-center gap-1">
+                            {t.footer.madeWith}
+                            <Heart className="h-4 w-4 text-red-500 fill-red-500 mx-1" />
+                            {t.footer.forStudents}
+                        </p>
+                    </div>
                 </div>
             </div>
         </footer>

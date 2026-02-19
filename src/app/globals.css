@@ -118,3 +118,138 @@ html {
 :focus-visible {
     @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ARABIC / RTL LANGUAGE SUPPORT
+   Applied when admin sets defaultLanguage = "ar"
+   JS sets:  html[lang="ar"]  html[dir="rtl"]  html[data-lang="ar"]
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Cairo font for Arabic ─────────────────────────────────────────── */
+html[lang="ar"],
+html[lang="ar"] body {
+    font-family: var(--font-sans, 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif);
+}
+
+/* Arabic needs more generous line-height for readability */
+html[lang="ar"] body,
+html[lang="ar"] p,
+html[lang="ar"] span,
+html[lang="ar"] label,
+html[lang="ar"] li,
+html[lang="ar"] td,
+html[lang="ar"] th {
+    line-height: 1.85;
+}
+
+/* Headings need a touch more room too */
+html[lang="ar"] h1,
+html[lang="ar"] h2,
+html[lang="ar"] h3,
+html[lang="ar"] h4,
+html[lang="ar"] h5,
+html[lang="ar"] h6 {
+    line-height: 1.6;
+    font-weight: 700;
+}
+
+/* Arabic does NOT use letter-spacing — reset everywhere */
+html[lang="ar"] * {
+    letter-spacing: 0 !important;
+}
+
+/* ── 2. RTL direction base ────────────────────────────────────────────── */
+html[dir="rtl"] {
+    direction: rtl;
+    text-align: start;
+}
+
+/* Code / mono blocks always stay LTR regardless of language */
+html[dir="rtl"] code,
+html[dir="rtl"] pre,
+html[dir="rtl"] kbd,
+html[dir="rtl"] samp,
+html[dir="rtl"] [class*="font-mono"],
+html[dir="rtl"] input[type="email"],
+html[dir="rtl"] input[type="url"],
+html[dir="rtl"] input[type="tel"],
+html[dir="rtl"] input[type="number"],
+html[dir="rtl"] input[type="password"] {
+    direction: ltr;
+    text-align: left;
+    unicode-bidi: isolate;
+}
+
+/* ── 3. Layout — flex rows reverse their start/end in RTL automatically
+        but icon-only gaps and explicit margins need a nudge ─────────── */
+
+/* Flip chevron / arrow icons that indicate direction */
+html[dir="rtl"] .lucide-chevron-right,
+html[dir="rtl"] .lucide-chevron-left,
+html[dir="rtl"] .lucide-arrow-right,
+html[dir="rtl"] .lucide-arrow-left {
+    transform: scaleX(-1);
+}
+
+/* ── 4. Input & textarea alignment ───────────────────────────────────── */
+html[dir="rtl"] input:not([type="email"]):not([type="url"]):not([type="tel"]):not([type="number"]):not([type="password"]),
+html[dir="rtl"] textarea {
+    text-align: right;
+}
+
+html[dir="rtl"] input::placeholder,
+html[dir="rtl"] textarea::placeholder {
+    text-align: right;
+}
+
+/* Numeric / email inputs keep LTR placeholder too */
+html[dir="rtl"] input[type="email"]::placeholder,
+html[dir="rtl"] input[type="url"]::placeholder {
+    text-align: left;
+}
+
+/* ── 5. Scrollbar — mirror to the left in RTL ─────────────────────────── */
+html[dir="rtl"] * {
+    scrollbar-width: thin;
+}
+
+/* ── 6. Sidebar / Navigation — RTL-aware padding ─────────────────────── */
+/* When dir=rtl the browser already mirrors flex/grid layouts.
+   Any component using logical CSS properties (ms-*, me-*, ps-*, pe-*)
+   gets RTL for free. For hardcoded left/right we patch below. */
+
+/* Badge, pill text keeps correct direction */
+html[dir="rtl"] [class*="badge"],
+html[dir="rtl"] [class*="Badge"] {
+    direction: rtl;
+}
+
+/* ── 7. Table cells ───────────────────────────────────────────────────── */
+html[dir="rtl"] td,
+html[dir="rtl"] th {
+    text-align: right;
+}
+
+/* ── 8. Select dropdowns ──────────────────────────────────────────────── */
+html[dir="rtl"] select {
+    direction: rtl;
+    text-align: right;
+}
+
+/* ── 9. Smooth transition when language changes ───────────────────────── */
+html {
+    transition: direction 0ms; /* instant — no animation on dir change */
+}
+
+/* ── 10. Number / statistic elements stay LTR ────────────────────────── */
+html[dir="rtl"] [data-ltr],
+html[dir="rtl"] .ltr {
+    direction: ltr;
+    text-align: left;
+    unicode-bidi: isolate;
+}
+
+/* ── 11. Utility class — Cairo font (used in admin language picker preview) */
+.font-cairo {
+    font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
+}

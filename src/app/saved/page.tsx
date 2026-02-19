@@ -10,8 +10,10 @@ import { useSavedScholarships } from "@/hooks/useSavedScholarships";
 import { SavedScholarshipListSkeleton } from "@/components/skeletons";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function SavedPage() {
+    const { t } = useTranslation();
     const router = useRouter();
     const { user, isLoading: isAuthLoading } = useAuth();
     const { list, remove } = useSavedScholarships();
@@ -44,14 +46,13 @@ export default function SavedPage() {
                 <div className="space-y-4 mb-8">
                     <div className="flex items-center gap-2 text-primary font-bold tracking-wider text-[10px]">
                         <Bookmark className="h-4 w-4" />
-                        My Bookmarks
+                        {t.saved.tag}
                     </div>
                     <h1 className="text-4xl font-black tracking-tight gradient-text">
-                        Saved Scholarships
+                        {t.saved.title}
                     </h1>
                     <p className="text-muted-foreground max-w-2xl">
-                        Keep track of scholarships you&apos;re interested in. Save them here
-                        and never miss an application deadline.
+                        {t.saved.desc}
                     </p>
                 </div>
 
@@ -76,11 +77,11 @@ export default function SavedPage() {
                                             </h3>
                                             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                                                 <span className="font-medium">
-                                                    {scholarship.organization || "Academic Institution"}
+                                                    {scholarship.organization || t.saved.academicInstitution}
                                                 </span>
                                                 <span>•</span>
                                                 <Badge variant="outline" className="text-[10px] h-5 bg-muted/50">
-                                                    {scholarship.type || "Full Funding"}
+                                                    {scholarship.type || t.saved.fullFunding}
                                                 </Badge>
                                             </div>
                                         </div>
@@ -96,7 +97,7 @@ export default function SavedPage() {
                                                 size="sm"
                                                 className="w-full h-10 font-bold border-muted-foreground/20"
                                             >
-                                                View Details
+                                                {t.saved.viewDetails}
                                             </Button>
                                         </Link>
                                         <Button
@@ -124,11 +125,10 @@ export default function SavedPage() {
                             <GraduationCap className="h-12 w-12 text-muted-foreground" />
                         </div>
                         <h2 className="text-2xl font-black mb-2 tracking-tight">
-                            Your bookmark list is empty
+                            {t.saved.emptyTitle}
                         </h2>
                         <p className="text-muted-foreground max-w-md mb-8 px-4">
-                            You haven&apos;t saved any scholarships yet. Browse available
-                            opportunities and click the bookmark icon to save them for later.
+                            {t.saved.emptyDesc}
                         </p>
                         <Link href="/scholarships">
                             <Button
@@ -136,7 +136,7 @@ export default function SavedPage() {
                                 size="lg"
                                 className="gap-2 font-bold px-8 shadow-xl shadow-primary/20"
                             >
-                                Browse Scholarships
+                                {t.saved.browseScholarships}
                                 <ArrowRight className="h-5 w-5" />
                             </Button>
                         </Link>

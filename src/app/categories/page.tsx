@@ -1,80 +1,36 @@
+"use client";
+
 import Link from "next/link";
 import { GraduationCap, Microscope, Briefcase, Palette, Globe, Code, Heart, BookOpen, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-const categories = [
-    {
-        icon: Microscope,
-        label: "Science & Research",
-        color: "text-blue-600 bg-blue-50 border-blue-200",
-        count: 48,
-        description: "Physics, Chemistry, Biology, Environmental Science",
-    },
-    {
-        icon: Code,
-        label: "Technology & Engineering",
-        color: "text-violet-600 bg-violet-50 border-violet-200",
-        count: 62,
-        description: "Computer Science, Software Engineering, AI, Data Science",
-    },
-    {
-        icon: Briefcase,
-        label: "Business & Economics",
-        color: "text-emerald-600 bg-emerald-50 border-emerald-200",
-        count: 35,
-        description: "Finance, Management, Entrepreneurship, MBA",
-    },
-    {
-        icon: Palette,
-        label: "Arts & Humanities",
-        color: "text-rose-600 bg-rose-50 border-rose-200",
-        count: 29,
-        description: "Literature, History, Philosophy, Fine Arts, Journalism",
-    },
-    {
-        icon: Heart,
-        label: "Medicine & Health",
-        color: "text-red-600 bg-red-50 border-red-200",
-        count: 41,
-        description: "Medicine, Pharmacy, Public Health, Nursing",
-    },
-    {
-        icon: Globe,
-        label: "International Studies",
-        color: "text-cyan-600 bg-cyan-50 border-cyan-200",
-        count: 27,
-        description: "Political Science, International Relations, Languages",
-    },
-    {
-        icon: BookOpen,
-        label: "Education",
-        color: "text-amber-600 bg-amber-50 border-amber-200",
-        count: 22,
-        description: "Teaching, Pedagogy, Educational Psychology",
-    },
-    {
-        icon: GraduationCap,
-        label: "General Scholarships",
-        color: "text-slate-600 bg-slate-50 border-slate-200",
-        count: 55,
-        description: "Open to all fields and disciplines",
-    },
-];
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function CategoriesPage() {
+    const { t } = useTranslation();
+
+    const categories = [
+        { icon: Microscope,   label: t.categories.cat1Title, color: "text-blue-600 bg-blue-50 border-blue-200",     count: 48, description: t.categories.cat1Desc },
+        { icon: Code,         label: t.categories.cat2Title, color: "text-violet-600 bg-violet-50 border-violet-200", count: 62, description: t.categories.cat2Desc },
+        { icon: Briefcase,    label: t.categories.cat3Title, color: "text-emerald-600 bg-emerald-50 border-emerald-200", count: 35, description: t.categories.cat3Desc },
+        { icon: Palette,      label: t.categories.cat4Title, color: "text-rose-600 bg-rose-50 border-rose-200",       count: 29, description: t.categories.cat4Desc },
+        { icon: Heart,        label: t.categories.cat5Title, color: "text-red-600 bg-red-50 border-red-200",          count: 41, description: t.categories.cat5Desc },
+        { icon: Globe,        label: t.categories.cat6Title, color: "text-cyan-600 bg-cyan-50 border-cyan-200",       count: 27, description: t.categories.cat6Desc },
+        { icon: BookOpen,     label: t.categories.cat7Title, color: "text-amber-600 bg-amber-50 border-amber-200",    count: 22, description: t.categories.cat7Desc },
+        { icon: GraduationCap, label: t.categories.cat8Title, color: "text-slate-600 bg-slate-50 border-slate-200",  count: 55, description: t.categories.cat8Desc },
+    ];
+
     return (
         <div className="min-h-screen bg-muted/20 py-12 md:py-16">
             <div className="container max-w-5xl">
                 {/* Header */}
                 <div className="text-center mb-12 space-y-3">
                     <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5">
-                        Browse by Category
+                        {t.categories.tag}
                     </Badge>
-                    <h1 className="text-4xl font-extrabold tracking-tight">Scholarship Categories</h1>
+                    <h1 className="text-4xl font-extrabold tracking-tight">{t.categories.title}</h1>
                     <p className="text-muted-foreground max-w-xl mx-auto">
-                        Explore scholarships organized by field of study. Find opportunities
-                        that match your academic interests and career goals.
+                        {t.categories.desc}
                     </p>
                 </div>
 
@@ -89,7 +45,7 @@ export default function CategoriesPage() {
                                             <cat.icon className="h-5 w-5" />
                                         </div>
                                         <Badge variant="secondary" className="text-xs">
-                                            {cat.count} scholarships
+                                            {cat.count} {t.categories.scholarshipsCount}
                                         </Badge>
                                     </div>
                                     <div>
@@ -101,7 +57,7 @@ export default function CategoriesPage() {
                                         </p>
                                     </div>
                                     <div className="flex items-center text-xs text-primary font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                                        Browse <ArrowRight className="h-3 w-3 ml-1" />
+                                        {t.categories.browse} <ArrowRight className="h-3 w-3 ml-1" />
                                     </div>
                                 </CardContent>
                             </Card>

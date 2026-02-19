@@ -19,8 +19,10 @@ import { registerSchema, RegisterInput } from "@/lib/validations/auth";
 import { useAuth } from "@/hooks/use-auth";
 import { useSearchParams } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function RegisterPage() {
+    const { t } = useTranslation();
     const [showPassword, setShowPassword] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
     const { register: registerMutation } = useAuth();
@@ -94,9 +96,9 @@ export default function RegisterPage() {
             className="space-y-6 w-full max-h-[90vh]"
         >
             <div className="space-y-1 text-center lg:text-left">
-                <h1 className="text-3xl font-bold tracking-tight text-zinc-900 border-l-4 border-primary pl-4">Join Hub</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-zinc-900 border-l-4 border-primary pl-4">{t.auth.joinHub}</h1>
                 <p className="text-sm text-zinc-500 font-medium pl-5">
-                    Start your global scholarship journey today
+                    {t.auth.joinHubSub}
                 </p>
             </div>
 
@@ -106,13 +108,13 @@ export default function RegisterPage() {
                         value="STUDENT"
                         className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all rounded-md text-xs font-bold"
                     >
-                        Student
+                        {t.auth.student}
                     </TabsTrigger>
                     <TabsTrigger
                         value="PROFESSOR"
                         className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all rounded-md text-xs font-bold"
                     >
-                        Professor
+                        {t.auth.professor}
                     </TabsTrigger>
                 </TabsList>
             </Tabs>
@@ -120,7 +122,7 @@ export default function RegisterPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
                 <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                        <Label htmlFor="firstName" className="text-zinc-600 text-xs font-bold">First Name</Label>
+                        <Label htmlFor="firstName" className="text-zinc-600 text-xs font-bold">{t.auth.firstName}</Label>
                         <Input
                             id="firstName"
                             placeholder="John"
@@ -132,7 +134,7 @@ export default function RegisterPage() {
                         )}
                     </div>
                     <div className="space-y-1.5">
-                        <Label htmlFor="lastName" className="text-zinc-600 text-xs font-bold">Last Name</Label>
+                        <Label htmlFor="lastName" className="text-zinc-600 text-xs font-bold">{t.auth.lastName}</Label>
                         <Input
                             id="lastName"
                             placeholder="Doe"
@@ -146,11 +148,11 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                    <Label htmlFor="email" className="text-zinc-600 text-xs font-bold">Work Email</Label>
+                    <Label htmlFor="email" className="text-zinc-600 text-xs font-bold">{t.auth.workEmail}</Label>
                     <Input
                         id="email"
                         type="email"
-                        placeholder="name@university.edu"
+                        placeholder={t.auth.workEmailPlaceholder}
                         className={`h-10 border-zinc-200 bg-zinc-50/50 text-sm focus:border-primary focus:ring-primary/20 ${errors.email ? "border-red-500" : ""}`}
                         {...register("email")}
                     />
@@ -160,7 +162,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                    <Label htmlFor="password" title="Password" className="text-zinc-600 text-xs font-bold">Password</Label>
+                    <Label htmlFor="password" title="Password" className="text-zinc-600 text-xs font-bold">{t.auth.password}</Label>
                     <div className="relative">
                         <Input
                             id="password"
@@ -188,7 +190,7 @@ export default function RegisterPage() {
                     className="w-full h-11 bg-primary hover:bg-primary/95 text-white font-bold shadow-md shadow-primary/10 transition-all hover:translate-y-[-1px] active:translate-y-[0px]"
                     disabled={isLoading}
                 >
-                    {isLoading ? "Creating..." : `Register as ${activeRole === "STUDENT" ? "Student" : "Professor"}`}
+                    {isLoading ? t.auth.creating : (activeRole === "STUDENT" ? t.auth.registerStudent : t.auth.registerProfessor)}
                     {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
                 </Button>
             </form>
@@ -198,7 +200,7 @@ export default function RegisterPage() {
                     <span className="w-full border-t border-zinc-200" />
                 </div>
                 <div className="relative flex justify-center text-[10px] items-center font-bold tracking-widest text-zinc-400">
-                    <span className="bg-white px-3">Quick Connect</span>
+                    <span className="bg-white px-3">{t.auth.quickConnect}</span>
                 </div>
             </div>
 
@@ -215,14 +217,12 @@ export default function RegisterPage() {
                     disabled={googleLoading || isLoading}
                 >
                     <Chrome className={`h-4 w-4 mr-2 ${googleLoading ? "animate-spin" : ""}`} />
-                    {googleLoading ? "Redirecting..." : "Google"}
+                    {googleLoading ? t.auth.redirecting : "Google"}
                 </Button>
             </div>
 
             <p className="text-center text-[10px] text-zinc-400 leading-relaxed px-4">
-                By registering, you agree to our{" "}
-                <span className="text-primary font-bold cursor-pointer hover:underline">Terms</span> &{" "}
-                <span className="text-primary font-bold cursor-pointer hover:underline">Privacy</span>.
+                {t.auth.agreeTerms}
             </p>
         </motion.div>
     );

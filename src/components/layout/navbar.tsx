@@ -33,13 +33,7 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-
-const navLinks = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/scholarships", label: "Scholarships", icon: BookOpen },
-    { href: "/about", label: "About", icon: Info },
-    { href: "/contact", label: "Contact", icon: Mail },
-];
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
@@ -49,6 +43,14 @@ export function Navbar() {
     const pathname = usePathname();
     const router = useRouter();
     const { user, logout, isLoading: isAuthLoading } = useAuth();
+    const { t } = useTranslation();
+
+    const navLinks = [
+        { href: "/", label: t.nav.home, icon: Home },
+        { href: "/scholarships", label: t.nav.scholarships, icon: BookOpen },
+        { href: "/about", label: t.nav.about, icon: Info },
+        { href: "/contact", label: t.nav.contact, icon: Mail },
+    ];
 
     useEffect(() => {
         setMounted(true);
@@ -117,7 +119,7 @@ export function Navbar() {
                                             className="overflow-hidden"
                                         >
                                             <Input
-                                                placeholder="Search..."
+                                                placeholder={t.search}
                                                 className="h-9 pr-10 bg-muted/50 border-none focus-visible:ring-1 focus-visible:ring-primary"
                                                 autoFocus
                                                 onBlur={() => setIsSearchOpen(false)}
@@ -152,14 +154,14 @@ export function Navbar() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-56 glass mt-1 border-primary/10">
                                             <DropdownMenuLabel className="font-bold text-[10px] tracking-wider text-muted-foreground px-3 py-2">
-                                                {user.role} Account
+                                                {user.role} · {t.user.account}
                                             </DropdownMenuLabel>
                                             <DropdownMenuSeparator />
                                             {mounted && user.role === "PROFESSOR" && (user.isProfessorVerified || user.isVerified) && (
                                                 <DropdownMenuItem asChild>
                                                     <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer w-full py-2">
                                                         <LayoutDashboard className="h-4 w-4 text-primary" />
-                                                        <span>Dashboard</span>
+                                                        <span>{t.user.dashboard}</span>
                                                     </Link>
                                                 </DropdownMenuItem>
                                             )}
@@ -167,27 +169,27 @@ export function Navbar() {
                                                 <DropdownMenuItem asChild>
                                                     <Link href="/applications" className="flex items-center gap-2 cursor-pointer w-full py-2">
                                                         <BookOpen className="h-4 w-4 text-primary" />
-                                                        <span>My Applications</span>
+                                                        <span>{t.user.myApplications}</span>
                                                     </Link>
                                                 </DropdownMenuItem>
                                             )}
                                             <DropdownMenuItem asChild>
                                                 <Link href="/saved" className="flex items-center gap-2 cursor-pointer w-full py-2">
                                                     <Bookmark className="h-4 w-4 text-primary" />
-                                                    <span>Saved Scholarships</span>
+                                                    <span>{t.user.savedScholarships}</span>
                                                 </Link>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem asChild>
                                                 <Link href="/profile" className="flex items-center gap-2 cursor-pointer w-full py-2">
                                                     <User className="h-4 w-4 text-primary" />
-                                                    <span>My Profile</span>
+                                                    <span>{t.user.myProfile}</span>
                                                 </Link>
                                             </DropdownMenuItem>
                                             {mounted && user.role === "ADMIN" && (
                                                 <DropdownMenuItem asChild>
                                                     <Link href="/admin" className="flex items-center gap-2 cursor-pointer w-full py-2">
                                                         <Shield className="h-4 w-4 text-amber-500" />
-                                                        <span>Admin Panel</span>
+                                                        <span>{t.user.adminPanel}</span>
                                                     </Link>
                                                 </DropdownMenuItem>
                                             )}
@@ -198,7 +200,7 @@ export function Navbar() {
                                                 disabled={logout.isPending}
                                             >
                                                 <LogOut className="h-4 w-4" />
-                                                {logout.isPending ? "Logging out..." : "Log out"}
+                                                {logout.isPending ? t.auth.loggingOut : t.auth.logOut}
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -206,10 +208,10 @@ export function Navbar() {
                             ) : (
                                 <div className="flex items-center gap-3">
                                     <Link href="/auth/login">
-                                        <Button variant="ghost" size="sm" className="text-xs font-semibold">Sign In</Button>
+                                        <Button variant="ghost" size="sm" className="text-xs font-semibold">{t.auth.signIn}</Button>
                                     </Link>
                                     <Link href="/auth/register">
-                                        <Button variant="gradient" size="sm" className="text-xs font-bold px-5 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">Get Started</Button>
+                                        <Button variant="gradient" size="sm" className="text-xs font-bold px-5 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">{t.auth.getStarted}</Button>
                                     </Link>
                                 </div>
                             )}
@@ -274,7 +276,7 @@ export function Navbar() {
                                                 className="flex items-center gap-4 text-lg font-bold text-muted-foreground p-4 rounded-xl hover:bg-muted"
                                             >
                                                 <LayoutDashboard className="h-5 w-5" />
-                                                Dashboard
+                                                {t.user.dashboard}
                                             </Link>
                                         )}
                                         {mounted && user.role === "STUDENT" && (
@@ -284,7 +286,7 @@ export function Navbar() {
                                                 className="flex items-center gap-4 text-lg font-bold text-muted-foreground p-4 rounded-xl hover:bg-muted"
                                             >
                                                 <BookOpen className="h-5 w-5" />
-                                                My Applications
+                                                {t.user.myApplications}
                                             </Link>
                                         )}
                                         <Link
@@ -293,7 +295,7 @@ export function Navbar() {
                                             className="flex items-center gap-4 text-lg font-bold text-muted-foreground p-4 rounded-xl hover:bg-muted"
                                         >
                                             <Bookmark className="h-5 w-5" />
-                                            Saved Scholarships
+                                            {t.user.savedScholarships}
                                         </Link>
                                         <Link
                                             href="/profile"
@@ -301,7 +303,7 @@ export function Navbar() {
                                             className="flex items-center gap-4 text-lg font-bold text-muted-foreground p-4 rounded-xl hover:bg-muted"
                                         >
                                             <User className="h-5 w-5" />
-                                            My Profile
+                                            {t.user.myProfile}
                                         </Link>
                                         {mounted && user.role === "ADMIN" && (
                                             <Link
@@ -310,7 +312,7 @@ export function Navbar() {
                                                 className="flex items-center gap-4 text-lg font-bold text-amber-600 p-4 rounded-xl hover:bg-amber-50"
                                             >
                                                 <Shield className="h-5 w-5" />
-                                                Admin Panel
+                                                {t.user.adminPanel}
                                             </Link>
                                         )}
                                         <button
@@ -319,16 +321,16 @@ export function Navbar() {
                                             disabled={logout.isPending}
                                         >
                                             <LogOut className="h-5 w-5" />
-                                            {logout.isPending ? "Logging out..." : "Log out"}
+                                            {logout.isPending ? t.auth.loggingOut : t.auth.logOut}
                                         </button>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-2 gap-4 h-12">
                                         <Link href="/auth/login" className="w-full">
-                                            <Button variant="outline" className="w-full h-full font-bold rounded-xl" onClick={() => setIsOpen(false)}>Login</Button>
+                                            <Button variant="outline" className="w-full h-full font-bold rounded-xl" onClick={() => setIsOpen(false)}>{t.auth.login}</Button>
                                         </Link>
                                         <Link href="/auth/register" className="w-full">
-                                            <Button variant="gradient" className="w-full h-full font-bold rounded-xl" onClick={() => setIsOpen(false)}>Join Now</Button>
+                                            <Button variant="gradient" className="w-full h-full font-bold rounded-xl" onClick={() => setIsOpen(false)}>{t.auth.joinNow}</Button>
                                         </Link>
                                     </div>
                                 )}

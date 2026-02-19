@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "@/hooks/use-toast";
 import api from "@/lib/axios";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const forgotPasswordSchema = z.object({
     email: z.string().email("Please enter a valid email address"),
@@ -20,6 +21,7 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
+    const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
@@ -75,21 +77,21 @@ export default function ForgotPasswordPage() {
 
                         <div className="space-y-2">
                             <h1 className="text-2xl font-bold text-zinc-900">
-                                Check your email
+                                {t.auth.checkEmail}
                             </h1>
                             <p className="text-sm text-zinc-600">
-                                We&apos;ve sent password reset instructions to your email address.
+                                {t.auth.checkEmailSub}
                             </p>
                         </div>
 
                         <div className="space-y-4 pt-4">
                             <p className="text-xs text-zinc-500">
-                                Didn&apos;t receive the email? Check your spam folder or{" "}
+                                {t.auth.didntReceive}{" "}
                                 <button
                                     onClick={() => setIsSuccess(false)}
                                     className="text-primary font-bold hover:underline"
                                 >
-                                    try again
+                                    {t.auth.tryAgain}
                                 </button>
                             </p>
 
@@ -99,7 +101,7 @@ export default function ForgotPasswordPage() {
                                     className="w-full h-11 border-zinc-200 hover:bg-zinc-50"
                                 >
                                     <ArrowLeft className="h-4 w-4 mr-2" />
-                                    Back to Login
+                                    {t.auth.backToLogin}
                                 </Button>
                             </Link>
                         </div>
@@ -120,24 +122,24 @@ export default function ForgotPasswordPage() {
                     <div className="space-y-6">
                         <div className="space-y-2">
                             <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
-                                Forgot password?
+                                {t.auth.forgotPasswordTitle}
                             </h1>
                             <p className="text-sm text-zinc-500 font-medium">
-                                No worries, we&apos;ll send you reset instructions
+                                {t.auth.forgotPasswordSub}
                             </p>
                         </div>
 
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="email" className="text-zinc-600 font-semibold">
-                                    Email Address
+                                    {t.auth.emailAddress}
                                 </Label>
                                 <div className="relative">
                                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="name@example.com"
+                                        placeholder={t.auth.emailPlaceholder}
                                         className={`pl-10 h-12 border-zinc-200 focus:border-primary focus:ring-primary/20 bg-zinc-50/50 ${
                                             errors.email
                                                 ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
@@ -167,7 +169,7 @@ export default function ForgotPasswordPage() {
                                 className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.98]"
                                 disabled={isLoading}
                             >
-                                {isLoading ? "Sending..." : "Send Reset Link"}
+                                {isLoading ? t.auth.sending : t.auth.sendResetLink}
                                 {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
                             </Button>
                         </form>
@@ -179,7 +181,7 @@ export default function ForgotPasswordPage() {
                                     className="w-full h-11 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50"
                                 >
                                     <ArrowLeft className="h-4 w-4 mr-2" />
-                                    Back to Login
+                                    {t.auth.backToLogin}
                                 </Button>
                             </Link>
                         </div>
@@ -187,9 +189,8 @@ export default function ForgotPasswordPage() {
                 </motion.div>
 
                 <p className="text-center text-xs text-zinc-400 mt-6">
-                    Remember your password?{" "}
                     <Link href="/auth/login" className="text-primary font-bold hover:underline">
-                        Sign in
+                        {t.auth.rememberPassword}
                     </Link>
                 </p>
             </div>

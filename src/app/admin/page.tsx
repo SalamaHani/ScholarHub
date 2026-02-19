@@ -49,6 +49,11 @@ import {
     Monitor,
     Globe,
     Lock,
+    Share2,
+    Languages,
+    BarChart2,
+    Brush,
+    Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,7 +93,7 @@ import { useApplications } from "@/hooks/useApplications";
 import { useCategories, CategoryInput } from "@/hooks/useCategories";
 import { useNotifications, SendNotificationInput } from "@/hooks/useNotifications";
 import { useTestimonials, Testimonial } from "@/hooks/useTestimonials";
-import { useSettings } from "@/hooks/useSettings";
+import { useSettings, SiteSettings } from "@/hooks/useSettings";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -3713,6 +3718,11 @@ const THEME_PRESETS = [
     { name: "Slate",        primary: "215 25% 45%", hex: "#64748b", ring: "215 25% 45%" },
 ];
 
+const LANGUAGE_OPTIONS = [
+    { code: "en", label: "English", native: "English",  flag: "🇺🇸", rtl: false },
+    { code: "ar", label: "Arabic",  native: "العربية",  flag: "🇸🇦", rtl: true  },
+];
+
 function applyTheme(primary: string, ring: string) {
     const root = document.documentElement;
     root.style.setProperty("--primary", primary);
@@ -3721,54 +3731,102 @@ function applyTheme(primary: string, ring: string) {
     localStorage.setItem("scholarhub_theme_ring", ring);
 }
 
+// ── Helper: section divider ────────────────────────────────────────────────
+function SettingsSectionHeader({ icon, title, description }: { icon: React.ReactNode; title: string; description?: string }) {
+    return (
+        <div className="flex items-start gap-3 pb-3 border-b">
+            <div className="mt-0.5">{icon}</div>
+            <div>
+                <h3 className="text-base font-bold tracking-tight">{title}</h3>
+                {description && <p className="text-sm text-muted-foreground mt-0.5">{description}</p>}
+            </div>
+        </div>
+    );
+}
+
+// ── Helper: toggle row ────────────────────────────────────────────────────
+function ToggleRow({ label, desc, value, onChange, danger }: { label: string; desc: string; value: boolean; onChange: (v: boolean) => void; danger?: boolean }) {
+    return (
+        <div className="flex items-center justify-between p-4 rounded-xl border bg-muted/20">
+            <div>
+                <p className="text-sm font-semibold">{label}</p>
+                <p className="text-xs text-muted-foreground">{desc}</p>
+            </div>
+            <button
+                onClick={() => onChange(!value)}
+                className={cn(
+                    "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                    value ? (danger ? "bg-rose-500" : "bg-primary") : "bg-muted-foreground/30"
+                )}
+            >
+                <span className={cn("inline-block h-4 w-4 rounded-full bg-white shadow transition-transform", value ? "translate-x-6" : "translate-x-1")} />
+            </button>
+        </div>
+    );
+}
+
 function SettingsSection() {
-    const { settings, save, isLoaded } = useSettings();
-    const [localSettings, setLocalSettings] = useState(settings);
-    const [saved, setSaved] = useState(false);
+    const { settings, save, isLoaded, isSaving } = useSettings();
+    const [loc, setLoc] = useState<SiteSettings>(settings);
 
     useEffect(() => {
-        if (isLoaded) setLocalSettings(settings);
-    }, [isLoaded]);
+        if (isLoaded) setLoc(settings);
+    }, [isLoaded, settings]);
 
-    const activePreset = THEME_PRESETS.find(p => p.primary === localSettings.themePrimary) || THEME_PRESETS[0];
+    // Generic field setter
+    const set = useCallback(<K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
+        setLoc(prev => ({ ...prev, [key]: value }));
+    }, []);
+
+    const activePreset = THEME_PRESETS.find(p => p.primary === loc.themePrimary) || THEME_PRESETS[0];
 
     const handleThemeSelect = (preset: typeof THEME_PRESETS[0]) => {
-        setLocalSettings(prev => ({ ...prev, themePrimary: preset.primary, themeRing: preset.ring }));
+        setLoc(prev => ({ ...prev, themePrimary: preset.primary, themeRing: preset.ring }));
         applyTheme(preset.primary, preset.ring);
     };
 
-    const handleSave = () => {
-        save(localSettings);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2500);
-    };
+    if (!isLoaded) {
+        return (
+            <div className="space-y-8 animate-pulse">
+                <div className="h-7 w-56 bg-muted rounded" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {[...Array(6)].map((_, i) => <div key={i} className="h-64 rounded-2xl bg-muted" />)}
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+
+            {/* Page title */}
             <div>
                 <h2 className="text-2xl font-bold">Platform Settings</h2>
-                <p className="text-muted-foreground">Manage appearance, project info, and system configuration.</p>
+                <p className="text-muted-foreground">Manage every aspect of your platform — appearance, SEO, integrations, and system controls.</p>
             </div>
 
+            {/* ═══════════════════════════════════════════════════════════════
+                SECTION 1 · CORE
+            ════════════════════════════════════════════════════════════════ */}
+            <SettingsSectionHeader
+                icon={<Settings className="h-5 w-5 text-primary" />}
+                title="Core"
+                description="Fundamental platform identity and system toggles."
+            />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                {/* ── Theme Color ──────────────────────────────────────── */}
+                {/* Theme Color */}
                 <Card className="border-none shadow-lg">
                     <CardHeader className="pb-4">
                         <CardTitle className="flex items-center gap-2 text-base">
-                            <Palette className="h-5 w-5 text-primary" />
-                            Theme Color
+                            <Palette className="h-5 w-5 text-primary" /> Theme Color
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground">Choose the primary color used across the entire platform.</p>
+                        <p className="text-sm text-muted-foreground">Primary color used across the entire platform.</p>
                     </CardHeader>
                     <CardContent className="space-y-5">
                         <div className="grid grid-cols-4 gap-3">
                             {THEME_PRESETS.map((preset) => {
-                                const isActive = localSettings.themePrimary === preset.primary;
+                                const isActive = loc.themePrimary === preset.primary;
                                 return (
                                     <button
                                         key={preset.name}
@@ -3779,119 +3837,73 @@ function SettingsSection() {
                                             isActive ? "border-slate-700 scale-105 shadow-md" : "border-transparent hover:border-slate-200"
                                         )}
                                     >
-                                        <div
-                                            className="h-10 w-10 rounded-full shadow flex items-center justify-center"
-                                            style={{ backgroundColor: preset.hex }}
-                                        >
+                                        <div className="h-10 w-10 rounded-full shadow flex items-center justify-center" style={{ backgroundColor: preset.hex }}>
                                             {isActive && <Check className="h-5 w-5 text-white" />}
                                         </div>
-                                        <span className="text-[10px] font-semibold text-center text-muted-foreground leading-tight">
-                                            {preset.name}
-                                        </span>
+                                        <span className="text-[10px] font-semibold text-center text-muted-foreground leading-tight">{preset.name}</span>
                                     </button>
                                 );
                             })}
                         </div>
-
-                        {/* Preview */}
                         <div className="p-4 rounded-xl bg-muted/30 border space-y-3">
                             <p className="text-[10px] font-bold tracking-widest text-muted-foreground">LIVE PREVIEW</p>
                             <div className="flex items-center gap-3 flex-wrap">
-                                <div
-                                    className="h-8 px-4 rounded-lg flex items-center text-xs font-bold text-white shadow-sm"
-                                    style={{ backgroundColor: activePreset.hex }}
-                                >
-                                    Primary Button
-                                </div>
-                                <div
-                                    className="h-8 px-4 rounded-lg flex items-center text-xs font-bold border-2 bg-transparent"
-                                    style={{ color: activePreset.hex, borderColor: activePreset.hex }}
-                                >
-                                    Outline
-                                </div>
-                                <Badge style={{ backgroundColor: activePreset.hex + "20", color: activePreset.hex }} className="border-0 font-bold text-xs">
-                                    Badge
-                                </Badge>
+                                <div className="h-8 px-4 rounded-lg flex items-center text-xs font-bold text-white shadow-sm" style={{ backgroundColor: activePreset.hex }}>Primary Button</div>
+                                <div className="h-8 px-4 rounded-lg flex items-center text-xs font-bold border-2 bg-transparent" style={{ color: activePreset.hex, borderColor: activePreset.hex }}>Outline</div>
+                                <Badge style={{ backgroundColor: activePreset.hex + "20", color: activePreset.hex }} className="border-0 font-bold text-xs">Badge</Badge>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* ── Project Info ─────────────────────────────────────── */}
+                {/* Project Information */}
                 <Card className="border-none shadow-lg">
                     <CardHeader className="pb-4">
                         <CardTitle className="flex items-center gap-2 text-base">
-                            <Globe className="h-5 w-5 text-primary" />
-                            Project Information
+                            <Globe className="h-5 w-5 text-primary" /> Project Information
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">General details shown across the platform.</p>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-1.5">
                             <Label className="text-xs font-bold">Platform Name</Label>
-                            <Input value={localSettings.siteName} onChange={(e) => setLocalSettings(prev => ({ ...prev, siteName: e.target.value }))} className="text-sm" />
+                            <Input value={loc.siteName} onChange={(e) => set("siteName", e.target.value)} className="text-sm" />
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-xs font-bold">Platform Description</Label>
-                            <Textarea
-                                value={localSettings.siteDescription}
-                                onChange={(e) => setLocalSettings(prev => ({ ...prev, siteDescription: e.target.value }))}
-                                className="text-sm resize-none"
-                                rows={3}
-                            />
+                            <Textarea value={loc.siteDescription} onChange={(e) => set("siteDescription", e.target.value)} className="text-sm resize-none" rows={3} />
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-xs font-bold">Support Email</Label>
-                            <Input value={localSettings.contactEmail} onChange={(e) => setLocalSettings(prev => ({ ...prev, contactEmail: e.target.value }))} type="email" className="text-sm" />
+                            <Input value={loc.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} type="email" className="text-sm" />
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* ── System Settings ──────────────────────────────────── */}
+                {/* System & Feature Flags */}
                 <Card className="border-none shadow-lg">
                     <CardHeader className="pb-4">
                         <CardTitle className="flex items-center gap-2 text-base">
-                            <Monitor className="h-5 w-5 text-primary" />
-                            System Settings
+                            <Monitor className="h-5 w-5 text-primary" /> System Settings
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground">Control platform-wide behaviour.</p>
+                        <p className="text-sm text-muted-foreground">Control platform-wide behaviour and feature flags.</p>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        {[
-                            { label: "Maintenance Mode", desc: "Temporarily restrict access.", value: localSettings.maintenanceMode, set: (v: boolean) => setLocalSettings(prev => ({ ...prev, maintenanceMode: v })), danger: true },
-                            { label: "Student Registrations", desc: "Allow new student sign-ups.", value: localSettings.studentsOpen, set: (v: boolean) => setLocalSettings(prev => ({ ...prev, studentsOpen: v })), danger: false },
-                            { label: "Professor Applications", desc: "Accept professor requests.", value: localSettings.professorsOpen, set: (v: boolean) => setLocalSettings(prev => ({ ...prev, professorsOpen: v })), danger: false },
-                        ].map(({ label, desc, value, set, danger }) => (
-                            <div key={label} className="flex items-center justify-between p-4 rounded-xl border bg-muted/20">
-                                <div>
-                                    <p className="text-sm font-semibold">{label}</p>
-                                    <p className="text-xs text-muted-foreground">{desc}</p>
-                                </div>
-                                <button
-                                    onClick={() => set(!value)}
-                                    className={cn(
-                                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                                        value ? (danger ? "bg-rose-500" : "bg-primary") : "bg-muted-foreground/30"
-                                    )}
-                                >
-                                    <span className={cn(
-                                        "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform",
-                                        value ? "translate-x-6" : "translate-x-1"
-                                    )} />
-                                </button>
-                            </div>
-                        ))}
+                        <ToggleRow label="Maintenance Mode"       desc="Temporarily restrict access to all users."  value={loc.maintenanceMode}          onChange={(v) => set("maintenanceMode", v)}          danger />
+                        <ToggleRow label="Student Registrations"  desc="Allow new student sign-ups."                value={loc.studentsOpen}             onChange={(v) => set("studentsOpen", v)} />
+                        <ToggleRow label="Professor Applications" desc="Accept professor account requests."         value={loc.professorsOpen}           onChange={(v) => set("professorsOpen", v)} />
+                        <ToggleRow label="Google Authentication"  desc="Allow sign-in with Google OAuth."           value={loc.allowGoogleAuth}          onChange={(v) => set("allowGoogleAuth", v)} />
+                        <ToggleRow label="Email Verification"     desc="Require email verification on sign-up."     value={loc.requireEmailVerification} onChange={(v) => set("requireEmailVerification", v)} />
                     </CardContent>
                 </Card>
 
-                {/* ── Security ─────────────────────────────────────────── */}
+                {/* Security (read-only info) */}
                 <Card className="border-none shadow-lg">
                     <CardHeader className="pb-4">
                         <CardTitle className="flex items-center gap-2 text-base">
-                            <Lock className="h-5 w-5 text-primary" />
-                            Security & Access
+                            <Lock className="h-5 w-5 text-primary" /> Security & Access
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground">Platform-level security configuration.</p>
+                        <p className="text-sm text-muted-foreground">Platform-level security status.</p>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <div className="p-4 rounded-xl border bg-emerald-50 border-emerald-200 flex items-start gap-3">
@@ -3916,121 +3928,311 @@ function SettingsSection() {
                 </Card>
             </div>
 
-            {/* ── SEO / Metadata ────────────────────────────────────── */}
-            <div>
-                <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
-                    <Globe className="h-5 w-5 text-primary" />
-                    SEO &amp; Metadata
-                </h3>
-                <p className="text-sm text-muted-foreground mb-5">
-                    Control what search engines and social platforms display for your site.
-                    Changes here update <code className="text-xs bg-muted px-1 py-0.5 rounded">src/app/layout.tsx</code> on next deploy.
-                </p>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Basic Meta */}
-                    <Card className="border-none shadow-lg">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-bold flex items-center gap-2">
-                                <FileText className="h-4 w-4 text-primary" />
-                                Basic Meta Tags
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-1.5">
-                                <Label className="text-xs font-bold">Page Title <span className="text-muted-foreground font-normal">(shown in browser tab &amp; Google)</span></Label>
-                                <Input
-                                    value={localSettings.metaTitle}
-                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, metaTitle: e.target.value }))}
-                                    className="text-sm"
-                                    maxLength={70}
-                                />
-                                <p className="text-[10px] text-muted-foreground text-right">{localSettings.metaTitle.length}/70 chars</p>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-xs font-bold">Meta Description <span className="text-muted-foreground font-normal">(shown in search results)</span></Label>
-                                <Textarea
-                                    value={localSettings.metaDescription}
-                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, metaDescription: e.target.value }))}
-                                    className="text-sm resize-none"
-                                    rows={3}
-                                    maxLength={160}
-                                />
-                                <p className="text-[10px] text-muted-foreground text-right">{localSettings.metaDescription.length}/160 chars</p>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-xs font-bold">Keywords <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
-                                <Textarea
-                                    value={localSettings.metaKeywords}
-                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, metaKeywords: e.target.value }))}
-                                    className="text-sm resize-none font-mono"
-                                    rows={2}
-                                    placeholder="scholarships, students, education..."
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
+            {/* ═══════════════════════════════════════════════════════════════
+                SECTION 2 · APPEARANCE & BRANDING
+            ════════════════════════════════════════════════════════════════ */}
+            <SettingsSectionHeader
+                icon={<Brush className="h-5 w-5 text-primary" />}
+                title="Appearance & Branding"
+                description="Logo, favicon, and social media profile links."
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                    {/* Open Graph / Social */}
-                    <Card className="border-none shadow-lg">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-bold flex items-center gap-2">
-                                <ExternalLink className="h-4 w-4 text-primary" />
-                                Open Graph &amp; Social Sharing
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-1.5">
-                                <Label className="text-xs font-bold">OG Title</Label>
-                                <Input
-                                    value={localSettings.ogTitle}
-                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, ogTitle: e.target.value }))}
-                                    className="text-sm"
-                                    maxLength={70}
-                                />
+                {/* Logo & Favicon */}
+                <Card className="border-none shadow-lg">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Brush className="h-5 w-5 text-primary" /> Logo & Favicon
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">Brand assets shown in the header and browser tab.</p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Logo URL <span className="text-muted-foreground font-normal">(SVG or PNG recommended)</span></Label>
+                            <Input value={loc.logoUrl} onChange={(e) => set("logoUrl", e.target.value)} className="text-sm font-mono" placeholder="https://yourdomain.com/logo.svg" />
+                            {loc.logoUrl && (
+                                <div className="mt-2 p-3 rounded-xl border bg-muted/20 flex items-center gap-3">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={loc.logoUrl} alt="Logo" className="h-8 object-contain max-w-[120px]" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                                    <span className="text-xs text-muted-foreground">Logo preview</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Favicon URL <span className="text-muted-foreground font-normal">(.ico or 32×32 PNG)</span></Label>
+                            <Input value={loc.faviconUrl} onChange={(e) => set("faviconUrl", e.target.value)} className="text-sm font-mono" placeholder="https://yourdomain.com/favicon.ico" />
+                            {loc.faviconUrl && (
+                                <div className="mt-2 p-3 rounded-xl border bg-muted/20 flex items-center gap-3">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={loc.faviconUrl} alt="Favicon" className="h-6 w-6 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                                    <span className="text-xs text-muted-foreground">Favicon preview</span>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Social Links */}
+                <Card className="border-none shadow-lg">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Share2 className="h-5 w-5 text-primary" /> Social Links
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">External links shown in the footer and about page.</p>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {([
+                            { label: "Facebook",    key: "facebookUrl",  placeholder: "https://facebook.com/scholarhub"           },
+                            { label: "Twitter / X", key: "twitterUrl",   placeholder: "https://twitter.com/scholarhub"            },
+                            { label: "LinkedIn",    key: "linkedinUrl",  placeholder: "https://linkedin.com/company/scholarhub"   },
+                            { label: "Instagram",   key: "instagramUrl", placeholder: "https://instagram.com/scholarhub"          },
+                        ] as { label: string; key: keyof SiteSettings; placeholder: string }[]).map(({ label, key, placeholder }) => (
+                            <div key={key} className="space-y-1.5">
+                                <Label className="text-xs font-bold">{label}</Label>
+                                <div className="flex items-center gap-2">
+                                    <Link2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                                    <Input value={loc[key] as string} onChange={(e) => set(key, e.target.value)} className="text-sm font-mono" placeholder={placeholder} />
+                                </div>
                             </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-xs font-bold">OG Description</Label>
-                                <Textarea
-                                    value={localSettings.ogDescription}
-                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, ogDescription: e.target.value }))}
-                                    className="text-sm resize-none"
-                                    rows={3}
-                                    maxLength={200}
-                                />
+                        ))}
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* ═══════════════════════════════════════════════════════════════
+                SECTION 3 · LOCALIZATION & ANALYTICS
+            ════════════════════════════════════════════════════════════════ */}
+            <SettingsSectionHeader
+                icon={<Languages className="h-5 w-5 text-primary" />}
+                title="Localization & Analytics"
+                description="Language, timezone, footer content, and tracking integrations."
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                {/* Localization */}
+                <Card className="border-none shadow-lg">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Languages className="h-5 w-5 text-primary" /> Localization
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">Regional settings and footer content.</p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+
+                        {/* Language picker */}
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold">Default Language</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {LANGUAGE_OPTIONS.map((lang) => {
+                                    const isActive = loc.defaultLanguage === lang.code;
+                                    return (
+                                        <button
+                                            key={lang.code}
+                                            type="button"
+                                            onClick={() => set("defaultLanguage", lang.code)}
+                                            className={cn(
+                                                "flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 transition-all text-left",
+                                                isActive
+                                                    ? "border-primary bg-primary/5 shadow-sm"
+                                                    : "border-transparent bg-muted/40 hover:bg-muted/70"
+                                            )}
+                                        >
+                                            <span className="text-xl leading-none">{lang.flag}</span>
+                                            <div className="min-w-0">
+                                                <p className={cn("text-xs font-semibold truncate", lang.rtl && "font-cairo")}>{lang.native}</p>
+                                                <p className="text-[10px] text-muted-foreground">{lang.label}</p>
+                                            </div>
+                                            {lang.rtl && (
+                                                <span className="ml-auto text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded shrink-0">RTL</span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
                             </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-xs font-bold">OG Image URL <span className="text-muted-foreground font-normal">(1200×630 recommended)</span></Label>
-                                <Input
-                                    value={localSettings.ogImage}
-                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, ogImage: e.target.value }))}
-                                    className="text-sm font-mono"
-                                    placeholder="https://yourdomain.com/og-image.png"
-                                />
-                            </div>
-                            {/* Preview card */}
-                            {(localSettings.ogTitle || localSettings.ogDescription || localSettings.ogImage) && (
-                                <div className="mt-2 rounded-xl border overflow-hidden bg-white shadow-sm">
-                                    {localSettings.ogImage && (
-                                        <div className="h-28 bg-muted flex items-center justify-center text-xs text-muted-foreground border-b" style={{ backgroundImage: `url(${localSettings.ogImage})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-                                    )}
-                                    <div className="p-3">
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">scholarhub.com</p>
-                                        <p className="text-sm font-bold line-clamp-1 mt-0.5">{localSettings.ogTitle || localSettings.metaTitle}</p>
-                                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{localSettings.ogDescription || localSettings.metaDescription}</p>
+
+                            {/* Live RTL preview when Arabic is selected */}
+                            {loc.defaultLanguage === "ar" && (
+                                <div className="mt-3 p-4 rounded-xl border border-amber-200 bg-amber-50 space-y-2" dir="rtl">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-bold text-amber-800">معاينة مباشرة — RTL</p>
+                                        <Badge className="bg-amber-100 text-amber-700 border-0 text-[10px]">العربية</Badge>
+                                    </div>
+                                    <p className="text-sm text-amber-900" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                                        مرحباً بك في ScholarHub — منصة المنح الدراسية
+                                    </p>
+                                    <p className="text-xs text-amber-700" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                                        اكتشف الفرص الأكاديمية حول العالم وقدّم طلبك بكل سهولة.
+                                    </p>
+                                    <div className="flex items-center gap-2 flex-row-reverse">
+                                        <div className="h-7 px-3 rounded-lg bg-amber-600 text-white text-xs font-bold flex items-center" style={{ fontFamily: "'Cairo', sans-serif" }}>تقدم الآن</div>
+                                        <div className="h-7 px-3 rounded-lg border-2 border-amber-600 text-amber-800 text-xs font-bold flex items-center" style={{ fontFamily: "'Cairo', sans-serif" }}>معرفة المزيد</div>
                                     </div>
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
-                </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Timezone</Label>
+                            <Select value={loc.timezone} onValueChange={(v) => set("timezone", v)}>
+                                <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="UTC">UTC</SelectItem>
+                                    <SelectItem value="America/New_York">America/New_York (ET)</SelectItem>
+                                    <SelectItem value="America/Chicago">America/Chicago (CT)</SelectItem>
+                                    <SelectItem value="America/Los_Angeles">America/Los_Angeles (PT)</SelectItem>
+                                    <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
+                                    <SelectItem value="Europe/Paris">Europe/Paris (CET)</SelectItem>
+                                    <SelectItem value="Asia/Dubai">Asia/Dubai (GST)</SelectItem>
+                                    <SelectItem value="Asia/Tokyo">Asia/Tokyo (JST)</SelectItem>
+                                    <SelectItem value="Africa/Algiers">Africa/Algiers (CET)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Footer Text</Label>
+                            <Textarea value={loc.footerText} onChange={(e) => set("footerText", e.target.value)} className="text-sm resize-none" rows={2} placeholder="Connecting students with opportunities worldwide." />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Copyright Notice</Label>
+                            <Input value={loc.copyrightText} onChange={(e) => set("copyrightText", e.target.value)} className="text-sm" placeholder={`© ${new Date().getFullYear()} ScholarHub. All rights reserved.`} />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Analytics */}
+                <Card className="border-none shadow-lg">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <BarChart2 className="h-5 w-5 text-primary" /> Analytics & Integrations
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">Connect third-party analytics and tracking tools.</p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Google Analytics ID <span className="text-muted-foreground font-normal">(G-XXXXXXXXXX)</span></Label>
+                            <Input value={loc.googleAnalyticsId} onChange={(e) => set("googleAnalyticsId", e.target.value)} className="text-sm font-mono" placeholder="G-XXXXXXXXXX" />
+                            {loc.googleAnalyticsId && (
+                                <p className="text-[10px] text-emerald-600 flex items-center gap-1 mt-1">
+                                    <CheckCircle2 className="h-3 w-3" /> Tracking ID configured
+                                </p>
+                            )}
+                        </div>
+                        <div className="p-4 rounded-xl border bg-muted/20 space-y-1">
+                            <p className="text-xs font-bold">Tip</p>
+                            <p className="text-xs text-muted-foreground">
+                                Add your Google Analytics 4 measurement ID. Stats appear in your GA4 dashboard within 24–48 hours after publishing.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
-            {/* Save */}
-            <div className="flex justify-end">
-                <Button className="gap-2 font-bold px-8" onClick={handleSave}>
-                    {saved ? <><Check className="h-4 w-4" /> Saved!</> : <><Save className="h-4 w-4" /> Save Settings</>}
+            {/* ═══════════════════════════════════════════════════════════════
+                SECTION 4 · SEO & METADATA
+            ════════════════════════════════════════════════════════════════ */}
+            <SettingsSectionHeader
+                icon={<Globe className="h-5 w-5 text-primary" />}
+                title="SEO & Metadata"
+                description="Control what search engines and social platforms display for your site."
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                {/* Basic Meta */}
+                <Card className="border-none shadow-lg">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-primary" /> Basic Meta Tags
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Page Title <span className="text-muted-foreground font-normal">(browser tab & Google)</span></Label>
+                            <Input value={loc.metaTitle} onChange={(e) => set("metaTitle", e.target.value)} className="text-sm" maxLength={70} />
+                            <p className="text-[10px] text-muted-foreground text-right">{loc.metaTitle.length}/70 chars</p>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Meta Description <span className="text-muted-foreground font-normal">(shown in search results)</span></Label>
+                            <Textarea value={loc.metaDescription} onChange={(e) => set("metaDescription", e.target.value)} className="text-sm resize-none" rows={3} maxLength={160} />
+                            <p className="text-[10px] text-muted-foreground text-right">{loc.metaDescription.length}/160 chars</p>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Keywords <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
+                            <Textarea value={loc.metaKeywords} onChange={(e) => set("metaKeywords", e.target.value)} className="text-sm resize-none font-mono" rows={2} placeholder="scholarships, students, education..." />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Open Graph */}
+                <Card className="border-none shadow-lg">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <ExternalLink className="h-4 w-4 text-primary" /> Open Graph (Facebook / LinkedIn)
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">OG Title</Label>
+                            <Input value={loc.ogTitle} onChange={(e) => set("ogTitle", e.target.value)} className="text-sm" maxLength={70} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">OG Description</Label>
+                            <Textarea value={loc.ogDescription} onChange={(e) => set("ogDescription", e.target.value)} className="text-sm resize-none" rows={2} maxLength={200} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">OG Image URL <span className="text-muted-foreground font-normal">(1200×630 recommended)</span></Label>
+                            <Input value={loc.ogImage} onChange={(e) => set("ogImage", e.target.value)} className="text-sm font-mono" placeholder="https://yourdomain.com/og-image.png" />
+                        </div>
+                        {(loc.ogTitle || loc.ogDescription || loc.ogImage) && (
+                            <div className="rounded-xl border overflow-hidden bg-white shadow-sm">
+                                {loc.ogImage && (
+                                    <div className="h-28 bg-muted border-b" style={{ backgroundImage: `url(${loc.ogImage})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                                )}
+                                <div className="p-3">
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">scholarhub.com</p>
+                                    <p className="text-sm font-bold line-clamp-1 mt-0.5">{loc.ogTitle || loc.metaTitle}</p>
+                                    <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{loc.ogDescription || loc.metaDescription}</p>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Twitter / X Card */}
+                <Card className="border-none shadow-lg lg:col-span-2">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <Share2 className="h-4 w-4 text-primary" /> Twitter / X Card
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">Overrides OG tags when your link is shared on Twitter/X. Leave blank to inherit OG values.</p>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Twitter Title</Label>
+                                <Input value={loc.twitterTitle} onChange={(e) => set("twitterTitle", e.target.value)} className="text-sm" maxLength={70} placeholder="Inherits OG title" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Twitter Description</Label>
+                                <Input value={loc.twitterDescription} onChange={(e) => set("twitterDescription", e.target.value)} className="text-sm" maxLength={200} placeholder="Inherits OG description" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Twitter Image URL</Label>
+                                <Input value={loc.twitterImage} onChange={(e) => set("twitterImage", e.target.value)} className="text-sm font-mono" placeholder="Inherits OG image" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* ── Save ───────────────────────────────────────────────── */}
+            <div className="flex justify-end pt-2">
+                <Button className="gap-2 font-bold px-8" onClick={() => save(loc)} disabled={isSaving}>
+                    {isSaving
+                        ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>
+                        : <><Save className="h-4 w-4" /> Save All Settings</>}
                 </Button>
             </div>
+
         </motion.div>
     );
 }

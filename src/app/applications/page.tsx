@@ -31,19 +31,20 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useApplications } from "@/hooks/useApplications";
 import { cn } from "@/lib/utils";
-
-// ─── Student Sidebar Nav ──────────────────────────────────────────────────────
-const STUDENT_MENU = [
-    { href: "/applications", label: "My Applications", icon: BookOpen },
-    { href: "/scholarships",  label: "Browse Scholarships", icon: GraduationCap },
-    { href: "/saved",         label: "Saved Scholarships",  icon: Bookmark },
-    { href: "/notifications", label: "Notifications",       icon: Bell },
-    { href: "/deadlines",     label: "Deadlines",           icon: Clock },
-    { href: "/profile",       label: "My Profile",          icon: User },
-];
+import { useTranslation } from "@/hooks/useTranslation";
 
 function StudentSidebar({ counts }: { counts: Record<string, number> }) {
+    const { t } = useTranslation();
     const pathname = usePathname();
+
+    const STUDENT_MENU = [
+        { href: "/applications", label: t.applications.title,            icon: BookOpen     },
+        { href: "/scholarships",  label: t.applications.browseScholarships, icon: GraduationCap },
+        { href: "/saved",         label: t.applications.savedScholarships,  icon: Bookmark     },
+        { href: "/notifications", label: t.applications.notifications,    icon: Bell         },
+        { href: "/deadlines",     label: t.applications.deadlines,        icon: Clock        },
+        { href: "/profile",       label: t.applications.myProfile,        icon: User         },
+    ];
 
     return (
         <aside className="w-64 shrink-0 hidden lg:block">
@@ -55,7 +56,7 @@ function StudentSidebar({ counts }: { counts: Record<string, number> }) {
                             <GraduationCap className="h-4 w-4 text-primary" />
                         </div>
                         <span className="text-xs font-bold tracking-wider text-primary uppercase">
-                            Student Menu
+                            {t.applications.menuTitle}
                         </span>
                     </div>
                 </div>
@@ -92,23 +93,23 @@ function StudentSidebar({ counts }: { counts: Record<string, number> }) {
 
                 {/* Quick stats */}
                 <div className="border-t mx-2 mt-1 pt-3 pb-2 px-2">
-                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground mb-2 px-1">QUICK STATS</p>
+                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground mb-2 px-1">{t.applications.quickStats}</p>
                     <div className="grid grid-cols-2 gap-1.5">
                         <div className="bg-amber-50 border border-amber-100 rounded-lg p-2 text-center">
                             <p className="text-lg font-black text-amber-600">{counts.PENDING}</p>
-                            <p className="text-[10px] text-amber-600/80 font-medium">Pending</p>
+                            <p className="text-[10px] text-amber-600/80 font-medium">{t.applications.pending}</p>
                         </div>
                         <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-2 text-center">
                             <p className="text-lg font-black text-emerald-600">{counts.ACCEPTED}</p>
-                            <p className="text-[10px] text-emerald-600/80 font-medium">Accepted</p>
+                            <p className="text-[10px] text-emerald-600/80 font-medium">{t.applications.accepted}</p>
                         </div>
                         <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 text-center">
                             <p className="text-lg font-black text-blue-600">{counts.UNDER_REVIEW}</p>
-                            <p className="text-[10px] text-blue-600/80 font-medium">In Review</p>
+                            <p className="text-[10px] text-blue-600/80 font-medium">{t.applications.inReview}</p>
                         </div>
                         <div className="bg-rose-50 border border-rose-100 rounded-lg p-2 text-center">
                             <p className="text-lg font-black text-rose-600">{counts.REJECTED}</p>
-                            <p className="text-[10px] text-rose-600/80 font-medium">Rejected</p>
+                            <p className="text-[10px] text-rose-600/80 font-medium">{t.applications.rejected}</p>
                         </div>
                     </div>
                 </div>
@@ -117,23 +118,26 @@ function StudentSidebar({ counts }: { counts: Record<string, number> }) {
     );
 }
 
-// ─── Tab config ───────────────────────────────────────────────────────────────
-const STATUS_TABS = [
-    { value: "all",          label: "All",          icon: BookOpen,     color: "text-primary"     },
-    { value: "PENDING",      label: "Pending",      icon: Clock,        color: "text-amber-500"   },
-    { value: "UNDER_REVIEW", label: "Under Review", icon: AlertCircle,  color: "text-blue-500"    },
-    { value: "ACCEPTED",     label: "Accepted",     icon: CheckCircle2, color: "text-emerald-500" },
-    { value: "REJECTED",     label: "Rejected",     icon: XCircle,      color: "text-rose-500"    },
-] as const;
+// ─── Tab value type ───────────────────────────────────────────────────────────
+type TabValue = "all" | "PENDING" | "UNDER_REVIEW" | "ACCEPTED" | "REJECTED";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ApplicationsPage() {
+    const { t } = useTranslation();
     const router = useRouter();
     const { user, isLoading: isAuthLoading } = useAuth();
     const { myApplications } = useApplications();
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("all");
     const [mounted, setMounted] = useState(false);
+
+    const STATUS_TABS = [
+        { value: "all" as TabValue,          label: t.applications.all,         icon: BookOpen,     color: "text-primary"     },
+        { value: "PENDING" as TabValue,      label: t.applications.pending,     icon: Clock,        color: "text-amber-500"   },
+        { value: "UNDER_REVIEW" as TabValue, label: t.applications.underReview, icon: AlertCircle,  color: "text-blue-500"    },
+        { value: "ACCEPTED" as TabValue,     label: t.applications.accepted,    icon: CheckCircle2, color: "text-emerald-500" },
+        { value: "REJECTED" as TabValue,     label: t.applications.rejected,    icon: XCircle,      color: "text-rose-500"    },
+    ];
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -192,13 +196,13 @@ export default function ApplicationsPage() {
                         <div className="mb-6">
                             <div className="flex items-center gap-2 text-primary font-bold tracking-wider text-xs mb-1">
                                 <TrendingUp className="h-4 w-4" />
-                                MY APPLICATIONS
+                                {t.applications.sectionTitle}
                             </div>
                             <h1 className="text-3xl font-extrabold tracking-tight mb-1">
-                                Application Tracker
+                                {t.applications.trackerTitle}
                             </h1>
                             <p className="text-muted-foreground text-sm">
-                                Track the status of all your scholarship applications in one place.
+                                {t.applications.trackerDesc}
                             </p>
                         </div>
 
@@ -206,7 +210,7 @@ export default function ApplicationsPage() {
                         <div className="relative mb-5">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder="Search by scholarship name or organization..."
+                                placeholder={t.applications.searchPlaceholder}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-10 bg-white"
@@ -268,6 +272,7 @@ function ApplicationList({
     totalUnfiltered: number;
     searchQuery: string;
 }) {
+    const { t } = useTranslation();
     if (isLoading) {
         return (
             <div className="space-y-4">
@@ -295,17 +300,17 @@ function ApplicationList({
             <Card>
                 <CardContent className="py-16 text-center">
                     <BookOpen className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-                    <h3 className="text-lg font-bold mb-2">No Applications Found</h3>
+                    <h3 className="text-lg font-bold mb-2">{t.applications.noApplicationsTitle}</h3>
                     <p className="text-muted-foreground text-sm mb-6">
                         {totalUnfiltered === 0
-                            ? "You haven't applied to any scholarships yet."
+                            ? t.applications.noApplicationsYet
                             : searchQuery
-                                ? "No applications match your search."
-                                : "No applications in this category yet."}
+                                ? t.applications.noApplicationsSearch
+                                : t.applications.noApplicationsCategory}
                     </p>
                     {totalUnfiltered === 0 && (
                         <Link href="/scholarships">
-                            <Button>Browse Scholarships</Button>
+                            <Button>{t.applications.browseScholarships}</Button>
                         </Link>
                     )}
                 </CardContent>
@@ -323,16 +328,18 @@ function ApplicationList({
 }
 
 // ─── Application Card ─────────────────────────────────────────────────────────
-const STATUS_CONFIG: Record<string, { label: string; icon: any; badge: any; border: string }> = {
-    PENDING:      { label: "Pending",      icon: Clock,        badge: "secondary",   border: "border-l-amber-400"   },
-    UNDER_REVIEW: { label: "Under Review", icon: AlertCircle,  badge: "warning",     border: "border-l-blue-500"    },
-    ACCEPTED:     { label: "Accepted",     icon: CheckCircle2, badge: "success",     border: "border-l-emerald-500" },
-    REJECTED:     { label: "Rejected",     icon: XCircle,      badge: "destructive", border: "border-l-rose-500"    },
-    DRAFT:        { label: "Draft",        icon: FileText,     badge: "outline",     border: "border-l-slate-400"   },
-    WITHDRAWN:    { label: "Withdrawn",    icon: XCircle,      badge: "outline",     border: "border-l-slate-400"   },
-};
-
 function ApplicationCard({ application }: { application: any }) {
+    const { t } = useTranslation();
+
+    const STATUS_CONFIG: Record<string, { label: string; icon: any; badge: any; border: string }> = {
+        PENDING:      { label: t.applications.pending,     icon: Clock,        badge: "secondary",   border: "border-l-amber-400"   },
+        UNDER_REVIEW: { label: t.applications.underReview, icon: AlertCircle,  badge: "warning",     border: "border-l-blue-500"    },
+        ACCEPTED:     { label: t.applications.accepted,    icon: CheckCircle2, badge: "success",     border: "border-l-emerald-500" },
+        REJECTED:     { label: t.applications.rejected,    icon: XCircle,      badge: "destructive", border: "border-l-rose-500"    },
+        DRAFT:        { label: t.applications.draft,       icon: FileText,     badge: "outline",     border: "border-l-slate-400"   },
+        WITHDRAWN:    { label: t.applications.withdrawn,   icon: XCircle,      badge: "outline",     border: "border-l-slate-400"   },
+    };
+
     const cfg = STATUS_CONFIG[application.status] ?? STATUS_CONFIG.DRAFT;
     const StatusIcon = cfg.icon;
 
@@ -354,11 +361,11 @@ function ApplicationCard({ application }: { application: any }) {
                             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                                 <span className="flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
-                                    Applied: {new Date(application.createdAt).toLocaleDateString()}
+                                    {t.applications.applied} {new Date(application.createdAt).toLocaleDateString()}
                                 </span>
                                 <span className="flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
-                                    Updated: {new Date(application.updatedAt).toLocaleDateString()}
+                                    {t.applications.updated} {new Date(application.updatedAt).toLocaleDateString()}
                                 </span>
                             </div>
                         </div>
@@ -372,7 +379,7 @@ function ApplicationCard({ application }: { application: any }) {
                         <Link href={`/applications/${application.id}`}>
                             <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs">
                                 <Eye className="h-3.5 w-3.5" />
-                                View Details
+                                {t.applications.viewDetails}
                             </Button>
                         </Link>
                     </div>

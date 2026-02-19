@@ -13,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "@/hooks/use-toast";
 import api from "@/lib/axios";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const resetPasswordSchema = z
     .object({
@@ -32,6 +33,7 @@ const resetPasswordSchema = z
 type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 export default function ResetPasswordPage() {
+    const { t } = useTranslation();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -119,17 +121,17 @@ export default function ResetPasswordPage() {
 
                         <div className="space-y-2">
                             <h1 className="text-2xl font-bold text-zinc-900">
-                                Password reset successful!
+                                {t.auth.resetSuccess}
                             </h1>
                             <p className="text-sm text-zinc-600">
-                                Your password has been changed successfully.
+                                {t.auth.resetSuccessSub}
                             </p>
                         </div>
 
                         <div className="pt-4">
                             <Link href="/auth/login">
                                 <Button className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20">
-                                    Continue to Login
+                                    {t.auth.continueToLogin}
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </Link>
@@ -151,17 +153,17 @@ export default function ResetPasswordPage() {
                     <div className="space-y-6">
                         <div className="space-y-2">
                             <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
-                                Set new password
+                                {t.auth.setNewPassword}
                             </h1>
                             <p className="text-sm text-zinc-500 font-medium">
-                                Your new password must be different from previously used passwords
+                                {t.auth.setNewPasswordSub}
                             </p>
                         </div>
 
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="password" className="text-zinc-600 font-semibold">
-                                    New Password
+                                    {t.auth.newPassword}
                                 </Label>
                                 <div className="relative">
                                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -208,7 +210,7 @@ export default function ResetPasswordPage() {
                                     htmlFor="confirmPassword"
                                     className="text-zinc-600 font-semibold"
                                 >
-                                    Confirm Password
+                                    {t.auth.confirmPassword}
                                 </Label>
                                 <div className="relative">
                                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -257,7 +259,7 @@ export default function ResetPasswordPage() {
                                     className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.98]"
                                     disabled={isLoading}
                                 >
-                                    {isLoading ? "Resetting..." : "Reset Password"}
+                                    {isLoading ? t.auth.resetting : t.auth.resetPassword}
                                     {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
                                 </Button>
                             </div>
@@ -266,9 +268,8 @@ export default function ResetPasswordPage() {
                 </motion.div>
 
                 <p className="text-center text-xs text-zinc-400 mt-6">
-                    Remember your password?{" "}
                     <Link href="/auth/login" className="text-primary font-bold hover:underline">
-                        Sign in
+                        {t.auth.rememberPassword}
                     </Link>
                 </p>
             </div>

@@ -1,6 +1,7 @@
+"use client";
+
 import Link from "next/link";
 import {
-    GraduationCap,
     Search,
     BookOpen,
     Bell,
@@ -13,42 +14,27 @@ import {
     Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
 import { FeaturedScholarships } from "@/components/home/featured-scholarships";
-
-const stats = [
-    { icon: BookOpen, value: "500+", label: "Scholarships" },
-    { icon: Globe, value: "50+", label: "Countries" },
-    { icon: Users, value: "10K+", label: "Students Helped" },
-    { icon: TrendingUp, value: "85%", label: "Success Rate" },
-];
-
-const features = [
-    {
-        icon: Search,
-        title: "Easy Search",
-        description: "Find scholarships matching your profile with our powerful search and filter system.",
-    },
-    {
-        icon: CalendarDays,
-        title: "Deadline Tracking",
-        description: "Never miss a deadline with our automatic reminders and organized deadline calendar.",
-    },
-    {
-        icon: Bell,
-        title: "Smart Alerts",
-        description: "Get notified about new scholarships that match your interests and qualifications.",
-    },
-    {
-        icon: BookOpen,
-        title: "Application Guides",
-        description: "Access comprehensive guides to help you submit winning scholarship applications.",
-    },
-];
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function HomePage() {
+    const { t } = useTranslation();
+
+    const stats = [
+        { icon: BookOpen,   value: t.home.stat1Value, label: t.home.stat1Label },
+        { icon: Globe,      value: t.home.stat2Value, label: t.home.stat2Label },
+        { icon: Users,      value: t.home.stat3Value, label: t.home.stat3Label },
+        { icon: TrendingUp, value: t.home.stat4Value, label: t.home.stat4Label },
+    ];
+
+    const features = [
+        { icon: Search,      title: t.home.feature1Title, description: t.home.feature1Desc },
+        { icon: CalendarDays, title: t.home.feature2Title, description: t.home.feature2Desc },
+        { icon: Bell,        title: t.home.feature3Title, description: t.home.feature3Desc },
+        { icon: BookOpen,    title: t.home.feature4Title, description: t.home.feature4Desc },
+    ];
+
     return (
         <div className="flex flex-col">
             {/* Hero Section */}
@@ -64,19 +50,18 @@ export default function HomePage() {
                         {/* Badge */}
                         <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium animate-fadeIn">
                             <Sparkles className="h-4 w-4" />
-                            <span>Empowering Gaza Students</span>
+                            <span>{t.home.heroTag}</span>
                         </div>
 
                         {/* Main Heading */}
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight animate-slideUp">
-                            Discover Your Path to{" "}
+                            {t.home.heroTitle.split("Academic Excellence")[0]}
                             <span className="gradient-text">Academic Excellence</span>
                         </h1>
 
                         {/* Description */}
                         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-slideUp">
-                            Find scholarship opportunities from around the world. We organize all scholarships
-                            in one place with clear requirements, deadlines, and application links.
+                            {t.home.heroSub}
                         </p>
 
                         {/* CTA Buttons */}
@@ -84,12 +69,12 @@ export default function HomePage() {
                             <Link href="/scholarships">
                                 <Button variant="gradient" size="xl" className="gap-2">
                                     <Search className="h-5 w-5" />
-                                    Browse Scholarships
+                                    {t.home.browseScholarships}
                                 </Button>
                             </Link>
                             <Link href="/about">
                                 <Button variant="outline" size="xl" className="gap-2">
-                                    Learn More
+                                    {t.home.learnMore}
                                     <ArrowRight className="h-5 w-5" />
                                 </Button>
                             </Link>
@@ -99,12 +84,12 @@ export default function HomePage() {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-12 animate-fadeIn">
                             {stats.map((stat, index) => (
                                 <div
-                                    key={stat.label}
+                                    key={index}
                                     className="text-center p-4 rounded-xl bg-card border shadow-sm"
                                     style={{ animationDelay: `${index * 100}ms` }}
                                 >
                                     <stat.icon className="h-6 w-6 text-primary mx-auto mb-2" />
-                                    <div className="text-2xl md:text-3xl font-bold">{stat.value}</div>
+                                    <div className="text-2xl md:text-3xl font-bold" data-ltr>{stat.value}</div>
                                     <div className="text-sm text-muted-foreground">{stat.label}</div>
                                 </div>
                             ))}
@@ -119,13 +104,13 @@ export default function HomePage() {
                     <div className="text-center space-y-4 mb-12">
                         <Badge variant="secondary" className="gap-1">
                             <Star className="h-3 w-3" />
-                            Featured
+                            {t.home.featuredTag}
                         </Badge>
                         <h2 className="text-3xl md:text-4xl font-bold">
-                            Top Scholarship Opportunities
+                            {t.home.featuredTitle}
                         </h2>
                         <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Explore carefully selected scholarships from prestigious institutions worldwide
+                            {t.home.featuredSub}
                         </p>
                     </div>
 
@@ -134,7 +119,7 @@ export default function HomePage() {
                     <div className="text-center mt-12">
                         <Link href="/scholarships">
                             <Button variant="outline" size="lg" className="gap-2 group">
-                                View All Scholarships
+                                {t.home.viewAll}
                                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                             </Button>
                         </Link>
@@ -147,15 +132,15 @@ export default function HomePage() {
                 <div className="container">
                     <div className="text-center space-y-4 mb-12">
                         <h2 className="text-3xl md:text-4xl font-bold">
-                            Why Choose ScholarHub?
+                            {t.home.whyTitle}
                         </h2>
                         <p className="text-muted-foreground max-w-2xl mx-auto">
-                            We make finding and applying for scholarships easier than ever before
+                            {t.home.whySub}
                         </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {features.map((feature, index) => (
+                        {features.map((feature) => (
                             <div
                                 key={feature.title}
                                 className="text-center p-6 rounded-xl border bg-card card-hover"
@@ -175,21 +160,21 @@ export default function HomePage() {
             <section className="py-16 md:py-24 bg-gradient-to-r from-primary to-blue-600 text-white">
                 <div className="container text-center space-y-6">
                     <h2 className="text-3xl md:text-4xl font-bold">
-                        Start Your Scholarship Journey Today
+                        {t.home.ctaTitle}
                     </h2>
                     <p className="text-white/80 max-w-2xl mx-auto text-lg">
-                        Join thousands of students who have found their path to higher education through ScholarHub.
+                        {t.home.ctaSub}
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                         <Link href="/scholarships">
                             <Button size="xl" variant="secondary" className="gap-2 text-primary">
-                                Explore Scholarships
+                                {t.home.exploreScholarships}
                                 <ArrowRight className="h-5 w-5" />
                             </Button>
                         </Link>
                         <Link href="/contact">
                             <Button size="xl" variant="outline" className="gap-2 border-white/30 text-white hover:bg-white/10">
-                                Contact Us
+                                {t.home.contactUs}
                             </Button>
                         </Link>
                     </div>

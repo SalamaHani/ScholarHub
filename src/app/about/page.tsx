@@ -1,4 +1,5 @@
-import { Metadata } from "next";
+"use client";
+
 import {
     Heart,
     Target,
@@ -11,11 +12,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-export const metadata: Metadata = {
-    title: "About Us | ScholarHub",
-    description: "Learn about ScholarHub's mission to help students in Gaza find scholarship opportunities.",
-};
+import { useTranslation } from "@/hooks/useTranslation";
 
 const teamMembers = [
     {
@@ -35,37 +32,23 @@ const teamMembers = [
     },
 ];
 
-const values = [
-    {
-        icon: Heart,
-        title: "Accessibility",
-        description: "Making scholarship information freely available to all students regardless of their circumstances.",
-    },
-    {
-        icon: Target,
-        title: "Accuracy",
-        description: "Providing verified and up-to-date information about scholarship requirements and deadlines.",
-    },
-    {
-        icon: Users,
-        title: "Community",
-        description: "Building a supportive community of students helping each other achieve their dreams.",
-    },
-    {
-        icon: Globe,
-        title: "Global Reach",
-        description: "Connecting students with opportunities from universities around the world.",
-    },
-];
-
-const milestones = [
-    { value: "500+", label: "Scholarships Listed" },
-    { value: "10K+", label: "Students Helped" },
-    { value: "50+", label: "Countries Covered" },
-    { value: "200+", label: "Success Stories" },
-];
-
 export default function AboutPage() {
+    const { t } = useTranslation();
+
+    const values = [
+        { icon: Heart,  title: t.about.value1Title, description: t.about.value1Desc },
+        { icon: Target, title: t.about.value2Title, description: t.about.value2Desc },
+        { icon: Users,  title: t.about.value3Title, description: t.about.value3Desc },
+        { icon: Globe,  title: t.about.value4Title, description: t.about.value4Desc },
+    ];
+
+    const milestones = [
+        { value: t.about.stat1Value, label: t.about.stat1Label },
+        { value: t.about.stat2Value, label: t.about.stat2Label },
+        { value: t.about.stat3Value, label: t.about.stat3Label },
+        { value: t.about.stat4Value, label: t.about.stat4Label },
+    ];
+
     return (
         <div className="py-8 md:py-12">
             {/* Hero Section */}
@@ -73,17 +56,13 @@ export default function AboutPage() {
                 <div className="max-w-3xl mx-auto text-center space-y-6">
                     <Badge variant="secondary" className="gap-1">
                         <Sparkles className="h-3 w-3" />
-                        About Us
+                        {t.about.tag}
                     </Badge>
                     <h1 className="text-4xl md:text-5xl font-bold">
-                        Empowering Students to{" "}
-                        <span className="gradient-text">Achieve Their Dreams</span>
+                        {t.about.title}
                     </h1>
                     <p className="text-lg text-muted-foreground">
-                        ScholarHub was born from a simple belief: every student deserves access
-                        to educational opportunities, regardless of their circumstances. We&apos;re
-                        dedicated to helping students in Gaza and beyond find their path to
-                        academic excellence.
+                        {t.about.desc}
                     </p>
                 </div>
             </section>
@@ -95,28 +74,20 @@ export default function AboutPage() {
                         <div className="space-y-6">
                             <Badge variant="default" className="gap-1">
                                 <Target className="h-3 w-3" />
-                                Our Mission
+                                {t.about.missionTag}
                             </Badge>
                             <h2 className="text-3xl font-bold">
-                                Opening Doors to Education
+                                {t.about.missionTitle}
                             </h2>
                             <p className="text-muted-foreground leading-relaxed">
-                                We believe that education is the key to a brighter future. Our mission
-                                is to collect and organize scholarship opportunities in one accessible
-                                platform, displaying requirements, deadlines, and application links
-                                clearly so students can focus on what matters most—their applications.
-                            </p>
-                            <p className="text-muted-foreground leading-relaxed">
-                                For students in Gaza facing unique challenges in accessing educational
-                                resources, we aim to be a bridge connecting them with opportunities
-                                that can transform their lives and communities.
+                                {t.about.missionDesc}
                             </p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             {milestones.map((milestone) => (
                                 <Card key={milestone.label} className="text-center">
                                     <CardContent className="p-6">
-                                        <div className="text-3xl font-bold text-primary mb-2">
+                                        <div className="text-3xl font-bold text-primary mb-2" data-ltr>
                                             {milestone.value}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
@@ -136,11 +107,11 @@ export default function AboutPage() {
                     <div className="text-center space-y-4 mb-12">
                         <Badge variant="secondary" className="gap-1">
                             <Award className="h-3 w-3" />
-                            Our Values
+                            {t.about.valuesTag}
                         </Badge>
-                        <h2 className="text-3xl font-bold">What We Stand For</h2>
+                        <h2 className="text-3xl font-bold">{t.about.valuesTitle}</h2>
                         <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Our core values guide everything we do at ScholarHub
+                            {t.about.valuesSub}
                         </p>
                     </div>
 
@@ -168,11 +139,11 @@ export default function AboutPage() {
                     <div className="text-center space-y-4 mb-12">
                         <Badge variant="secondary" className="gap-1">
                             <Users className="h-3 w-3" />
-                            Our Team
+                            {t.about.teamTag}
                         </Badge>
-                        <h2 className="text-3xl font-bold">Meet the Team</h2>
+                        <h2 className="text-3xl font-bold">{t.about.teamTitle}</h2>
                         <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Passionate individuals dedicated to helping students succeed
+                            {t.about.teamSub}
                         </p>
                     </div>
 
@@ -203,34 +174,14 @@ export default function AboutPage() {
                     <div className="text-center space-y-4 mb-8">
                         <Badge variant="secondary" className="gap-1">
                             <BookOpen className="h-3 w-3" />
-                            Our Story
+                            {t.about.storyTag}
                         </Badge>
-                        <h2 className="text-3xl font-bold">Why We Started ScholarHub</h2>
+                        <h2 className="text-3xl font-bold">{t.about.storyTitle}</h2>
                     </div>
 
-                    <div className="prose prose-lg mx-auto text-muted-foreground">
-                        <p>
-                            ScholarHub started as a simple idea: what if there was one place where
-                            students could find all the scholarship opportunities they need? As students
-                            ourselves, we experienced firsthand the challenges of searching for scholarships—
-                            scattered information, missed deadlines, and unclear requirements.
-                        </p>
-                        <p>
-                            For students in Gaza, these challenges are even greater. Limited internet access,
-                            difficulty reaching international institutions, and a lack of guidance make the
-                            already daunting process of applying for scholarships even more difficult.
-                        </p>
-                        <p>
-                            That&apos;s why we created ScholarHub. We wanted to build a platform that would
-                            organize scholarship information clearly, track deadlines, and make the
-                            application process as smooth as possible. Our goal is to ensure that no
-                            student misses out on an opportunity simply because they didn&apos;t know about it.
-                        </p>
-                        <p className="font-medium text-foreground">
-                            Together, we can open doors to education and create a brighter future for
-                            students everywhere.
-                        </p>
-                    </div>
+                    <p className="text-muted-foreground leading-relaxed text-lg text-center">
+                        {t.about.storyDesc}
+                    </p>
                 </div>
             </section>
         </div>
