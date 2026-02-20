@@ -59,6 +59,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { DashboardSkeleton, ApplicationTableSkeleton } from "@/components/skeletons";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // Roles constant
 const ROLES = {
@@ -72,6 +73,7 @@ export default function DashboardPage() {
     const { user, isLoading: isAuthLoading } = useAuth();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isCreateTestimonialOpen, setIsCreateTestimonialOpen] = useState(false);
+    const { t } = useTranslation();
 
     // Determine context for scholarship hooks
     const role = user?.role?.toUpperCase() || ROLES.STUDENT;
@@ -115,17 +117,17 @@ export default function DashboardPage() {
                     <div className="space-y-2">
                         <div className="flex items-center gap-2 text-primary font-bold tracking-wider text-xs">
                             <LayoutDashboard className="h-4 w-4" />
-                            {role} Portal
+                            {role} {t.dashboard.portal}
                         </div>
                         <h1 className="text-4xl font-extrabold tracking-tight gradient-text">
                             {user?.name || user?.email?.split('@')[0] || "User"}
                         </h1>
                         <p className="text-muted-foreground font-medium">
                             {role === ROLES.STUDENT
-                                ? "Manage your applications and find new opportunities."
+                                ? t.dashboard.studentDesc
                                 : role === ROLES.PROFESSOR
-                                    ? "Manage your scholarship listings and applications."
-                                    : "Platform administration and system oversight."}
+                                    ? t.dashboard.professorDesc
+                                    : t.dashboard.adminDesc}
                         </p>
                     </div>
 
@@ -135,16 +137,16 @@ export default function DashboardPage() {
                                 <DialogTrigger asChild>
                                     <Button variant="gradient" className="gap-2 shadow-lg shadow-primary/20">
                                         <Plus className="h-4 w-4" />
-                                        New Scholarship
+                                        {t.dashboard.newScholarship}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                                     <DialogHeader>
-                                        <DialogTitle>Post New Scholarship</DialogTitle>
+                                        <DialogTitle>{t.dashboard.postScholarship}</DialogTitle>
                                     </DialogHeader>
                                     <ScholarshipForm
                                         onSuccess={() => {
-                                            toast({ title: "Success", description: "Scholarship posted successfully!" });
+                                            toast({ title: t.dashboard.successTitle, description: t.dashboard.scholarshipPosted });
                                             setIsCreateDialogOpen(false);
                                             professorList.refetch();
                                         }}
@@ -158,12 +160,12 @@ export default function DashboardPage() {
                                 <DialogTrigger asChild>
                                     <Button variant="outline" className="gap-2 bg-white">
                                         <MessageSquare className="h-4 w-4" />
-                                        New Testimonial
+                                        {t.dashboard.newTestimonial}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-2xl">
                                     <DialogHeader>
-                                        <DialogTitle>Create New Testimonial</DialogTitle>
+                                        <DialogTitle>{t.dashboard.createTestimonial}</DialogTitle>
                                     </DialogHeader>
                                     <TestimonialForm
                                         onSubmit={async (data) => {
@@ -180,7 +182,7 @@ export default function DashboardPage() {
                         <Button variant="outline" className="bg-white gap-2 relative">
                             <Bell className="h-4 w-4" />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-                            Notifications
+                            {t.dashboard.notifications}
                         </Button>
                     </div>
                 </div>
@@ -189,24 +191,24 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     {role === ROLES.STUDENT ? (
                         <>
-                            <StatCard label="My Applications" value={Array.isArray(myApplications.data) ? myApplications.data.length : "0"} icon={BookOpen} color="primary" />
-                            <StatCard label="In Review" value={Array.isArray(myApplications.data) ? myApplications.data.filter((a: any) => a.status === 'PENDING').length : "0"} icon={Clock} color="warning" />
-                            <StatCard label="Accepted" value={Array.isArray(myApplications.data) ? myApplications.data.filter((a: any) => a.status === 'ACCEPTED').length : "0"} icon={CheckCircle2} color="success" />
-                            <StatCard label="Recommendations" value="15" icon={Star} color="info" />
+                            <StatCard label={t.dashboard.myApplications} value={Array.isArray(myApplications.data) ? myApplications.data.length : "0"} icon={BookOpen} color="primary" />
+                            <StatCard label={t.dashboard.inReview} value={Array.isArray(myApplications.data) ? myApplications.data.filter((a: any) => a.status === 'PENDING').length : "0"} icon={Clock} color="warning" />
+                            <StatCard label={t.dashboard.accepted} value={Array.isArray(myApplications.data) ? myApplications.data.filter((a: any) => a.status === 'ACCEPTED').length : "0"} icon={CheckCircle2} color="success" />
+                            <StatCard label={t.dashboard.recommendations} value="15" icon={Star} color="info" />
                         </>
                     ) : role === ROLES.PROFESSOR ? (
                         <>
-                            <StatCard label="My Posted Hubs" value={professorScholarships.length} icon={BookOpen} color="primary" />
-                            <StatCard label="Live/Active" value={professorScholarships.filter((s: any) => s.status === 'APPROVED').length} icon={CheckCircle2} color="success" />
-                            <StatCard label="Under Review" value={professorScholarships.filter((s: any) => s.status === 'PENDING').length} icon={Clock} color="warning" />
-                            <StatCard label="Total Reach" value={professorScholarships.reduce((acc: number, s: any) => acc + (s.views || 0), 0)} icon={Eye} color="info" />
+                            <StatCard label={t.dashboard.myPostedHubs} value={professorScholarships.length} icon={BookOpen} color="primary" />
+                            <StatCard label={t.dashboard.liveActive} value={professorScholarships.filter((s: any) => s.status === 'APPROVED').length} icon={CheckCircle2} color="success" />
+                            <StatCard label={t.dashboard.underReview} value={professorScholarships.filter((s: any) => s.status === 'PENDING').length} icon={Clock} color="warning" />
+                            <StatCard label={t.dashboard.totalReach} value={professorScholarships.reduce((acc: number, s: any) => acc + (s.views || 0), 0)} icon={Eye} color="info" />
                         </>
                     ) : (
                         <>
-                            <StatCard label="Pending Approval" value={pendingScholarships.length} icon={AlertCircle} color="warning" />
-                            <StatCard label="Total Listings" value="45" icon={GraduationCap} color="success" />
-                            <StatCard label="Verification Queue" value="8" icon={CheckCircle2} color="info" />
-                            <StatCard label="System Reports" value="2" icon={AlertCircle} color="destructive" />
+                            <StatCard label={t.dashboard.pendingApproval} value={pendingScholarships.length} icon={AlertCircle} color="warning" />
+                            <StatCard label={t.dashboard.totalListings} value="45" icon={GraduationCap} color="success" />
+                            <StatCard label={t.dashboard.verificationQueue} value="8" icon={CheckCircle2} color="info" />
+                            <StatCard label={t.dashboard.systemReports} value="2" icon={AlertCircle} color="destructive" />
                         </>
                     )}
                 </div>
@@ -217,25 +219,25 @@ export default function DashboardPage() {
                         <Tabs defaultValue="main" className="w-full">
                             <TabsList className="bg-white border rounded-xl p-1 h-12 mb-6">
                                 <TabsTrigger value="main" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-6">
-                                    {role === ROLES.STUDENT ? "My Applications" : role === ROLES.PROFESSOR ? "Scholarships" : "Approvals Needed"}
+                                    {role === ROLES.STUDENT ? t.dashboard.tabMyApplications : role === ROLES.PROFESSOR ? t.dashboard.tabScholarships : t.dashboard.tabApprovalsNeeded}
                                 </TabsTrigger>
                                 {role === ROLES.PROFESSOR && (
                                     <>
                                         <TabsTrigger value="applications" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-6">
-                                            Applications
+                                            {t.dashboard.tabApplications}
                                         </TabsTrigger>
                                         <TabsTrigger value="testimonials" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-6">
-                                            Testimonials
+                                            {t.dashboard.tabTestimonials}
                                         </TabsTrigger>
                                     </>
                                 )}
                                 {role === ROLES.STUDENT && (
                                     <TabsTrigger value="external" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-6">
-                                        External Scholarships
+                                        {t.dashboard.tabExternal}
                                     </TabsTrigger>
                                 )}
                                 <TabsTrigger value="activity" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-6 font-bold">
-                                    Activity
+                                    {t.dashboard.tabActivity}
                                 </TabsTrigger>
                             </TabsList>
 
@@ -259,9 +261,9 @@ export default function DashboardPage() {
                                         ) : (
                                             <div className="text-center py-12 border-2 border-dashed rounded-2xl bg-white/50">
                                                 <BookOpen className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                                                <p className="text-muted-foreground font-medium">You haven&apos;t applied for any scholarships yet.</p>
+                                                <p className="text-muted-foreground font-medium">{t.dashboard.noApplicationsYet}</p>
                                                 <Link href="/scholarships" className="mt-4 inline-block">
-                                                    <Button variant="outline" size="sm" className="font-bold">Browse Opportunities</Button>
+                                                    <Button variant="outline" size="sm" className="font-bold">{t.dashboard.browseOpportunities}</Button>
                                                 </Link>
                                             </div>
                                         )}
@@ -269,7 +271,7 @@ export default function DashboardPage() {
                                 ) : role === ROLES.PROFESSOR ? (
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between mb-2">
-                                            <h3 className="text-lg font-bold">Your Posted Hubs</h3>
+                                            <h3 className="text-lg font-bold">{t.dashboard.yourPostedHubs}</h3>
                                         </div>
                                         {professorScholarships.length > 0 ? (
                                             professorScholarships.map((s: any) => (
@@ -284,7 +286,7 @@ export default function DashboardPage() {
                                         ) : (
                                             <div className="text-center py-12 border-2 border-dashed rounded-2xl bg-white/50">
                                                 <GraduationCap className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                                                <p className="text-muted-foreground font-medium">You haven&apos;t posted any scholarships yet.</p>
+                                                <p className="text-muted-foreground font-medium">{t.dashboard.noScholarshipsYet}</p>
                                             </div>
                                         )}
                                     </div>
@@ -303,7 +305,7 @@ export default function DashboardPage() {
                                         ) : (
                                             <div className="text-center py-12 border-2 border-dashed rounded-2xl bg-white/50">
                                                 <CheckCircle2 className="h-8 w-8 mx-auto text-emerald-500 mb-3" />
-                                                <p className="text-muted-foreground font-medium">All caught up! No pending approvals.</p>
+                                                <p className="text-muted-foreground font-medium">{t.dashboard.allCaughtUpApprovals}</p>
                                             </div>
                                         )}
                                     </div>
@@ -314,8 +316,8 @@ export default function DashboardPage() {
                                 <TabsContent value="applications" className="space-y-4 outline-none">
                                     <div className="flex flex-col gap-4">
                                         <div className="flex items-center justify-between">
-                                            <h3 className="text-lg font-bold">Received Applications</h3>
-                                            <Badge variant="outline">{Array.isArray(myApplications.data) ? myApplications.data.length : 0} Total</Badge>
+                                            <h3 className="text-lg font-bold">{t.dashboard.receivedApplications}</h3>
+                                            <Badge variant="outline">{Array.isArray(myApplications.data) ? myApplications.data.length : 0} {t.dashboard.total}</Badge>
                                         </div>
                                         {Array.isArray(myApplications.data) && myApplications.data.length > 0 ? (
                                             <div className="bg-white rounded-xl border overflow-hidden">
@@ -323,11 +325,11 @@ export default function DashboardPage() {
                                                     <table className="w-full">
                                                         <thead className="bg-slate-50 border-b">
                                                             <tr>
-                                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">Student</th>
-                                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">Scholarship</th>
-                                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
-                                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">Applied</th>
-                                                                <th className="text-right px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
+                                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">{t.dashboard.colStudent}</th>
+                                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">{t.dashboard.colScholarship}</th>
+                                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">{t.dashboard.colStatus}</th>
+                                                                <th className="text-left px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">{t.dashboard.colApplied}</th>
+                                                                <th className="text-right px-6 py-3 text-xs font-bold text-slate-600 uppercase tracking-wider">{t.dashboard.colActions}</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody className="divide-y divide-slate-100">
@@ -346,7 +348,7 @@ export default function DashboardPage() {
                                         ) : (
                                             <div className="text-center py-20 bg-white rounded-3xl border border-dashed">
                                                 <Users className="h-10 w-10 text-slate-300 mx-auto mb-4" />
-                                                <p className="text-slate-500 font-medium">No applications received yet.</p>
+                                                <p className="text-slate-500 font-medium">{t.dashboard.noApplicationsReceived}</p>
                                             </div>
                                         )}
                                     </div>
@@ -357,9 +359,9 @@ export default function DashboardPage() {
                                 <TabsContent value="testimonials" className="space-y-4 outline-none">
                                     <div className="flex flex-col gap-4">
                                         <div className="flex items-center justify-between">
-                                            <h3 className="text-lg font-bold">Your Success Stories</h3>
+                                            <h3 className="text-lg font-bold">{t.dashboard.yourSuccessStories}</h3>
                                             <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsCreateTestimonialOpen(true)}>
-                                                <Plus className="h-3 w-3" /> Add New
+                                                <Plus className="h-3 w-3" /> {t.dashboard.addNew}
                                             </Button>
                                         </div>
                                         {professorTestimonials.length > 0 ? (
@@ -375,7 +377,7 @@ export default function DashboardPage() {
                                         ) : (
                                             <div className="text-center py-20 bg-white rounded-3xl border border-dashed">
                                                 <MessageSquare className="h-10 w-10 text-slate-300 mx-auto mb-4" />
-                                                <p className="text-slate-500 font-medium">Capture your impact by adding testimonials.</p>
+                                                <p className="text-slate-500 font-medium">{t.dashboard.addTestimonialsPrompt}</p>
                                             </div>
                                         )}
                                     </div>
@@ -398,7 +400,7 @@ export default function DashboardPage() {
                             <CardHeader className="bg-primary/5 pb-4 border-b">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <User className="h-5 w-5 text-primary" />
-                                    Account Profile
+                                    {t.dashboard.accountProfile}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="pt-6">
@@ -412,7 +414,7 @@ export default function DashboardPage() {
                                             <Badge variant="secondary" className="text-[10px]">{user?.role}</Badge>
                                             <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold tracking-wider">
                                                 <CheckCircle2 className="h-3 w-3" />
-                                                Verified
+                                                {t.dashboard.verified}
                                             </div>
                                         </div>
                                     </div>
@@ -420,12 +422,12 @@ export default function DashboardPage() {
                                 <div className="space-y-2">
                                     <Link href="/profile">
                                         <Button variant="outline" className="w-full text-xs justify-start gap-2 h-9 bg-white">
-                                            <Settings className="h-3.5 w-3.5" /> View Profile Details
+                                            <Settings className="h-3.5 w-3.5" /> {t.dashboard.viewProfileDetails}
                                         </Button>
                                     </Link>
                                     <Link href="/profile">
                                         <Button variant="outline" className="w-full text-xs justify-start gap-2 h-9 bg-white">
-                                            <Eye className="h-3.5 w-3.5" /> Edit Profile Settings
+                                            <Eye className="h-3.5 w-3.5" /> {t.dashboard.editProfileSettings}
                                         </Button>
                                     </Link>
                                 </div>
@@ -438,17 +440,17 @@ export default function DashboardPage() {
                             <CardHeader className="relative z-10">
                                 <CardTitle className="text-xl flex items-center gap-2">
                                     <Bookmark className="h-5 w-5 text-primary" />
-                                    Academic Hub
+                                    {t.dashboard.academicHub}
                                 </CardTitle>
                                 <CardDescription className="text-zinc-400">
                                     {role === ROLES.STUDENT
-                                        ? "Get professional guidance on applications."
-                                        : "Tools to streamline your scholarship management."}
+                                        ? t.dashboard.guidanceDesc
+                                        : t.dashboard.streamlineDesc}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="relative z-10">
                                 <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-11 shadow-lg shadow-primary/20">
-                                    Access Resources
+                                    {t.dashboard.accessResources}
                                 </Button>
                             </CardContent>
                         </Card>
@@ -517,6 +519,7 @@ function ApplicationRow({ title, status, date, institution }: any) {
 function ScholarshipManageRow({ scholarship, onDelete, isDeleting, onRefresh }: any) {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const status = scholarship.status;
+    const { t } = useTranslation();
 
     return (
         <Card className="hover:border-primary/50 transition-colors bg-white shadow-none border group">
@@ -532,11 +535,11 @@ function ScholarshipManageRow({ scholarship, onDelete, isDeleting, onRefresh }: 
                         <div className="flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground font-medium">
                             <span className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
-                                Updated: {new Date(scholarship.updatedAt).toLocaleDateString()}
+                                {t.dashboard.updated} {new Date(scholarship.updatedAt).toLocaleDateString()}
                             </span>
                             <span className="flex items-center gap-1">
                                 <Eye className="h-3 w-3" />
-                                {scholarship.views || 0} Views
+                                {scholarship.views || 0} {t.dashboard.views}
                             </span>
                             <Badge
                                 variant={status === "APPROVED" ? "success" : status === "PENDING" ? "warning" : "destructive"}
@@ -551,12 +554,12 @@ function ScholarshipManageRow({ scholarship, onDelete, isDeleting, onRefresh }: 
                     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                         <DialogTrigger asChild>
                             <Button size="sm" variant="outline" className="h-8 text-xs font-bold flex-1 sm:flex-none">
-                                Edit
+                                {t.dashboard.edit}
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
-                                <DialogTitle>Edit Scholarship: {scholarship.title}</DialogTitle>
+                                <DialogTitle>{t.dashboard.editScholarship} {scholarship.title}</DialogTitle>
                             </DialogHeader>
                             <ScholarshipForm
                                 initialData={scholarship}
@@ -573,7 +576,7 @@ function ScholarshipManageRow({ scholarship, onDelete, isDeleting, onRefresh }: 
                         variant="destructive"
                         className="h-8 text-xs font-bold flex-1 sm:flex-none"
                         onClick={() => {
-                            if (window.confirm("Are you sure you want to delete this scholarship?")) {
+                            if (window.confirm(t.dashboard.confirmDelete)) {
                                 onDelete();
                             }
                         }}
@@ -588,6 +591,7 @@ function ScholarshipManageRow({ scholarship, onDelete, isDeleting, onRefresh }: 
 }
 
 function ApprovalRequestRow({ scholarship, onApprove, onReject, isProcessing }: any) {
+    const { t } = useTranslation();
     return (
         <Card className="bg-white shadow-none border hover:border-primary/30 transition-all group">
             <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -598,7 +602,7 @@ function ApprovalRequestRow({ scholarship, onApprove, onReject, isProcessing }: 
                     <div className="space-y-1">
                         <h4 className="font-bold text-sm group-hover:text-primary transition-colors">{scholarship.title}</h4>
                         <p className="text-[10px] text-muted-foreground font-medium tracking-wider">
-                            By {scholarship.organization || "Private Donor"} • {scholarship.fundingType}
+                            {t.dashboard.by} {scholarship.organization || t.dashboard.privateDonor} • {scholarship.fundingType}
                         </p>
                     </div>
                 </div>
@@ -610,7 +614,7 @@ function ApprovalRequestRow({ scholarship, onApprove, onReject, isProcessing }: 
                         onClick={onReject}
                         disabled={isProcessing}
                     >
-                        Reject
+                        {t.dashboard.reject}
                     </Button>
                     <Button
                         size="sm"
@@ -620,7 +624,7 @@ function ApprovalRequestRow({ scholarship, onApprove, onReject, isProcessing }: 
                         disabled={isProcessing}
                     >
                         {isProcessing ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <CheckCircle2 className="h-3 w-3 mr-1" />}
-                        Approve
+                        {t.dashboard.approve}
                     </Button>
                 </div>
             </CardContent>
@@ -691,6 +695,7 @@ function ExternalScholarshipCard({ title, provider, amount }: any) {
 function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) {
     const [isEvalOpen, setIsEvalOpen] = useState(false);
     const [evaluationText, setEvaluationText] = useState(application.evaluation || "");
+    const { t } = useTranslation();
 
     return (
         <Card className="hover:border-primary/50 transition-all bg-white shadow-none border group overflow-hidden relative">
@@ -715,33 +720,33 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                     </div>
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-base tracking-tight">{application.student?.name || "Anonymous Student"}</h4>
+                            <h4 className="font-bold text-base tracking-tight">{application.student?.name || t.dashboard.anonymousStudent}</h4>
                             <Badge variant="secondary" className="text-[9px] font-black tracking-widest px-2 py-0 h-4">
                                 {application.status}
                             </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground font-medium">
-                            Target: <span className="text-primary font-bold">{application.scholarship?.title}</span>
+                            {t.dashboard.target} <span className="text-primary font-bold">{application.scholarship?.title}</span>
                         </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <Dialog open={isEvalOpen} onOpenChange={setIsEvalOpen}>
                         <DialogTrigger asChild>
-                            <Button size="sm" variant="gradient" className="h-8 text-xs font-bold">Review Application</Button>
+                            <Button size="sm" variant="gradient" className="h-8 text-xs font-bold">{t.dashboard.reviewApplication}</Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                             <DialogHeader>
-                                <DialogTitle>Evaluate Application</DialogTitle>
+                                <DialogTitle>{t.dashboard.evaluateApplication}</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4 py-4">
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div className="space-y-1">
-                                        <p className="text-muted-foreground">Applicant</p>
+                                        <p className="text-muted-foreground">{t.dashboard.applicant}</p>
                                         <p className="font-bold">{application.student?.name}</p>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-muted-foreground">GPA</p>
+                                        <p className="text-muted-foreground">{t.dashboard.gpa}</p>
                                         <p className="font-bold">{application.student?.gpa || "N/A"}</p>
                                     </div>
                                 </div>
@@ -751,7 +756,7 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                                             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                                                 <MessageSquare className="h-4 w-4 text-primary" />
                                             </div>
-                                            <h3 className="text-sm font-black tracking-tight text-primary">Applicant Responses</h3>
+                                            <h3 className="text-sm font-black tracking-tight text-primary">{t.dashboard.applicantResponses}</h3>
                                         </div>
                                         <div className="grid gap-3">
                                             {(() => {
@@ -766,21 +771,21 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                                                                 <Badge variant="outline" className="h-4 text-[8px] bg-white">{q.type}</Badge>
                                                             </div>
                                                             <p className="text-sm font-semibold text-slate-900 leading-relaxed italic">
-                                                                &ldquo;{answers[q.id] || "No answer provided"}&rdquo;
+                                                                &ldquo;{answers[q.id] || t.dashboard.noAnswerProvided}&rdquo;
                                                             </p>
                                                         </div>
                                                     ));
                                                 } catch (e) {
-                                                    return <p className="text-xs text-muted-foreground italic">No formatted answers available.</p>;
+                                                    return <p className="text-xs text-muted-foreground italic">{t.dashboard.noFormattedAnswers}</p>;
                                                 }
                                             })()}
                                         </div>
                                     </div>
                                 )}
                                 <div className="space-y-2">
-                                    <Label>Professor Evaluation / Comments</Label>
+                                    <Label>{t.dashboard.professorEvaluation}</Label>
                                     <Textarea
-                                        placeholder="Add your feedback here..."
+                                        placeholder={t.dashboard.feedbackPlaceholder}
                                         rows={5}
                                         value={evaluationText}
                                         onChange={(e) => setEvaluationText(e.target.value)}
@@ -797,7 +802,7 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                                     }}
                                     disabled={isSubmitting}
                                 >
-                                    Under Review
+                                    {t.dashboard.markUnderReview}
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -808,7 +813,7 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                                     }}
                                     disabled={isSubmitting}
                                 >
-                                    Reject
+                                    {t.dashboard.reject}
                                 </Button>
                                 <Button
                                     variant="gradient"
@@ -819,7 +824,7 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                                     }}
                                     disabled={isSubmitting}
                                 >
-                                    Accept Applicant
+                                    {t.dashboard.acceptApplicant}
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
@@ -837,6 +842,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
     const [emailSubject, setEmailSubject] = useState(
         `Re: Your Application for ${application.scholarship?.title || "Scholarship"}`
     );
+    const { t } = useTranslation();
     const [emailBody, setEmailBody] = useState("");
 
     const studentEmail = application.user?.email || application.student?.email || "";
@@ -912,23 +918,23 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                     <DialogTrigger asChild>
                         <Button size="sm" variant="outline" className="h-8 text-xs font-bold gap-1" disabled={!studentEmail}>
                             <Mail className="h-3 w-3" />
-                            Email
+                            {t.dashboard.emailBtn}
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-lg">
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
                                 <Mail className="h-4 w-4 text-primary" />
-                                Send Email to {studentName}
+                                {t.dashboard.sendEmailTo} {studentName}
                             </DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 py-2">
                             <div className="space-y-1.5">
-                                <Label>To</Label>
+                                <Label>{t.dashboard.to}</Label>
                                 <Input value={studentEmail} readOnly className="bg-muted text-muted-foreground text-sm" />
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Subject</Label>
+                                <Label>{t.dashboard.subject}</Label>
                                 <Input
                                     value={emailSubject}
                                     onChange={(e) => setEmailSubject(e.target.value)}
@@ -937,7 +943,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Message</Label>
+                                <Label>{t.dashboard.message}</Label>
                                 <Textarea
                                     rows={6}
                                     value={emailBody}
@@ -949,7 +955,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                         </div>
                         <DialogFooter className="gap-2">
                             <DialogClose asChild>
-                                <Button variant="outline" size="sm">Cancel</Button>
+                                <Button variant="outline" size="sm">{t.dashboard.cancel}</Button>
                             </DialogClose>
                             <Button
                                 size="sm"
@@ -958,7 +964,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                                 disabled={!studentEmail || !emailSubject}
                             >
                                 <Send className="h-3.5 w-3.5" />
-                                Open in Mail App
+                                {t.dashboard.openInMail}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -968,18 +974,18 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                     <DialogTrigger asChild>
                         <Button size="sm" variant="outline" className="h-8 text-xs font-bold">
                             <Eye className="h-3 w-3 mr-1" />
-                            Review
+                            {t.dashboard.reviewBtn}
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl">
                         <DialogHeader>
-                            <DialogTitle>Evaluate Application</DialogTitle>
+                            <DialogTitle>{t.dashboard.evaluateApplication}</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
                             {/* Student Basic Info */}
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div className="space-y-1">
-                                    <p className="text-muted-foreground">Applicant</p>
+                                    <p className="text-muted-foreground">{t.dashboard.applicant}</p>
                                     <p className="font-bold">
                                         {application.user?.firstName
                                             ? `${application.user.firstName} ${application.user.lastName || ''}`.trim()
@@ -987,31 +993,31 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                                     </p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-muted-foreground">Email</p>
+                                    <p className="text-muted-foreground">{t.dashboard.email}</p>
                                     <p className="font-medium text-xs">{application.user?.email || "N/A"}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-muted-foreground">GPA</p>
+                                    <p className="text-muted-foreground">{t.dashboard.gpa}</p>
                                     <p className="font-bold">{application.user?.studentProfile?.gpa || application.student?.gpa || "N/A"}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-muted-foreground">University</p>
+                                    <p className="text-muted-foreground">{t.dashboard.university}</p>
                                     <p className="font-medium text-xs">{application.user?.studentProfile?.university || "N/A"}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-muted-foreground">Field of Study</p>
+                                    <p className="text-muted-foreground">{t.dashboard.fieldOfStudy}</p>
                                     <p className="font-medium text-xs">{application.user?.studentProfile?.fieldOfStudy || "N/A"}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-muted-foreground">Degree</p>
+                                    <p className="text-muted-foreground">{t.dashboard.degree}</p>
                                     <p className="font-medium text-xs">{application.user?.studentProfile?.currentDegree || "N/A"}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-muted-foreground">Graduation Year</p>
+                                    <p className="text-muted-foreground">{t.dashboard.graduationYear}</p>
                                     <p className="font-medium text-xs">{application.user?.studentProfile?.graduationYear || "N/A"}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-muted-foreground">Location</p>
+                                    <p className="text-muted-foreground">{t.dashboard.location}</p>
                                     <p className="font-medium text-xs">
                                         {application.user?.studentProfile?.city && application.user?.studentProfile?.country
                                             ? `${application.user.studentProfile.city}, ${application.user.studentProfile.country}`
@@ -1023,7 +1029,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                             {/* Cover Letter */}
                             {application.coverLetter && (
                                 <div className="space-y-2 pt-4 border-t">
-                                    <Label className="text-sm font-bold text-slate-700">Cover Letter</Label>
+                                    <Label className="text-sm font-bold text-slate-700">{t.dashboard.coverLetter}</Label>
                                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                                         <p className="text-sm text-slate-700 whitespace-pre-wrap">{application.coverLetter}</p>
                                     </div>
@@ -1033,7 +1039,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                             {/* Additional Info */}
                             {application.additionalInfo && (
                                 <div className="space-y-2 pt-4 border-t">
-                                    <Label className="text-sm font-bold text-slate-700">Additional Information</Label>
+                                    <Label className="text-sm font-bold text-slate-700">{t.dashboard.additionalInfo}</Label>
                                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                                         <p className="text-sm text-slate-700 whitespace-pre-wrap">{application.additionalInfo}</p>
                                     </div>
@@ -1042,7 +1048,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                             {/* Skills */}
                             {application.user?.studentProfile?.skills && Array.isArray(application.user.studentProfile.skills) && application.user.studentProfile.skills.length > 0 && (
                                 <div className="space-y-2 pt-4 border-t">
-                                    <Label className="text-sm font-bold text-slate-700">Skills</Label>
+                                    <Label className="text-sm font-bold text-slate-700">{t.dashboard.skills}</Label>
                                     <div className="flex flex-wrap gap-2">
                                         {application.user.studentProfile.skills.map((skill: string, idx: number) => (
                                             <Badge key={idx} variant="secondary" className="text-xs">{skill}</Badge>
@@ -1054,12 +1060,12 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                             {/* Languages */}
                             {application.user?.studentProfile?.languages && Array.isArray(application.user.studentProfile.languages) && application.user.studentProfile.languages.length > 0 && (
                                 <div className="space-y-2 pt-4 border-t">
-                                    <Label className="text-sm font-bold text-slate-700">Languages</Label>
+                                    <Label className="text-sm font-bold text-slate-700">{t.dashboard.languages}</Label>
                                     <div className="grid gap-2">
                                         {application.user.studentProfile.languages.map((lang: any, idx: number) => (
                                             <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
                                                 <span className="text-sm font-medium">{lang.name}</span>
-                                                <span className="text-xs text-slate-500">Proficiency: {lang.proficiency}%</span>
+                                                <span className="text-xs text-slate-500">{t.dashboard.proficiency} {lang.proficiency}%</span>
                                             </div>
                                         ))}
                                     </div>
@@ -1069,7 +1075,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                             {/* Experience */}
                             {application.user?.studentProfile?.experience && Array.isArray(application.user.studentProfile.experience) && application.user.studentProfile.experience.length > 0 && (
                                 <div className="space-y-3 pt-4 border-t">
-                                    <Label className="text-sm font-bold text-slate-700">Experience</Label>
+                                    <Label className="text-sm font-bold text-slate-700">{t.dashboard.experience}</Label>
                                     {application.user.studentProfile.experience.map((exp: any, idx: number) => (
                                         <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
                                             <p className="font-bold text-sm">{exp.title}</p>
@@ -1084,7 +1090,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                             {/* Certifications */}
                             {application.user?.studentProfile?.certifications && Array.isArray(application.user.studentProfile.certifications) && application.user.studentProfile.certifications.length > 0 && (
                                 <div className="space-y-3 pt-4 border-t">
-                                    <Label className="text-sm font-bold text-slate-700">Certifications</Label>
+                                    <Label className="text-sm font-bold text-slate-700">{t.dashboard.certifications}</Label>
                                     {application.user.studentProfile.certifications.map((cert: any, idx: number) => (
                                         <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
                                             <p className="font-bold text-sm">{cert.title}</p>
@@ -1100,7 +1106,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                             {((application.documents && Array.isArray(application.documents) && application.documents.length > 0) ||
                               (application.user?.studentProfile?.documents && Array.isArray(application.user.studentProfile.documents) && application.user.studentProfile.documents.length > 0)) && (
                                 <div className="space-y-3 pt-4 border-t">
-                                    <Label className="text-sm font-bold text-slate-700">Uploaded Documents</Label>
+                                    <Label className="text-sm font-bold text-slate-700">{t.dashboard.uploadedDocuments}</Label>
                                     <div className="grid gap-2">
                                         {(application.documents || application.user?.studentProfile?.documents || []).map((doc: string, idx: number) => (
                                             <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
@@ -1112,7 +1118,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                                                         <p className="text-sm font-medium text-slate-900">
                                                             {doc.split('/').pop() || `Document ${idx + 1}`}
                                                         </p>
-                                                        <p className="text-xs text-slate-500">Application Document</p>
+                                                        <p className="text-xs text-slate-500">{t.dashboard.appDocument}</p>
                                                     </div>
                                                 </div>
                                                 <Button
@@ -1130,7 +1136,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                                                     }}
                                                 >
                                                     <Download className="h-3 w-3" />
-                                                    Download
+                                                    {t.dashboard.download}
                                                 </Button>
                                             </div>
                                         ))}
@@ -1145,7 +1151,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                                         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                                             <MessageSquare className="h-4 w-4 text-primary" />
                                         </div>
-                                        <h3 className="text-sm font-black tracking-tight text-primary">Applicant Responses</h3>
+                                        <h3 className="text-sm font-black tracking-tight text-primary">{t.dashboard.applicantResponses}</h3>
                                     </div>
                                     <div className="grid gap-3">
                                         {application.answers.map((answerObj: any) => (
@@ -1156,11 +1162,11 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                                                 {answerObj.question?.type === 'DOCUMENT' ? (
                                                     <div className="flex items-center gap-2">
                                                         <FileText className="h-4 w-4 text-emerald-600" />
-                                                        <p className="text-sm font-semibold text-emerald-600">{answerObj.answer || "No file uploaded"}</p>
+                                                        <p className="text-sm font-semibold text-emerald-600">{answerObj.answer || t.dashboard.noFileUploaded}</p>
                                                     </div>
                                                 ) : (
                                                     <p className="text-sm font-semibold text-slate-900 leading-relaxed italic">
-                                                        &ldquo;{answerObj.answer || "No answer provided"}&rdquo;
+                                                        &ldquo;{answerObj.answer || t.dashboard.noAnswerProvided}&rdquo;
                                                     </p>
                                                 )}
                                             </div>
@@ -1169,9 +1175,9 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                                 </div>
                             )}
                             <div className="space-y-2">
-                                <Label>Professor Evaluation / Comments</Label>
+                                <Label>{t.dashboard.professorEvaluation}</Label>
                                 <Textarea
-                                    placeholder="Add your feedback here..."
+                                    placeholder={t.dashboard.feedbackPlaceholder}
                                     rows={5}
                                     value={evaluationText}
                                     onChange={(e) => setEvaluationText(e.target.value)}
@@ -1188,7 +1194,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                                 }}
                                 disabled={isSubmitting}
                             >
-                                Under Review
+                                {t.dashboard.markUnderReview}
                             </Button>
                             <Button
                                 variant="outline"
@@ -1199,7 +1205,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                                 }}
                                 disabled={isSubmitting}
                             >
-                                Reject
+                                {t.dashboard.reject}
                             </Button>
                             <Button
                                 variant="gradient"
@@ -1210,7 +1216,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                                 }}
                                 disabled={isSubmitting}
                             >
-                                Accept Applicant
+                                {t.dashboard.acceptApplicant}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -1223,6 +1229,7 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
 
 function TestimonialManageRow({ testimonial, onUpdate, onDelete, isProcessing }: any) {
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const { t } = useTranslation();
 
     return (
         <Card className="hover:border-primary/50 transition-colors bg-white shadow-none border group">
@@ -1245,7 +1252,7 @@ function TestimonialManageRow({ testimonial, onUpdate, onDelete, isProcessing }:
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                             <DialogHeader>
-                                <DialogTitle>Edit Testimonial</DialogTitle>
+                                <DialogTitle>{t.dashboard.editTestimonial}</DialogTitle>
                             </DialogHeader>
                             <TestimonialForm
                                 initialData={testimonial}
@@ -1262,7 +1269,7 @@ function TestimonialManageRow({ testimonial, onUpdate, onDelete, isProcessing }:
                         variant="ghost"
                         className="h-8 w-8 p-0 text-rose-600 hover:bg-rose-50"
                         onClick={() => {
-                            if (window.confirm("Delete this testimonial?")) {
+                            if (window.confirm(t.dashboard.confirmDeleteTestimonial)) {
                                 onDelete();
                             }
                         }}

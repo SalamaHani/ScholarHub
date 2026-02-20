@@ -68,6 +68,7 @@ import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/axios";
 import { getProfileStatus, getStatusColor, getStatusStroke, getProgressMessage, getStatusIndicatorColor } from "@/lib/profileStatus";
 import { ProfileHeaderSkeleton, ProfileFormSkeleton } from "@/components/skeletons";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const DEGREE_LEVELS = [
     { value: "BACHELOR", label: "Bachelor's Degree" },
@@ -81,6 +82,7 @@ const DEGREE_LEVELS = [
 // Non-form fields are handled separately or directly from the user object
 
 export default function ProfilePage() {
+    const { t } = useTranslation();
     const { user, isLoading, editProfile, updateAvatar: updateAvatarAction, refresh } = useAuth();
     const [mounted, setMounted] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -290,8 +292,8 @@ export default function ProfilePage() {
         } catch (error) {
             console.error("Profile update failed:", error);
             toast({
-                title: "Update Failed",
-                description: "There was a problem syncing your scholarly data.",
+                title: t.profile.toastUpdateFailed,
+                description: t.profile.toastUpdateFailedDesc,
                 variant: "destructive",
             });
         }
@@ -313,8 +315,8 @@ export default function ProfilePage() {
         // 1. Validation: Size (Max 5MB)
         if (file.size > 5 * 1024 * 1024) {
             toast({
-                title: "File Too Large",
-                description: "Maximum allowed size is 5MB for academic documents.",
+                title: t.profile.toastFileTooLarge,
+                description: t.profile.toastFileTooLargeDesc,
                 variant: "destructive",
             });
             return;
@@ -330,8 +332,8 @@ export default function ProfilePage() {
         ];
         if (!allowedTypes.includes(file.type)) {
             toast({
-                title: "Invalid Format",
-                description: "Please upload PDF, Word, or professional Images only.",
+                title: t.profile.toastInvalidFormat,
+                description: t.profile.toastInvalidFormatDesc,
                 variant: "destructive",
             });
             return;
@@ -349,8 +351,8 @@ export default function ProfilePage() {
 
             if (response.data) {
                 toast({
-                    title: "Upload Successful",
-                    description: `${file.name} has been securely added to your profile.`,
+                    title: t.profile.toastUploadSuccessful,
+                    description: `${file.name} ${t.profile.toastUploadSuccessfulDesc}`,
                     variant: "default",
                 });
                 setIsEditingDocs(false);
@@ -358,8 +360,8 @@ export default function ProfilePage() {
             }
         } catch (error: any) {
             toast({
-                title: "Upload Failed",
-                description: error.response?.data?.message || "There was a problem syncing your document.",
+                title: t.profile.toastUploadFailed,
+                description: error.response?.data?.message || t.profile.toastUpdateFailedDesc,
                 variant: "destructive",
             });
         } finally {
@@ -377,16 +379,16 @@ export default function ProfilePage() {
 
             if (response.data) {
                 toast({
-                    title: "Security Vault Updated",
-                    description: "The document has been securely removed.",
+                    title: t.profile.toastVaultUpdated,
+                    description: t.profile.toastVaultUpdatedDesc,
                     variant: "default",
                 });
                 refresh(); // Re-sync user data
             }
         } catch (error: any) {
             toast({
-                title: "Action Failed",
-                description: error.response?.data?.message || "Could not remove the document.",
+                title: t.profile.toastActionFailed,
+                description: error.response?.data?.message || t.profile.toastActionFailedDesc,
                 variant: "destructive",
             });
         }
@@ -440,7 +442,7 @@ export default function ProfilePage() {
                                 )} />
                                 <CardHeader className="pb-2 text-center border-b border-white/50">
                                     <CardTitle className={cn("text-[10px] font-bold tracking-widest uppercase", getStatusColor(progressStatus))}>
-                                        {progressStatus} Status
+                                        {progressStatus}{t.profile.statusSuffix}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex flex-col items-center pt-6 pb-8">
@@ -473,26 +475,26 @@ export default function ProfilePage() {
                                         </div>
                                     </div>
                                     <div className="w-full space-y-4 px-2 mb-6">
-                                        <CompletenessStep label="Bio & Identity" completed={!!(user.name && user.bio && user.avatar)} />
-                                        <CompletenessStep label="Contact Info" completed={!!(user.phoneNumber && user.country)} />
-                                        <CompletenessStep label="Location Details" completed={!!(user.city && user.zipCode)} />
-                                        <CompletenessStep label="Personal Info" completed={!!(user.age && user.gender)} />
+                                        <CompletenessStep label={t.profile.steps.bioIdentity} completed={!!(user.name && user.bio && user.avatar)} />
+                                        <CompletenessStep label={t.profile.steps.contactInfo} completed={!!(user.phoneNumber && user.country)} />
+                                        <CompletenessStep label={t.profile.steps.locationDetails} completed={!!(user.city && user.zipCode)} />
+                                        <CompletenessStep label={t.profile.steps.personalInfo} completed={!!(user.age && user.gender)} />
                                         {mounted && user.role === 'STUDENT' ? (
                                             <>
-                                                <CompletenessStep label="Academic Profile" completed={!!(user.university && user.fieldOfStudy && user.gpa)} />
-                                                <CompletenessStep label="Degree Info" completed={!!(user.degreeLevel && user.graduationYear)} />
+                                                <CompletenessStep label={t.profile.steps.academicProfile} completed={!!(user.university && user.fieldOfStudy && user.gpa)} />
+                                                <CompletenessStep label={t.profile.steps.degreeInfo} completed={!!(user.degreeLevel && user.graduationYear)} />
                                             </>
                                         ) : mounted ? (
                                             <>
-                                                <CompletenessStep label="Institutional Profile" completed={!!(user.institution && user.department)} />
-                                                <CompletenessStep label="Academic Position" completed={!!(user.position && user.specialization)} />
+                                                <CompletenessStep label={t.profile.steps.institutionalProfile} completed={!!(user.institution && user.department)} />
+                                                <CompletenessStep label={t.profile.steps.academicPosition} completed={!!(user.position && user.specialization)} />
                                             </>
                                         ) : null}
-                                        <CompletenessStep label="Skills & Mastery" completed={(user.skills?.length ?? 0) > 0} />
-                                        <CompletenessStep label="Language Proficiency" completed={(user.languages?.length ?? 0) > 0} />
-                                        <CompletenessStep label="Experience" completed={(user.experience?.length ?? 0) > 0} />
-                                        <CompletenessStep label="Certifications" completed={(user.certifications?.length ?? 0) > 0} />
-                                        <CompletenessStep label="Document Vault" completed={(user.documents?.length ?? 0) > 0} />
+                                        <CompletenessStep label={t.profile.steps.skillsMastery} completed={(user.skills?.length ?? 0) > 0} />
+                                        <CompletenessStep label={t.profile.steps.languageProficiency} completed={(user.languages?.length ?? 0) > 0} />
+                                        <CompletenessStep label={t.profile.steps.experience} completed={(user.experience?.length ?? 0) > 0} />
+                                        <CompletenessStep label={t.profile.steps.certifications} completed={(user.certifications?.length ?? 0) > 0} />
+                                        <CompletenessStep label={t.profile.steps.documentVault} completed={(user.documents?.length ?? 0) > 0} />
                                     </div>
                                     <p className={cn(
                                         "text-[10px] font-bold px-4 py-2 rounded-xl italic text-center w-full mb-4",
@@ -512,7 +514,7 @@ export default function ProfilePage() {
                                         )}
                                         onClick={() => setIsEditing(true)}
                                     >
-                                        {progressStatus === "EXCELLENT" ? "Optimize Profile" : "Improve Now"}
+                                        {progressStatus === "EXCELLENT" ? t.profile.optimizeProfile : t.profile.improveNow}
                                     </Button>
                                 </CardContent>
                             </Card>
@@ -524,11 +526,11 @@ export default function ProfilePage() {
                                     <GraduationCap className="h-20 w-20" />
                                 </div>
                                 <CardContent className="p-8 relative z-10">
-                                    <h3 className="font-bold text-xl mb-3">Scholarship Match</h3>
+                                    <h3 className="font-bold text-xl mb-3">{t.profile.scholarshipMatch}</h3>
                                     <p className="text-xs text-white/80 leading-relaxed mb-6 font-medium">
-                                        Based on your GPA of <span className="text-white font-bold">{user.gpa || "N/A"}</span> and field in <span className="text-white font-bold">{user.fieldOfStudy || "your major"}</span>, we found matches.
+                                        {t.profile.scholarshipMatchDesc} <span className="text-white font-bold">{user.gpa || t.profile.yourMajor}</span> {t.profile.scholarshipMatchDesc2} <span className="text-white font-bold">{user.fieldOfStudy || t.profile.yourMajor}</span>, {t.profile.scholarshipMatchDesc3}
                                     </p>
-                                    <Button variant="gradient" className="w-full font-bold h-11 rounded-xl shadow-xl shadow-black/20 bg-white text-primary hover:bg-white/90">Find Funds</Button>
+                                    <Button variant="gradient" className="w-full font-bold h-11 rounded-xl shadow-xl shadow-black/20 bg-white text-primary hover:bg-white/90">{t.profile.findFunds}</Button>
                                 </CardContent>
                             </Card>
                         </motion.div>
@@ -555,25 +557,25 @@ export default function ProfilePage() {
                                                 )}
                                                 <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <Camera className="h-8 w-8 text-white mb-2" />
-                                                    <span className="text-[10px] font-bold text-white tracking-wider">Update Photo</span>
+                                                    <span className="text-[10px] font-bold text-white tracking-wider">{t.profile.updatePhoto}</span>
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="flex-1 space-y-3 mb-2 w-full">
                                             <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
                                                 <div className="space-y-1 text-center md:text-left">
-                                                    <h1 className="text-4xl font-bold tracking-tight text-slate-800">{user.name || "Scholar User"}</h1>
+                                                    <h1 className="text-4xl font-bold tracking-tight text-slate-800">{user.name || t.profile.scholarUser}</h1>
                                                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                                                         <Badge className="bg-primary/10 text-primary border-primary/20 rounded-lg font-bold text-[10px] tracking-wide px-3 py-1">{user.role}</Badge>
                                                         {mounted && user.role === 'PROFESSOR' ? user.isVerified ? (
                                                             <Badge variant="outline" className="w-fit text-emerald-600">
                                                                 <UserCheck className="h-3 w-3 mr-1" />
-                                                                Verified
+                                                                {t.profile.verified}
                                                             </Badge>
                                                         ) : (
                                                             <Badge variant="outline" className="w-fit text-amber-600 bg-amber-50">
                                                                 <Clock className="h-3 w-3 mr-1" />
-                                                                Pending
+                                                                {t.profile.pending}
                                                             </Badge>
                                                         ) : null}
 
@@ -582,9 +584,9 @@ export default function ProfilePage() {
                                                 </div>
                                             </div>
                                             <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-8 gap-y-2 text-xs font-bold text-slate-400 tracking-wide">
-                                                <span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {user.country || "Global Scholar"}</span>
+                                                <span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {user.country || t.profile.globalScholar}</span>
                                                 <span className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary" /> {user.email}</span>
-                                                <span className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /> Joined {new Date(user?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                                                <span className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /> {t.profile.joined} {new Date(user?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -594,63 +596,63 @@ export default function ProfilePage() {
 
                         {/* 2. Role-Specific Primary Data Card */}
                         {mounted && user.role === "PROFESSOR" ? (
-                            <ProfileSection title="Institutional Profile" icon={Building2} onEdit={() => setIsEditingAcademic(true)}>
+                            <ProfileSection title={t.profile.sectionInstitutional} icon={Building2} onEdit={() => setIsEditingAcademic(true)}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                    <InfoItem label="Primary Institution" value={user.institution} icon={Building2} />
-                                    <InfoItem label="Faculty / Department" value={user.department} icon={BookOpen} />
-                                    <InfoItem label="Academic Position" value={user.position} icon={Award} />
-                                    <InfoItem label="Research Specialization" value={user.specialization} icon={TrendingUp} />
-                                    <InfoItem label="Total Experience" value={user.experience && user.experience.length > 0 ? `${user.experience.length} Professional Positions` : undefined} icon={Briefcase} />
-                                    <InfoItem label="Certifications" value={certificationItems.length > 0 ? `${certificationItems.length} Verified Credentials` : undefined} icon={Award} />
+                                    <InfoItem label={t.profile.primaryInstitution} value={user.institution} icon={Building2} />
+                                    <InfoItem label={t.profile.facultyDept} value={user.department} icon={BookOpen} />
+                                    <InfoItem label={t.profile.academicPosition} value={user.position} icon={Award} />
+                                    <InfoItem label={t.profile.researchSpec} value={user.specialization} icon={TrendingUp} />
+                                    <InfoItem label={t.profile.totalExperience} value={user.experience && user.experience.length > 0 ? `${user.experience.length} ${t.profile.professionalPositions}` : undefined} icon={Briefcase} />
+                                    <InfoItem label={t.profile.steps.certifications} value={certificationItems.length > 0 ? `${certificationItems.length} ${t.profile.verifiedCredentials}` : undefined} icon={Award} />
                                 </div>
                             </ProfileSection>
                         ) : mounted ? (
-                            <ProfileSection title="Academic Profile" icon={GraduationCap} onEdit={() => setIsEditingAcademic(true)}>
+                            <ProfileSection title={t.profile.sectionAcademic} icon={GraduationCap} onEdit={() => setIsEditingAcademic(true)}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                    <InfoItem label="Host University" value={user.university} icon={Building2} />
-                                    <InfoItem label="Field of Study" value={user.fieldOfStudy} icon={BookOpen} />
-                                    <InfoItem label="Current GPA" value={user.gpa ? `${user.gpa} / 4.0` : undefined} icon={TrendingUp} highlight />
-                                    <InfoItem label="Expected Graduation" value={user.graduationYear ? String(user.graduationYear) : undefined} icon={Calendar} />
-                                    <InfoItem label="Target Degree" value={user.degreeLevel} icon={Award} />
-                                    <InfoItem label="Current Level" value={user.currentDegree} icon={ShieldCheck} />
-                                    <InfoItem label="Work Experience" value={user.experience && user.experience.length > 0 ? `${user.experience.length} Positions` : undefined} icon={Briefcase} />
-                                    <InfoItem label="Certifications" value={certificationItems.length > 0 ? `${certificationItems.length} Credentials` : undefined} icon={Award} highlight />
+                                    <InfoItem label={t.profile.hostUniversity} value={user.university} icon={Building2} />
+                                    <InfoItem label={t.profile.fieldOfStudy} value={user.fieldOfStudy} icon={BookOpen} />
+                                    <InfoItem label={t.profile.currentGPA} value={user.gpa ? `${user.gpa} / 4.0` : undefined} icon={TrendingUp} highlight />
+                                    <InfoItem label={t.profile.expectedGrad} value={user.graduationYear ? String(user.graduationYear) : undefined} icon={Calendar} />
+                                    <InfoItem label={t.profile.targetDegree} value={user.degreeLevel} icon={Award} />
+                                    <InfoItem label={t.profile.currentLevel} value={user.currentDegree} icon={ShieldCheck} />
+                                    <InfoItem label={t.profile.workExperience} value={user.experience && user.experience.length > 0 ? `${user.experience.length} ${t.profile.positions}` : undefined} icon={Briefcase} />
+                                    <InfoItem label={t.profile.steps.certifications} value={certificationItems.length > 0 ? `${certificationItems.length} ${t.profile.credentials}` : undefined} icon={Award} highlight />
                                 </div>
                             </ProfileSection>
                         ) : null}
 
                         {/* 3. Personal Info Section */}
-                        <ProfileSection title="Personal Info" icon={User} onEdit={() => setIsEditing(true)}>
+                        <ProfileSection title={t.profile.sectionPersonal} icon={User} onEdit={() => setIsEditing(true)}>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-8">
-                                <InfoItem label="Full Name" value={user.name} icon={User} />
-                                <InfoItem label="Account Email" value={user.email} icon={Mail} />
-                                <InfoItem label="Phone Number" value={user.phoneNumber} icon={Phone} />
-                                <InfoItem label="Nationality" value={user.country} icon={Globe} />
-                                <InfoItem label="City" value={user.city} icon={MapPin} />
-                                <InfoItem label="Zip Code" value={user.zipCode} icon={MapPin} />
-                                <InfoItem label="Age" value={user.age ? `${user.age} Years` : undefined} icon={Calendar} />
-                                <InfoItem label="Gender" value={user.gender} icon={User} />
+                                <InfoItem label={t.profile.fullName} value={user.name} icon={User} />
+                                <InfoItem label={t.profile.accountEmail} value={user.email} icon={Mail} />
+                                <InfoItem label={t.profile.phoneNumber} value={user.phoneNumber} icon={Phone} />
+                                <InfoItem label={t.profile.nationality} value={user.country} icon={Globe} />
+                                <InfoItem label={t.profile.city} value={user.city} icon={MapPin} />
+                                <InfoItem label={t.profile.zipCode} value={user.zipCode} icon={MapPin} />
+                                <InfoItem label={t.profile.age} value={user.age ? `${user.age} ${t.profile.years}` : undefined} icon={Calendar} />
+                                <InfoItem label={t.profile.gender} value={user.gender} icon={User} />
                                 {mounted && user.role === "PROFESSOR" && (
-                                    <InfoItem label="Website" value={user.website} icon={Globe} link />
+                                    <InfoItem label={t.profile.website} value={user.website} icon={Globe} link />
                                 )}
-                                <InfoItem label="Role Status" value={user.role} icon={ShieldCheck} highlight />
+                                <InfoItem label={t.profile.roleStatus} value={user.role} icon={ShieldCheck} highlight />
                             </div>
                         </ProfileSection>
 
                         {/* 4. Professional Summary Section */}
-                        <ProfileSection title="Bio Summary" icon={Layout} onEdit={() => setIsEditingBio(true)}>
+                        <ProfileSection title={t.profile.sectionBio} icon={Layout} onEdit={() => setIsEditingBio(true)}>
                             <div className="p-8 bg-slate-50/50 rounded-3xl border border-slate-100 relative group overflow-hidden">
                                 <Quote className="h-12 w-12 text-primary/5 absolute -top-2 -left-2 rotate-12 group-hover:scale-110 transition-transform" />
                                 <p className="text-slate-600 leading-relaxed font-medium italic text-lg text-center md:text-left">
                                     {user.bio || (mounted && user.role === "PROFESSOR"
-                                        ? "Academic professional dedicated to research and education at " + (user.institution || "their institution") + "."
-                                        : "Dedicated student focused on achieving academic excellence and exploring international scholarship opportunities.")}
+                                        ? t.profile.profDefaultBio + " " + (user.institution || t.profile.defaultInstitution) + "."
+                                        : t.profile.studentDefaultBio)}
                                 </p>
                             </div>
                         </ProfileSection>
 
                         {/* 5. Documents Section */}
-                        <ProfileSection title="Documents" icon={FileText}>
+                        <ProfileSection title={t.profile.sectionDocuments} icon={FileText}>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {user.documents && user.documents.length > 0 ? (
                                     user.documents.map((doc, idx) => {
@@ -672,7 +674,7 @@ export default function ProfilePage() {
                                     })
                                 ) : (
                                     <div className="col-span-full py-8 px-6 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200 text-center">
-                                        <p className="text-xs font-bold text-slate-400 italic">No academic documents uploaded yet.</p>
+                                        <p className="text-xs font-bold text-slate-400 italic">{t.profile.noDocuments}</p>
                                     </div>
                                 )}
                                 <div
@@ -682,13 +684,13 @@ export default function ProfilePage() {
                                     <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:scale-110 transition-transform">
                                         <PlusCircle className="h-6 w-6 text-primary/40 group-hover:text-primary transition-colors" />
                                     </div>
-                                    <span className="text-[10px] font-bold text-slate-400 tracking-wide">Upload Academic Proof</span>
+                                    <span className="text-[10px] font-bold text-slate-400 tracking-wide">{t.profile.uploadProof}</span>
                                 </div>
                             </div>
                         </ProfileSection>
 
                         {/* 5. Experience Timeline */}
-                        <ProfileSection title="Experience" icon={Briefcase} onAdd={() => setIsEditingExperience(true)}>
+                        <ProfileSection title={t.profile.sectionExperience} icon={Briefcase} onAdd={() => setIsEditingExperience(true)}>
                             <div className="space-y-4">
                                 {experienceItems.length > 0 ? (
                                     experienceItems.map((exp, idx) => (
@@ -706,10 +708,10 @@ export default function ProfilePage() {
                                                     <Briefcase className="h-5 w-5 text-primary" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <h4 className="font-semibold text-slate-800">{exp.title || "Position"}</h4>
-                                                    <p className="text-sm text-slate-600">{exp.organization || "Organization"}</p>
+                                                    <h4 className="font-semibold text-slate-800">{exp.title || t.profile.position}</h4>
+                                                    <p className="text-sm text-slate-600">{exp.organization || t.profile.expOrganization}</p>
                                                     <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                                                        <span>{exp.startDate || "Start"} - {exp.endDate || "Present"}</span>
+                                                        <span>{exp.startDate || t.profile.start} - {exp.endDate || t.profile.present}</span>
                                                         {exp.location && <span>• {exp.location}</span>}
                                                     </div>
                                                     {exp.description && <p className="text-sm text-slate-500 mt-2">{exp.description}</p>}
@@ -720,7 +722,7 @@ export default function ProfilePage() {
                                 ) : (
                                     <div className="text-center py-8 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                                         <Briefcase className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                                        <p className="text-sm text-slate-500">No experience added yet</p>
+                                        <p className="text-sm text-slate-500">{t.profile.noExperience}</p>
                                     </div>
                                 )}
                                 <Button
@@ -732,12 +734,12 @@ export default function ProfilePage() {
                                     }}
                                 >
                                     <PlusCircle className="h-4 w-4 mr-2" />
-                                    Add Experience
+                                    {t.profile.addExperience}
                                 </Button>
                             </div>
                         </ProfileSection>
                         {/* 6. Training & Certifications */}
-                        <ProfileSection title="Training & Certifications" icon={Award} onAdd={() => setIsEditingCertifications(true)}>
+                        <ProfileSection title={t.profile.sectionTraining} icon={Award} onAdd={() => setIsEditingCertifications(true)}>
                             <div className="space-y-4">
                                 {certificationItems.length > 0 ? (
                                     certificationItems.map((cert, idx) => (
@@ -755,16 +757,16 @@ export default function ProfilePage() {
                                                     <Award className="h-5 w-5 text-primary" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <h4 className="font-semibold text-slate-800">{cert.title || "Certification"}</h4>
-                                                    <p className="text-sm text-slate-600">{cert.organization || "Issuing Organization"}</p>
+                                                    <h4 className="font-semibold text-slate-800">{cert.title || t.profile.certificationLabel}</h4>
+                                                    <p className="text-sm text-slate-600">{cert.organization || t.profile.issuingOrg}</p>
                                                     <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                                                        <span>Issued: {cert.issueDate || "Date"}</span>
-                                                        {cert.expiryDate && <span>• Expires: {cert.expiryDate}</span>}
+                                                        <span>{t.profile.issuedLabel} {cert.issueDate || "-"}</span>
+                                                        {cert.expiryDate && <span>• {t.profile.expiresLabel} {cert.expiryDate}</span>}
                                                     </div>
-                                                    {cert.credentialId && <p className="text-xs text-slate-400 mt-1">ID: {cert.credentialId}</p>}
+                                                    {cert.credentialId && <p className="text-xs text-slate-400 mt-1">{t.profile.idLabel} {cert.credentialId}</p>}
                                                     {cert.credentialUrl && (
                                                         <a href={cert.credentialUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary font-bold mt-2 hover:underline">
-                                                            View Credential <ExternalLink className="h-3 w-3" />
+                                                            {t.profile.viewCredential} <ExternalLink className="h-3 w-3" />
                                                         </a>
                                                     )}
                                                 </div>
@@ -774,7 +776,7 @@ export default function ProfilePage() {
                                 ) : (
                                     <div className="text-center py-8 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                                         <Award className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                                        <p className="text-sm text-slate-500">No certifications added yet</p>
+                                        <p className="text-sm text-slate-500">{t.profile.noCertifications}</p>
                                     </div>
                                 )}
                                 <Button
@@ -786,7 +788,7 @@ export default function ProfilePage() {
                                     }}
                                 >
                                     <PlusCircle className="h-4 w-4 mr-2" />
-                                    Add Certification
+                                    {t.profile.addCertification}
                                 </Button>
                             </div>
                         </ProfileSection>
@@ -795,7 +797,7 @@ export default function ProfilePage() {
 
                         {/* 7. Skills & Languages in Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <ProfileSection title="Skills" icon={Settings} onEdit={() => setIsEditingSkills(true)}>
+                            <ProfileSection title={t.profile.sectionSkills} icon={Settings} onEdit={() => setIsEditingSkills(true)}>
                                 <div className="flex flex-wrap gap-2">
                                     {(user.skills && user.skills.length > 0) ? user.skills.map(skill => (
                                         <Badge key={skill} variant="secondary" className="px-5 py-2.5 rounded-2xl font-bold text-[10px] tracking-wide bg-slate-50 text-slate-600 border-none hover:bg-primary hover:text-white transition-all cursor-default text-xs">
@@ -803,28 +805,28 @@ export default function ProfilePage() {
                                         </Badge>
                                     )) : (
                                         <div className="w-full py-4 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                                            <p className="text-[10px] font-bold text-slate-400 italic">No skills added yet.</p>
+                                            <p className="text-[10px] font-bold text-slate-400 italic">{t.profile.noSkills}</p>
                                         </div>
                                     )}
                                     <Button variant="outline" size="sm" className="rounded-2xl border-dashed border-2 h-10 px-6 font-bold text-primary hover:bg-primary/5 transition-colors" onClick={() => setIsEditingSkills(true)}>
                                         <PlusCircle className="h-4 w-4 mr-2" />
-                                        Add Skill
+                                        {t.profile.addSkill}
                                     </Button>
                                 </div>
                             </ProfileSection>
 
-                            <ProfileSection title="Languages" icon={Globe} onEdit={() => setIsEditingLanguages(true)}>
+                            <ProfileSection title={t.profile.sectionLanguages} icon={Globe} onEdit={() => setIsEditingLanguages(true)}>
                                 <div className="space-y-6">
                                     {(user.languages && user.languages.length > 0) ? user.languages.map((lang: any) => (
                                         <LanguageItem key={lang.name} label={lang.name} proficiency={lang.proficiency} />
                                     )) : (
                                         <div className="w-full py-6 text-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
-                                            <p className="text-[10px] font-bold text-slate-400 italic text-center">No languages documented yet.</p>
+                                            <p className="text-[10px] font-bold text-slate-400 italic text-center">{t.profile.noLanguages}</p>
                                         </div>
                                     )}
                                     <Button variant="outline" className="w-full mt-4 rounded-xl border-dashed border-2 font-bold text-xs h-10 border-primary/20 text-primary hover:bg-primary/5" onClick={() => setIsEditingLanguages(true)}>
                                         <PlusCircle className="h-4 w-4 mr-2" />
-                                        Add Language
+                                        {t.profile.addLanguage}
                                     </Button>
                                 </div>
                             </ProfileSection>
@@ -837,7 +839,7 @@ export default function ProfilePage() {
             <Dialog open={isEditingAvatar} onOpenChange={setIsEditingAvatar}>
                 <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
                     <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                        <h2 className="text-xl font-semibold text-slate-900">Update Photo</h2>
+                        <h2 className="text-xl font-semibold text-slate-900">{t.profile.dialogUpdatePhoto}</h2>
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingAvatar(false)}>
                             <X className="h-4 w-4 text-slate-500" />
                         </Button>
@@ -859,12 +861,12 @@ export default function ProfilePage() {
                                 onClick={() => document.getElementById('avatar-upload-dialog')?.click()}
                             >
                                 <Camera className="h-4 w-4 mr-2" />
-                                Select New Image
+                                {t.profile.selectNewImage}
                             </Button>
                             <input type="file" id="avatar-upload-dialog" className="hidden" accept="image/*" onChange={onImageChange} />
                             <div className="flex gap-3">
-                                <Button variant="outline" className="h-11 flex-1 rounded-md font-medium" onClick={() => setIsEditingAvatar(false)}>Cancel</Button>
-                                <Button className="h-11 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" onClick={() => setIsEditingAvatar(false)}>Save</Button>
+                                <Button variant="outline" className="h-11 flex-1 rounded-md font-medium" onClick={() => setIsEditingAvatar(false)}>{t.profile.cancel}</Button>
+                                <Button className="h-11 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" onClick={() => setIsEditingAvatar(false)}>{t.profile.save}</Button>
                             </div>
                         </div>
                     </div>
@@ -876,7 +878,7 @@ export default function ProfilePage() {
                 <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
                     <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col max-h-[90vh]">
                         <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                            <h2 className="text-xl font-semibold text-slate-900">Personal Identity</h2>
+                            <h2 className="text-xl font-semibold text-slate-900">{t.profile.dialogPersonalIdentity}</h2>
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditing(false)}>
                                 <X className="h-4 w-4 text-slate-500" />
                             </Button>
@@ -886,14 +888,14 @@ export default function ProfilePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                        <User className="h-4 w-4 text-primary" /> Full Name
+                                        <User className="h-4 w-4 text-primary" /> {t.profile.fieldFullName}
                                     </Label>
                                     <Input {...register("name")} className={`h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all ${errors.name ? 'border-red-500 bg-red-50/10' : ''}`} placeholder="e.g. John Doe" />
                                     {errors.name && <p className="text-[10px] font-bold text-red-500 pl-1">{errors.name.message}</p>}
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                        <Phone className="h-4 w-4 text-primary" /> Phone Number
+                                        <Phone className="h-4 w-4 text-primary" /> {t.profile.fieldPhoneNumber}
                                     </Label>
                                     <Input {...register("phoneNumber")} className={`h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all ${errors.phoneNumber ? 'border-red-500 bg-red-50/10' : ''}`} placeholder="+1..." />
                                     {errors.phoneNumber && <p className="text-[10px] font-bold text-red-500 pl-1">{errors.phoneNumber.message}</p>}
@@ -903,19 +905,19 @@ export default function ProfilePage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                        <Globe className="h-4 w-4 text-primary" /> Country
+                                        <Globe className="h-4 w-4 text-primary" /> {t.profile.fieldCountry}
                                     </Label>
                                     <Input {...register("country")} className="h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all" placeholder="e.g. United States" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                        <MapPin className="h-4 w-4 text-primary" /> City
+                                        <MapPin className="h-4 w-4 text-primary" /> {t.profile.fieldCity}
                                     </Label>
                                     <Input {...register("city")} className="h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                        <MapPin className="h-4 w-4 text-primary" /> Zip Code
+                                        <MapPin className="h-4 w-4 text-primary" /> {t.profile.fieldZipCode}
                                     </Label>
                                     <Input {...register("zipCode")} className="h-11 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all" />
                                 </div>
@@ -923,25 +925,25 @@ export default function ProfilePage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-slate-700">Age</Label>
+                                    <Label className="text-sm font-medium text-slate-700">{t.profile.fieldAge}</Label>
                                     <Input type="number" {...register("age", { valueAsNumber: true })} className={`h-10 rounded-md border-slate-200 focus:border-blue-500 focus:ring-blue-500 ${errors.age ? 'border-red-500' : ''}`} />
                                     {errors.age && <p className="text-[10px] font-bold text-red-500">{errors.age.message}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-slate-700">Gender</Label>
+                                    <Label className="text-sm font-medium text-slate-700">{t.profile.fieldGender}</Label>
                                     <Select value={watch("gender")} onValueChange={(v) => setValue("gender", v)}>
                                         <SelectTrigger className="h-10 rounded-md border-slate-200"><SelectValue placeholder="Select" /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="MALE">Male</SelectItem>
-                                            <SelectItem value="FEMALE">Female</SelectItem>
-                                            <SelectItem value="OTHER">Other</SelectItem>
+                                            <SelectItem value="MALE">{t.profile.genderMale}</SelectItem>
+                                            <SelectItem value="FEMALE">{t.profile.genderFemale}</SelectItem>
+                                            <SelectItem value="OTHER">{t.profile.genderOther}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
                             {user.role === "PROFESSOR" && (
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-slate-700">Portfolio Website</Label>
+                                    <Label className="text-sm font-medium text-slate-700">{t.profile.fieldPortfolio}</Label>
                                     <Input {...register("website")} className={`h-10 rounded-md border-slate-200 focus:border-blue-500 focus:ring-blue-500 ${errors.website ? 'border-red-500' : ''}`} placeholder="https://..." />
                                     {errors.website && <p className="text-[10px] font-bold text-red-500">{errors.website.message}</p>}
                                 </div>
@@ -949,10 +951,10 @@ export default function ProfilePage() {
                         </div>
 
                         <div className="p-6 border-t border-slate-100 flex gap-3">
-                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditing(false)}>Cancel</Button>
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditing(false)}>{t.profile.cancel}</Button>
                             <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                                Save
+                                {t.profile.save}
                             </Button>
                         </div>
                     </form>
@@ -964,7 +966,7 @@ export default function ProfilePage() {
                 <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
                     <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col max-h-[90vh]">
                         <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                            <h2 className="text-xl font-semibold text-slate-900">Academic Credentials</h2>
+                            <h2 className="text-xl font-semibold text-slate-900">{t.profile.dialogAcademicCredentials}</h2>
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingAcademic(false)}>
                                 <X className="h-4 w-4 text-slate-500" />
                             </Button>
@@ -976,13 +978,13 @@ export default function ProfilePage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                                <Building2 className="h-4 w-4 text-primary" /> Current Institution
+                                                <Building2 className="h-4 w-4 text-primary" /> {t.profile.fieldCurrentInstitution}
                                             </Label>
                                             <Input {...register("institution")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Stanford University" />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                                <BookOpen className="h-4 w-4 text-primary" /> Faculty / Department
+                                                <BookOpen className="h-4 w-4 text-primary" /> {t.profile.fieldFacultyDept}
                                             </Label>
                                             <Input {...register("department")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Computer Science" />
                                         </div>
@@ -990,20 +992,20 @@ export default function ProfilePage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                                <Award className="h-4 w-4 text-primary" /> Academic Position
+                                                <Award className="h-4 w-4 text-primary" /> {t.profile.fieldAcademicPosition}
                                             </Label>
                                             <Input {...register("position")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Associate Professor" />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                                <TrendingUp className="h-4 w-4 text-primary" /> Research Specialization
+                                                <TrendingUp className="h-4 w-4 text-primary" /> {t.profile.fieldResearchSpec}
                                             </Label>
                                             <Input {...register("specialization")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Machine Learning" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                            <MapPin className="h-4 w-4 text-primary" /> Office Location
+                                            <MapPin className="h-4 w-4 text-primary" /> {t.profile.fieldOfficeLocation}
                                         </Label>
                                         <Input {...register("officeLocation")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. Building A, Room 305" />
                                     </div>
@@ -1012,20 +1014,20 @@ export default function ProfilePage() {
                                 <>
                                     <div className="space-y-2">
                                         <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                            <Building2 className="h-4 w-4 text-primary" /> Host University
+                                            <Building2 className="h-4 w-4 text-primary" /> {t.profile.fieldHostUniversity}
                                         </Label>
                                         <Input {...register("university")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. University of Tokyo" />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                                <GraduationCap className="h-4 w-4 text-primary" /> Current Degree / Level
+                                                <GraduationCap className="h-4 w-4 text-primary" /> {t.profile.fieldCurrentDegree}
                                             </Label>
                                             <Input {...register("currentDegree")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. B.Sc. Candidate" />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                                <Award className="h-4 w-4 text-primary" /> Target Degree
+                                                <Award className="h-4 w-4 text-primary" /> {t.profile.fieldTargetDegree}
                                             </Label>
                                             <Select value={watchDegreeLevel} onValueChange={(v) => setValue("degreeLevel", v)}>
                                                 <SelectTrigger className="h-11 rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
@@ -1036,20 +1038,20 @@ export default function ProfilePage() {
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         <div className="space-y-2 col-span-1">
                                             <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                                <TrendingUp className="h-4 w-4 text-primary" /> GPA
+                                                <TrendingUp className="h-4 w-4 text-primary" /> {t.profile.fieldGPA}
                                             </Label>
                                             <Input type="number" step="0.01" {...register("gpa", { valueAsNumber: true })} className={`h-11 rounded-xl border-slate-200 ${errors.gpa ? 'border-red-500 bg-red-50/10' : ''}`} placeholder="3.8" />
                                             {errors.gpa && <p className="text-[10px] font-bold text-red-500 pl-1">{errors.gpa.message}</p>}
                                         </div>
                                         <div className="space-y-2 col-span-1">
                                             <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                                <Calendar className="h-4 w-4 text-primary" /> Grad Year
+                                                <Calendar className="h-4 w-4 text-primary" /> {t.profile.fieldGradYear}
                                             </Label>
                                             <Input type="number" {...register("graduationYear", { valueAsNumber: true })} className="h-11 rounded-xl border-slate-200" placeholder="2025" />
                                         </div>
                                         <div className="space-y-2 col-span-2">
                                             <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                                <BookOpen className="h-4 w-4 text-primary" /> Major / Field
+                                                <BookOpen className="h-4 w-4 text-primary" /> {t.profile.fieldMajor}
                                             </Label>
                                             <Input {...register("fieldOfStudy")} className="h-11 rounded-xl border-slate-200" placeholder="e.g. AI & Robotics" />
                                         </div>
@@ -1059,10 +1061,10 @@ export default function ProfilePage() {
                         </div>
 
                         <div className="p-6 border-t border-slate-100 flex gap-3">
-                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingAcademic(false)}>Cancel</Button>
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingAcademic(false)}>{t.profile.cancel}</Button>
                             <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                                Save
+                                {t.profile.save}
                             </Button>
                         </div>
                     </form>
@@ -1074,28 +1076,28 @@ export default function ProfilePage() {
                 <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
                     <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col">
                         <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                            <h2 className="text-xl font-semibold text-slate-900">Academic Biography</h2>
+                            <h2 className="text-xl font-semibold text-slate-900">{t.profile.dialogAcademicBiography}</h2>
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingBio(false)}>
                                 <X className="h-4 w-4 text-slate-500" />
                             </Button>
                         </div>
                         <div className="p-6 space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-sm font-medium text-slate-700">Personal Bio</Label>
+                                <Label className="text-sm font-medium text-slate-700">{t.profile.fieldPersonalBio}</Label>
                                 <Textarea
                                     {...register("bio")}
                                     className={`rounded-md border-slate-200 min-h-[180px] focus:border-blue-500 focus:ring-blue-500 ${errors.bio ? 'border-red-500' : ''}`}
-                                    placeholder="Share your goals, research interests, or academic journey..."
+                                    placeholder={t.profile.bioPlaceholder}
                                 />
                                 {errors.bio && <p className="text-[10px] font-bold text-red-500 pl-1">{errors.bio.message}</p>}
-                                <p className="text-xs text-slate-500">Write a compelling biography that highlights your achievements and future aspirations.</p>
+                                <p className="text-xs text-slate-500">{t.profile.bioHelper}</p>
                             </div>
                         </div>
                         <div className="p-6 border-t border-slate-100 flex gap-3">
-                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingBio(false)}>Cancel</Button>
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingBio(false)}>{t.profile.cancel}</Button>
                             <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                                Save
+                                {t.profile.save}
                             </Button>
                         </div>
                     </form>
@@ -1107,14 +1109,14 @@ export default function ProfilePage() {
                 <DialogContent className="sm:max-w-xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
                     <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col">
                         <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                            <h2 className="text-xl font-semibold text-slate-900">Expertise Profile</h2>
+                            <h2 className="text-xl font-semibold text-slate-900">{t.profile.dialogExpertiseProfile}</h2>
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingSkills(false)}>
                                 <X className="h-4 w-4 text-slate-500" />
                             </Button>
                         </div>
                         <div className="p-6 space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-sm font-medium text-slate-700">Current Skills</Label>
+                                <Label className="text-sm font-medium text-slate-700">{t.profile.currentSkills}</Label>
                                 <div className="flex flex-wrap gap-2 min-h-[60px] p-3 bg-slate-50 rounded-md border border-slate-200">
                                     <AnimatePresence>
                                         {skillTags.length > 0 ? skillTags.map(skill => (
@@ -1127,29 +1129,29 @@ export default function ProfilePage() {
                                                 </Badge>
                                             </motion.div>
                                         )) : (
-                                            <p className="text-sm text-slate-400 py-2">No skills added yet...</p>
+                                            <p className="text-sm text-slate-400 py-2">{t.profile.noSkillsYet}</p>
                                         )}
                                     </AnimatePresence>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-sm font-medium text-slate-700">Add New Skill</Label>
+                                <Label className="text-sm font-medium text-slate-700">{t.profile.addNewSkill}</Label>
                                 <Input
                                     value={skillInputValue}
                                     onChange={(e) => setSkillInputValue(e.target.value)}
                                     onKeyDown={handleAddSkill}
                                     className="h-10 rounded-md border-slate-200"
-                                    placeholder="Type a skill and press Enter"
+                                    placeholder={t.profile.skillPlaceholder}
                                 />
-                                <p className="text-xs text-slate-500">Press <span className="font-medium text-slate-700">Enter</span> to add a tag.</p>
+                                <p className="text-xs text-slate-500">{t.profile.skillHint}</p>
                             </div>
                         </div>
                         <div className="p-6 border-t border-slate-100 flex gap-3">
-                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingSkills(false)}>Cancel</Button>
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingSkills(false)}>{t.profile.cancel}</Button>
                             <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                                Save
+                                {t.profile.save}
                             </Button>
                         </div>
                     </form>
@@ -1161,7 +1163,7 @@ export default function ProfilePage() {
                 <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
                     <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col max-h-[90vh]">
                         <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                            <h2 className="text-xl font-semibold text-slate-900">Languages</h2>
+                            <h2 className="text-xl font-semibold text-slate-900">{t.profile.dialogLanguages}</h2>
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingLanguages(false)}>
                                 <X className="h-4 w-4 text-slate-500" />
                             </Button>
@@ -1175,15 +1177,15 @@ export default function ProfilePage() {
                                         </Button>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">Language Name</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.languageName}</Label>
                                                 <Input value={lang.name} onChange={(e) => handleUpdateLanguage(idx, "name", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. Spanish" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">Proficiency Level</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.proficiencyLevel}</Label>
                                                 <Select value={lang.level} onValueChange={(v) => handleUpdateLanguage(idx, "level", v)}>
                                                     <SelectTrigger className="h-10 rounded-md border-slate-200"><SelectValue /></SelectTrigger>
                                                     <SelectContent>
-                                                        {["Beginner", "Intermediate", "Advanced", "Professional", "Native"].map(l => (
+                                                        {[t.profile.levels.beginner, t.profile.levels.intermediate, t.profile.levels.advanced, t.profile.levels.professional, t.profile.levels.native].map(l => (
                                                             <SelectItem key={l} value={l}>{l}</SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -1192,7 +1194,7 @@ export default function ProfilePage() {
                                         </div>
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center">
-                                                <Label className="text-sm font-medium text-slate-700">Proficiency</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.proficiency}</Label>
                                                 <span className="text-sm font-medium text-slate-700">{lang.proficiency}%</span>
                                             </div>
                                             <input type="range" min="0" max="100" value={lang.proficiency} onChange={(e) => handleUpdateLanguage(idx, "proficiency", parseInt(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary" />
@@ -1202,20 +1204,20 @@ export default function ProfilePage() {
                             ) : (
                                 <div className="text-center py-8 bg-slate-50 rounded-md border border-dashed border-slate-200">
                                     <Globe className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                                    <p className="text-sm text-slate-500">No languages added yet...</p>
+                                    <p className="text-sm text-slate-500">{t.profile.noLanguagesYet}</p>
                                 </div>
                             )}
 
                             <Button type="button" variant="outline" className="w-full h-10 rounded-md border-dashed border-2" onClick={handleAddLanguage}>
                                 <PlusCircle className="h-4 w-4 mr-2" />
-                                Add Language
+                                {t.profile.addLanguage}
                             </Button>
                         </div>
                         <div className="p-6 border-t border-slate-100 flex gap-3">
-                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingLanguages(false)}>Cancel</Button>
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingLanguages(false)}>{t.profile.cancel}</Button>
                             <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                                Save
+                                {t.profile.save}
                             </Button>
                         </div>
                     </form>
@@ -1227,7 +1229,7 @@ export default function ProfilePage() {
                 <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
                     <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col max-h-[90vh]">
                         <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                            <h2 className="text-xl font-semibold text-slate-900">Experience Timeline</h2>
+                            <h2 className="text-xl font-semibold text-slate-900">{t.profile.dialogExperienceTimeline}</h2>
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingExperience(false)}>
                                 <X className="h-4 w-4 text-slate-500" />
                             </Button>
@@ -1243,32 +1245,32 @@ export default function ProfilePage() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">Job Title</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.jobTitle}</Label>
                                                 <Input value={exp.title} onChange={(e) => handleUpdateExperience(idx, "title", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. Senior Researcher" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">Organization</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.expOrganization}</Label>
                                                 <Input value={exp.organization} onChange={(e) => handleUpdateExperience(idx, "organization", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. MIT" />
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">Start Date</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.startDate}</Label>
                                                 <Input value={exp.startDate} onChange={(e) => handleUpdateExperience(idx, "startDate", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="Jan 2020" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">End Date</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.endDate}</Label>
                                                 <Input value={exp.endDate} onChange={(e) => handleUpdateExperience(idx, "endDate", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="Present" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">Location</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.location}</Label>
                                                 <Input value={exp.location} onChange={(e) => handleUpdateExperience(idx, "location", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="Cambridge, MA" />
                                             </div>
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-medium text-slate-700">Description</Label>
+                                            <Label className="text-sm font-medium text-slate-700">{t.profile.description}</Label>
                                             <Textarea value={exp.description} onChange={(e) => handleUpdateExperience(idx, "description", e.target.value)} className="rounded-md border-slate-200 min-h-[80px]" placeholder="Briefly describe your role and achievements..." />
                                         </div>
                                     </div>
@@ -1276,21 +1278,21 @@ export default function ProfilePage() {
                             ) : (
                                 <div className="text-center py-8 bg-slate-50 rounded-md border border-dashed border-slate-200">
                                     <Briefcase className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                                    <p className="text-sm text-slate-500">No experience milestones added yet.</p>
+                                    <p className="text-sm text-slate-500">{t.profile.noExperienceYet}</p>
                                 </div>
                             )}
 
                             <Button type="button" variant="outline" className="w-full h-10 rounded-md border-dashed border-2" onClick={handleAddExperience}>
                                 <PlusCircle className="h-4 w-4 mr-2" />
-                                Add Position
+                                {t.profile.addPosition}
                             </Button>
                         </div>
 
                         <div className="p-6 border-t border-slate-100 flex gap-3">
-                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingExperience(false)}>Cancel</Button>
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingExperience(false)}>{t.profile.cancel}</Button>
                             <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                                Save
+                                {t.profile.save}
                             </Button>
                         </div>
                     </form>
@@ -1302,7 +1304,7 @@ export default function ProfilePage() {
                 <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
                     <form onSubmit={handleSubmit(onUpdateProfile)} className="flex flex-col max-h-[90vh]">
                         <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                            <h2 className="text-xl font-semibold text-slate-900">Training & Certifications</h2>
+                            <h2 className="text-xl font-semibold text-slate-900">{t.profile.dialogTrainingCerts}</h2>
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingCertifications(false)}>
                                 <X className="h-4 w-4 text-slate-500" />
                             </Button>
@@ -1318,33 +1320,33 @@ export default function ProfilePage() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">Certification Title</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.certTitle}</Label>
                                                 <Input value={cert.title} onChange={(e) => handleUpdateCertification(idx, "title", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. AWS Certified Solutions Architect" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">Issuing Organization</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.issuingOrganization}</Label>
                                                 <Input value={cert.organization} onChange={(e) => handleUpdateCertification(idx, "organization", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. Amazon Web Services" />
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">Issue Date</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.issueDate}</Label>
                                                 <Input value={cert.issueDate} onChange={(e) => handleUpdateCertification(idx, "issueDate", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. Jan 2023" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">Expiry Date (Optional)</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.expiryDate}</Label>
                                                 <Input value={cert.expiryDate} onChange={(e) => handleUpdateCertification(idx, "expiryDate", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. Jan 2026" />
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">Credential ID</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.credentialId}</Label>
                                                 <Input value={cert.credentialId} onChange={(e) => handleUpdateCertification(idx, "credentialId", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="e.g. ABC-123-XYZ" />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-medium text-slate-700">Credential URL</Label>
+                                                <Label className="text-sm font-medium text-slate-700">{t.profile.credentialUrl}</Label>
                                                 <Input value={cert.credentialUrl} onChange={(e) => handleUpdateCertification(idx, "credentialUrl", e.target.value)} className="h-10 rounded-md border-slate-200" placeholder="https://..." />
                                             </div>
                                         </div>
@@ -1353,21 +1355,21 @@ export default function ProfilePage() {
                             ) : (
                                 <div className="text-center py-8 bg-slate-50 rounded-md border border-dashed border-slate-200">
                                     <Award className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                                    <p className="text-sm text-slate-500">No certifications added yet.</p>
+                                    <p className="text-sm text-slate-500">{t.profile.noCertsYet}</p>
                                 </div>
                             )}
 
                             <Button type="button" variant="outline" className="w-full h-10 rounded-md border-dashed border-2" onClick={handleAddCertification}>
                                 <PlusCircle className="h-4 w-4 mr-2" />
-                                Add Certification
+                                {t.profile.addCertification}
                             </Button>
                         </div>
 
                         <div className="p-6 border-t border-slate-100 flex gap-3">
-                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingCertifications(false)}>Cancel</Button>
+                            <Button type="button" variant="outline" className="h-10 flex-1 rounded-md font-medium" onClick={() => setIsEditingCertifications(false)}>{t.profile.cancel}</Button>
                             <Button type="submit" className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                                Save
+                                {t.profile.save}
                             </Button>
                         </div>
                     </form>
@@ -1378,7 +1380,7 @@ export default function ProfilePage() {
             <Dialog open={isEditingDocs} onOpenChange={setIsEditingDocs}>
                 <DialogContent className="sm:max-w-xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg flex flex-col max-h-[90vh]">
                     <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
-                        <h2 className="text-xl font-semibold text-slate-900">Document Vault</h2>
+                        <h2 className="text-xl font-semibold text-slate-900">{t.profile.dialogDocumentVault}</h2>
                         <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-slate-100" onClick={() => setIsEditingDocs(false)}>
                             <X className="h-4 w-4 text-slate-500" />
                         </Button>
@@ -1395,7 +1397,7 @@ export default function ProfilePage() {
                             {isUploadingDoc ? (
                                 <>
                                     <Loader2 className="h-8 w-8 text-slate-600 animate-spin" />
-                                    <p className="text-sm font-medium text-slate-600">Uploading...</p>
+                                    <p className="text-sm font-medium text-slate-600">{t.profile.uploading}</p>
                                 </>
                             ) : (
                                 <>
@@ -1403,8 +1405,8 @@ export default function ProfilePage() {
                                         <FileText className="h-6 w-6 text-slate-600" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-slate-700">Drop your file or click to browse</p>
-                                        <p className="text-xs text-slate-500 mt-1">PDF, Word, or Images (Max 5MB)</p>
+                                        <p className="text-sm font-medium text-slate-700">{t.profile.dropFile}</p>
+                                        <p className="text-xs text-slate-500 mt-1">{t.profile.docFormats}</p>
                                     </div>
                                 </>
                             )}
@@ -1414,17 +1416,17 @@ export default function ProfilePage() {
                         <div className="grid grid-cols-2 gap-3">
                             <div className="p-3 bg-emerald-50 rounded-md border border-emerald-200 flex items-center gap-2">
                                 <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                                <span className="text-xs font-medium text-emerald-700">Encrypted</span>
+                                <span className="text-xs font-medium text-emerald-700">{t.profile.encrypted}</span>
                             </div>
                             <div className="p-3 bg-blue-50 rounded-md border border-blue-200 flex items-center gap-2">
                                 <Globe className="h-4 w-4 text-blue-600" />
-                                <span className="text-xs font-medium text-blue-700">Private</span>
+                                <span className="text-xs font-medium text-blue-700">{t.profile.private}</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="p-6 border-t border-slate-100 shrink-0">
-                        <Button type="button" variant="outline" className="w-full h-10 rounded-md font-medium" onClick={() => setIsEditingDocs(false)} disabled={isUploadingDoc}>Close</Button>
+                        <Button type="button" variant="outline" className="w-full h-10 rounded-md font-medium" onClick={() => setIsEditingDocs(false)} disabled={isUploadingDoc}>{t.profile.close}</Button>
                     </div>
                 </DialogContent>
             </Dialog>
@@ -1457,6 +1459,7 @@ function ProfileSection({ title, icon: Icon, children, onEdit, onAdd }: { title:
 }
 
 function InfoItem({ label, value, icon: Icon, link, highlight }: { label: string, value?: string | number, icon?: any, link?: boolean, highlight?: boolean }) {
+    const { t } = useTranslation();
     return (
         <div className="space-y-2 group">
             <div className="flex items-center gap-2 mb-1">
@@ -1469,7 +1472,7 @@ function InfoItem({ label, value, icon: Icon, link, highlight }: { label: string
                 </a>
             ) : (
                 <p className={cn("text-md font-bold text-slate-700", highlight && "text-primary italic")}>
-                    {value || <span className="text-slate-200 italic font-medium">Not Provided</span>}
+                    {value || <span className="text-slate-200 italic font-medium">{t.profile.notProvided}</span>}
                 </p>
             )}
         </div>
@@ -1504,12 +1507,13 @@ function ExperienceItem({ title, org, date, location, detail, edu }: { title: st
 }
 
 function LanguageItem({ label, proficiency }: { label: string, proficiency: number }) {
+    const { t } = useTranslation();
     const getLevel = (p: number) => {
-        if (p >= 90) return "Native";
-        if (p >= 75) return "Professional";
-        if (p >= 50) return "Advanced";
-        if (p >= 25) return "Intermediate";
-        return "Beginner";
+        if (p >= 90) return t.profile.levels.native;
+        if (p >= 75) return t.profile.levels.professional;
+        if (p >= 50) return t.profile.levels.advanced;
+        if (p >= 25) return t.profile.levels.intermediate;
+        return t.profile.levels.beginner;
     };
 
     return (

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { formatDeadline, getDeadlineStatus, truncateText } from "@/lib/utils";
 import { useSavedScholarships, useCheckSaved } from "@/hooks/useSavedScholarships";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface ScholarshipCardProps {
     scholarship: {
@@ -49,6 +50,7 @@ export function ScholarshipCard({ scholarship, index = 0 }: ScholarshipCardProps
     const { save, remove: removeSaved } = useSavedScholarships();
     const { isAuthenticated } = useAuth();
     const { data: isSaved, isLoading: isCheckingSaved } = useCheckSaved(scholarship.id);
+    const { t } = useTranslation();
 
     const deadlineStatus = getDeadlineStatus(scholarship.deadline);
     const deadlineText = formatDeadline(scholarship.deadline);
@@ -61,8 +63,8 @@ export function ScholarshipCard({ scholarship, index = 0 }: ScholarshipCardProps
 
         if (!isAuthenticated) {
             toast({
-                title: "Authentication Required",
-                description: "Please sign in to save scholarships to your profile.",
+                title: t.scholarships.authRequired,
+                description: t.scholarships.authRequiredDesc,
                 variant: "destructive",
             });
             return;
@@ -104,7 +106,7 @@ export function ScholarshipCard({ scholarship, index = 0 }: ScholarshipCardProps
                         <div className="space-y-1 flex-1">
                             {scholarship.isFeatured && (
                                 <Badge variant="default" className="mb-2">
-                                    ⭐ Featured
+                                    ⭐ {t.scholarships.featured}
                                 </Badge>
                             )}
                             <Link
@@ -175,7 +177,7 @@ export function ScholarshipCard({ scholarship, index = 0 }: ScholarshipCardProps
                         <div className="flex items-center justify-between w-full gap-2">
                             <Link href={`/scholarships/${scholarship.id}`} className="flex-1">
                                 <Button variant="outline" size="sm" className="w-full">
-                                    View Details
+                                    {t.scholarships.viewDetails}
                                 </Button>
                             </Link>
                             <a
@@ -184,7 +186,7 @@ export function ScholarshipCard({ scholarship, index = 0 }: ScholarshipCardProps
                                 rel="noopener noreferrer"
                             >
                                 <Button variant="default" size="sm" className="gap-1">
-                                    Apply
+                                    {t.scholarships.apply}
                                     <ExternalLink className="h-3 w-3" />
                                 </Button>
                             </a>

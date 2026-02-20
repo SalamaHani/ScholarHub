@@ -17,6 +17,7 @@ import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function NotificationBell() {
     const router = useRouter();
@@ -24,6 +25,7 @@ export function NotificationBell() {
     const { list, markRead } = useNotifications();
     const { isConnected, isPusherConfigured } = usePusherNotifications(user?.id);
     const [isOpen, setIsOpen] = useState(false);
+    const { t } = useTranslation();
 
     const notifications = Array.isArray(list.data?.notifications)
         ? list.data.notifications
@@ -103,16 +105,16 @@ export function NotificationBell() {
                 {/* Header */}
                 <div className="flex items-center justify-between border-b px-4 py-3">
                     <div>
-                        <h4 className="font-bold text-sm">Notifications</h4>
+                        <h4 className="font-bold text-sm">{t.notifications.title}</h4>
                         <p className="text-xs text-muted-foreground">
-                            {unreadCount > 0 ? `${unreadCount} unread` : "All caught up!"}
+                            {unreadCount > 0 ? `${unreadCount} ${t.notifications.unread}` : t.notifications.allCaughtUp}
                         </p>
                     </div>
 
                     {/* Real-time status dot */}
                     {isPusherConfigured && (
                         <span
-                            title={isConnected ? "Real-time connected" : "Real-time disconnected"}
+                            title={isConnected ? t.notifications.realTimeConnected : t.notifications.realTimeDisconnected}
                             className={cn(
                                 "h-2 w-2 rounded-full",
                                 isConnected ? "bg-green-500 animate-pulse" : "bg-orange-400"
@@ -125,7 +127,7 @@ export function NotificationBell() {
                 {list.isError && (
                     <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 dark:bg-orange-950 text-xs text-orange-700 dark:text-orange-300">
                         <WifiOff className="h-3 w-3 shrink-0" />
-                        <span>Could not load notifications. Retrying&hellip;</span>
+                        <span>{t.notifications.retryingDesc}</span>
                     </div>
                 )}
 
@@ -141,10 +143,10 @@ export function NotificationBell() {
                         <div className="flex flex-col items-center justify-center py-12 text-center">
                             <Bell className="h-12 w-12 text-muted-foreground/20 mb-3" />
                             <p className="text-sm text-muted-foreground font-medium">
-                                No notifications yet
+                                {t.notifications.emptyTitle}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                                We&apos;ll notify you when something happens
+                                {t.notifications.willNotify}
                             </p>
                         </div>
                     ) : (
@@ -164,7 +166,7 @@ export function NotificationBell() {
                     <div className="border-t p-2">
                         <Link href="/notifications" onClick={() => setIsOpen(false)}>
                             <Button variant="ghost" className="w-full text-xs h-8 font-semibold">
-                                View all notifications
+                                {t.notifications.viewAll}
                                 <ExternalLink className="h-3 w-3 ml-2" />
                             </Button>
                         </Link>
