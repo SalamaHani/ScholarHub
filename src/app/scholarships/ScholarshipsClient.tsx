@@ -17,7 +17,7 @@ export default function ScholarshipsClient() {
         country: "",
         degreeLevel: "",
         fundingType: "",
-        fieldOfStudy: "",
+        category: "",
     };
     const [filters, setFilters] = useState(initialFilters);
 
@@ -28,7 +28,7 @@ export default function ScholarshipsClient() {
         country: filters.country || undefined,
         degreeLevel: filters.degreeLevel || undefined,
         fundingType: filters.fundingType || undefined,
-        category: filters.fieldOfStudy || undefined,
+        category: filters.category || undefined,
     });
 
     const handleSearch = (query: string) => {

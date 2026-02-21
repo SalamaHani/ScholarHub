@@ -83,7 +83,7 @@ export function NotificationBell() {
                     variant="ghost"
                     size="icon"
                     className="relative h-9 w-9 rounded-full hover:bg-muted"
-                    aria-label="Notifications"
+                    aria-label={t.notifications.title}
                 >
                     <Bell className="h-5 w-5" />
 
@@ -183,6 +183,14 @@ interface NotificationItemProps {
 }
 
 function NotificationItem({ notification, onClick }: NotificationItemProps) {
+    const { t } = useTranslation();
+    const typeLabels: Record<string, string> = {
+        SCHOLARSHIP: t.notifications.typeScholarship,
+        APPLICATION: t.notifications.typeApplication,
+        SUCCESS: t.notifications.typeSuccess,
+        WARNING: t.notifications.typeWarning,
+        INFO: t.notifications.typeInfo,
+    };
     return (
         <div
             role="button"
@@ -229,7 +237,7 @@ function NotificationItem({ notification, onClick }: NotificationItemProps) {
                         variant="outline"
                         className={cn("text-[9px] h-4 px-1.5 font-medium", getTypeBadgeClass(notification.type))}
                     >
-                        {notification.type}
+                        {typeLabels[notification.type] ?? notification.type}
                     </Badge>
                 </div>
             </div>

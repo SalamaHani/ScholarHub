@@ -312,6 +312,11 @@ export const translations = {
             realTimeConnected: "Real-time connected",
             realTimeDisconnected: "Real-time disconnected",
             willNotify: "We'll notify you when something happens",
+            typeScholarship: "Scholarship",
+            typeApplication: "Application",
+            typeSuccess: "Success",
+            typeWarning: "Warning",
+            typeInfo: "Info",
         },
         categories: {
             tag: "Browse by Category",
@@ -1144,6 +1149,11 @@ export const translations = {
             realTimeConnected: "متصل في الوقت الفعلي",
             realTimeDisconnected: "غير متصل في الوقت الفعلي",
             willNotify: "سنُخطرك عند حدوث شيء ما",
+            typeScholarship: "منحة",
+            typeApplication: "طلب",
+            typeSuccess: "نجاح",
+            typeWarning: "تحذير",
+            typeInfo: "معلومة",
         },
         categories: {
             tag: "تصفح حسب الفئة",

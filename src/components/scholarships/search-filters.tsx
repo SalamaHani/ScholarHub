@@ -12,6 +12,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { useCategories, Category } from "@/hooks/useCategories";
 
 interface SearchFiltersProps {
     onSearch?: (query: string) => void;
@@ -22,7 +23,7 @@ interface FilterState {
     country: string;
     degreeLevel: string;
     fundingType: string;
-    fieldOfStudy: string;
+    category: string;
 }
 
 const countries = [
@@ -56,19 +57,6 @@ const fundingTypes = [
     { label: "Living Expenses", value: "STIPEND" },
 ];
 
-const fieldsOfStudy = [
-    { label: "All Fields", value: "ALL" },
-    { label: "Engineering", value: "ENGINEERING" },
-    { label: "Medicine", value: "MEDICINE" },
-    { label: "Computer Science", value: "COMPUTER_SCIENCE" },
-    { label: "Business", value: "BUSINESS" },
-    { label: "Arts & Humanities", value: "ARTS_HUMANITIES" },
-    { label: "Natural Sciences", value: "NATURAL_SCIENCES" },
-    { label: "Social Sciences", value: "SOCIAL_SCIENCES" },
-];
-
-import { useCategories, Category } from "@/hooks/useCategories";
-
 export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) {
     const { list: categoriesList } = useCategories();
     const categories = Array.isArray(categoriesList.data) ? categoriesList.data : [];
@@ -79,7 +67,7 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
         country: "",
         degreeLevel: "",
         fundingType: "",
-        fieldOfStudy: "",
+        category: "",
     });
 
     const activeFiltersCount = Object.entries(filters).filter(
@@ -101,14 +89,14 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
             country: "",
             degreeLevel: "ALL",
             fundingType: "ALL",
-            fieldOfStudy: "ALL",
+            category: "ALL",
         };
         setFilters(clearedFilters);
         onFilterChange?.({
             country: "",
             degreeLevel: "",
             fundingType: "",
-            fieldOfStudy: "",
+            category: "",
         } as any);
     };
 
@@ -214,14 +202,14 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
                         </Select>
 
                         <Select
-                            value={filters.fieldOfStudy}
-                            onValueChange={(value) => handleFilterChange("fieldOfStudy", value)}
+                            value={filters.category}
+                            onValueChange={(value) => handleFilterChange("category", value)}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Field of Study" />
+                                <SelectValue placeholder="Category" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="ALL">All Fields</SelectItem>
+                                <SelectItem value="ALL">All Categories</SelectItem>
                                 {categories.map((cat: Category) => (
                                     <SelectItem key={cat.id} value={cat.name}>
                                         {cat.name}

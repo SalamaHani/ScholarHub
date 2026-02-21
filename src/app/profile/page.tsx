@@ -255,7 +255,6 @@ export default function ProfilePage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setValue("avatar", reader.result as string);
-                onUpdateAvatar({ avatar: reader.result as string });
             };
             reader.readAsDataURL(file);
         }
@@ -305,6 +304,11 @@ export default function ProfilePage() {
             setIsEditingAvatar(false);
         } catch (error) {
             console.error("Avatar update failed:", error);
+            toast({
+                title: t.profile.toastUpdateFailed,
+                description: t.profile.toastUpdateFailedDesc,
+                variant: "destructive",
+            });
         }
     };
 
@@ -866,7 +870,7 @@ export default function ProfilePage() {
                             <input type="file" id="avatar-upload-dialog" className="hidden" accept="image/*" onChange={onImageChange} />
                             <div className="flex gap-3">
                                 <Button variant="outline" className="h-11 flex-1 rounded-md font-medium" onClick={() => setIsEditingAvatar(false)}>{t.profile.cancel}</Button>
-                                <Button className="h-11 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" onClick={() => setIsEditingAvatar(false)}>{t.profile.save}</Button>
+                                <Button className="h-11 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white" disabled={!watchAvatar || watchAvatar === user?.avatar} onClick={() => watchAvatar && onUpdateAvatar({ avatar: watchAvatar })}>{t.profile.save}</Button>
                             </div>
                         </div>
                     </div>

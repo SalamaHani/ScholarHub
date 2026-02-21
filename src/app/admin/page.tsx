@@ -54,6 +54,10 @@ import {
     BarChart2,
     Brush,
     Link2,
+    Layout,
+    Newspaper,
+    ToggleLeft,
+    ArrowUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,6 +98,9 @@ import { useCategories, CategoryInput } from "@/hooks/useCategories";
 import { useNotifications, SendNotificationInput } from "@/hooks/useNotifications";
 import { useTestimonials, Testimonial } from "@/hooks/useTestimonials";
 import { useSettings, SiteSettings } from "@/hooks/useSettings";
+import { usePageContent, PageContent, PageContentInput } from "@/hooks/usePageContent";
+import { useFaqItems, FaqItem, FaqItemInput } from "@/hooks/useFaqItems";
+import { useBlogPosts, BlogPost, BlogPostInput } from "@/hooks/useBlogPosts";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -224,6 +231,10 @@ export default function AdminDashboardPage() {
                             <Settings className="h-4 w-4" />
                             Settings
                         </TabsTrigger>
+                        <TabsTrigger value="page-content" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-4 py-2 gap-2">
+                            <Layout className="h-4 w-4" />
+                            Page Content
+                        </TabsTrigger>
                     </TabsList>
 
                     {/* Overview Tab */}
@@ -264,6 +275,15 @@ export default function AdminDashboardPage() {
                     {/* Settings Tab */}
                     <TabsContent value="settings">
                         <SettingsSection />
+                    </TabsContent>
+
+                    {/* Page Content Tab — contains Page Content, FAQ Items, Blog Posts */}
+                    <TabsContent value="page-content">
+                        <div className="space-y-10">
+                            <PageContentSection />
+                            <FaqItemsSection />
+                            <BlogPostsSection />
+                        </div>
                     </TabsContent>
                 </Tabs>
             </div>
@@ -4233,6 +4253,534 @@ function SettingsSection() {
                 </Button>
             </div>
 
+        </motion.div>
+    );
+}
+
+// ============================================
+// PAGE CONTENT SECTION
+// ============================================
+
+function PageContentSection() {
+    const [sectionFilter, setSectionFilter] = useState<string>("all");
+    const [search, setSearch] = useState("");
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [editTarget, setEditTarget] = useState<PageContent | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<PageContent | null>(null);
+
+    const filters = sectionFilter !== "all" ? { section: sectionFilter } : undefined;
+    const { list, create, update, remove } = usePageContent(filters);
+
+    const entries: PageContent[] = Array.isArray(list.data) ? list.data : [];
+    const filtered = entries.filter(e =>
+        !search ||
+        e.pageKey.toLowerCase().includes(search.toLowerCase()) ||
+        e.title_en.toLowerCase().includes(search.toLowerCase()) ||
+        e.title_ar.includes(search)
+    );
+
+    const [form, setForm] = useState<PageContentInput>({ pageKey: "", title_en: "", title_ar: "", section: "", link: "", description_en: "", description_ar: "", isActive: true });
+
+    const openCreate = () => { setEditTarget(null); setForm({ pageKey: "", title_en: "", title_ar: "", section: sectionFilter !== "all" ? sectionFilter : "", link: "", description_en: "", description_ar: "", isActive: true }); setDialogOpen(true); };
+    const openEdit = (e: PageContent) => { setEditTarget(e); setForm({ pageKey: e.pageKey, title_en: e.title_en, title_ar: e.title_ar, section: e.section || "", link: e.link || "", description_en: e.description_en || "", description_ar: e.description_ar || "", isActive: e.isActive }); setDialogOpen(true); };
+
+    const handleSave = () => {
+        if (editTarget) {
+            update.mutate({ pageKey: editTarget.pageKey, data: form }, { onSuccess: () => setDialogOpen(false) });
+        } else {
+            create.mutate(form, { onSuccess: () => setDialogOpen(false) });
+        }
+    };
+
+    const sectionBadgeColor = (s?: string) => {
+        if (s === "platform") return "bg-blue-100 text-blue-700";
+        if (s === "resources") return "bg-emerald-100 text-emerald-700";
+        if (s === "company") return "bg-purple-100 text-purple-700";
+        return "bg-slate-100 text-slate-600";
+    };
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <Card className="border-none shadow-lg">
+                <CardHeader className="pb-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle className="text-xl font-bold flex items-center gap-2"><Layout className="h-5 w-5 text-primary" /> Page Content</CardTitle>
+                            <CardDescription>Manage footer navigation links and page text displayed across the platform.</CardDescription>
+                        </div>
+                        <Button className="gap-2 shrink-0" onClick={openCreate}><Plus className="h-4 w-4" /> New Entry</Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {/* Filters */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Search by key or title..." className="pl-9 h-10" value={search} onChange={e => setSearch(e.target.value)} />
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                            {["all", "platform", "resources", "company"].map(s => (
+                                <Button key={s} size="sm" variant={sectionFilter === s ? "default" : "outline"} className="capitalize h-10 px-4" onClick={() => setSectionFilter(s)}>{s}</Button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Table */}
+                    {list.isLoading ? (
+                        <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />)}</div>
+                    ) : filtered.length === 0 ? (
+                        <div className="py-16 text-center text-muted-foreground">
+                            <Layout className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                            <p className="font-medium">No entries found</p>
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead className="bg-muted/50">
+                                    <tr className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                                        <th className="px-4 py-3">Page Key</th>
+                                        <th className="px-4 py-3">Title EN</th>
+                                        <th className="px-4 py-3">Title AR</th>
+                                        <th className="px-4 py-3">Section</th>
+                                        <th className="px-4 py-3">Link</th>
+                                        <th className="px-4 py-3">Status</th>
+                                        <th className="px-4 py-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                    {filtered.map(entry => (
+                                        <tr key={entry.id} className="hover:bg-muted/30 transition-colors">
+                                            <td className="px-4 py-3 font-mono text-xs text-primary font-semibold">{entry.pageKey}</td>
+                                            <td className="px-4 py-3 font-medium">{entry.title_en}</td>
+                                            <td className="px-4 py-3 text-right font-medium" dir="rtl">{entry.title_ar}</td>
+                                            <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${sectionBadgeColor(entry.section)}`}>{entry.section || "—"}</span></td>
+                                            <td className="px-4 py-3 font-mono text-xs text-muted-foreground truncate max-w-[120px]">{entry.link || "—"}</td>
+                                            <td className="px-4 py-3"><Badge variant="outline" className={entry.isActive ? "border-emerald-300 text-emerald-700 bg-emerald-50" : "border-slate-200 text-slate-500"}>{entry.isActive ? "Active" : "Inactive"}</Badge></td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex justify-end gap-1">
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => openEdit(entry)}><Pencil className="h-3.5 w-3.5" /></Button>
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleteTarget(entry)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Create / Edit Dialog */}
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>{editTarget ? "Edit Page Content" : "New Page Content Entry"}</DialogTitle>
+                        <DialogDescription>Fill in both English and Arabic text for full bilingual support.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-2">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Page Key *</Label>
+                                <Input value={form.pageKey} onChange={e => setForm(f => ({ ...f, pageKey: e.target.value }))} placeholder="e.g. footer-browse-scholarships" className="font-mono text-xs" disabled={!!editTarget} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Section</Label>
+                                <Select value={form.section || ""} onValueChange={v => setForm(f => ({ ...f, section: v }))}>
+                                    <SelectTrigger><SelectValue placeholder="Select section" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="platform">Platform</SelectItem>
+                                        <SelectItem value="resources">Resources</SelectItem>
+                                        <SelectItem value="company">Company</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Title (English) *</Label>
+                                <Input value={form.title_en} onChange={e => setForm(f => ({ ...f, title_en: e.target.value }))} placeholder="e.g. Browse Scholarships" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Title (Arabic) *</Label>
+                                <Input value={form.title_ar} onChange={e => setForm(f => ({ ...f, title_ar: e.target.value }))} placeholder="مثل: تصفح المنح" dir="rtl" />
+                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Link / Path</Label>
+                            <Input value={form.link || ""} onChange={e => setForm(f => ({ ...f, link: e.target.value }))} placeholder="/scholarships" className="font-mono text-xs" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Description (EN)</Label>
+                                <Textarea value={form.description_en || ""} onChange={e => setForm(f => ({ ...f, description_en: e.target.value }))} rows={2} placeholder="Optional description in English" className="resize-none text-sm" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Description (AR)</Label>
+                                <Textarea value={form.description_ar || ""} onChange={e => setForm(f => ({ ...f, description_ar: e.target.value }))} rows={2} placeholder="وصف اختياري بالعربية" dir="rtl" className="resize-none text-sm" />
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 pt-1">
+                            <input type="checkbox" id="pc-active" checked={!!form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} className="h-4 w-4 accent-primary" />
+                            <Label htmlFor="pc-active" className="text-sm font-medium cursor-pointer">Active (visible on the platform)</Label>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button onClick={handleSave} disabled={create.isPending || update.isPending || !form.pageKey || !form.title_en || !form.title_ar} className="gap-2">
+                            {(create.isPending || update.isPending) ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Save className="h-4 w-4" />{editTarget ? "Save Changes" : "Create Entry"}</>}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirm */}
+            <Dialog open={!!deleteTarget} onOpenChange={o => !o && setDeleteTarget(null)}>
+                <DialogContent className="sm:max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Delete Entry</DialogTitle>
+                        <DialogDescription>Are you sure you want to delete <span className="font-mono font-bold text-destructive">{deleteTarget?.pageKey}</span>? This cannot be undone.</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button variant="destructive" disabled={remove.isPending} onClick={() => remove.mutate(deleteTarget!.pageKey, { onSuccess: () => setDeleteTarget(null) })} className="gap-2">
+                            {remove.isPending ? <><Loader2 className="h-4 w-4 animate-spin" />Deleting...</> : <><Trash2 className="h-4 w-4" />Delete</>}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </motion.div>
+    );
+}
+
+// ============================================
+// FAQ ITEMS SECTION
+// ============================================
+
+function FaqItemsSection() {
+    const [pageKeyFilter, setPageKeyFilter] = useState("faq");
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [editTarget, setEditTarget] = useState<FaqItem | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<FaqItem | null>(null);
+
+    const { list, create, update, remove } = useFaqItems({ pageKey: pageKeyFilter || undefined });
+    const items: FaqItem[] = Array.isArray(list.data) ? list.data : [];
+
+    const emptyForm: FaqItemInput = { pageKey: "faq", question_en: "", question_ar: "", answer_en: "", answer_ar: "", order: items.length + 1, isActive: true };
+    const [form, setForm] = useState<FaqItemInput>(emptyForm);
+
+    const openCreate = () => { setEditTarget(null); setForm({ ...emptyForm, pageKey: pageKeyFilter || "faq", order: items.length + 1 }); setDialogOpen(true); };
+    const openEdit = (item: FaqItem) => { setEditTarget(item); setForm({ pageKey: item.pageKey, question_en: item.question_en, question_ar: item.question_ar, answer_en: item.answer_en, answer_ar: item.answer_ar, order: item.order, isActive: item.isActive }); setDialogOpen(true); };
+
+    const handleSave = () => {
+        if (editTarget) {
+            update.mutate({ id: editTarget.id, data: form }, { onSuccess: () => setDialogOpen(false) });
+        } else {
+            create.mutate(form, { onSuccess: () => setDialogOpen(false) });
+        }
+    };
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <Card className="border-none shadow-lg">
+                <CardHeader className="pb-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle className="text-xl font-bold flex items-center gap-2"><HelpCircle className="h-5 w-5 text-primary" /> FAQ Items</CardTitle>
+                            <CardDescription>Manage frequently asked questions displayed on the FAQ page.</CardDescription>
+                        </div>
+                        <Button className="gap-2 shrink-0" onClick={openCreate}><Plus className="h-4 w-4" /> New FAQ</Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center gap-3">
+                        <Label className="text-xs font-bold shrink-0">Page Key:</Label>
+                        <Input value={pageKeyFilter} onChange={e => setPageKeyFilter(e.target.value)} placeholder="faq" className="h-9 max-w-[180px] font-mono text-xs" />
+                        <span className="text-xs text-muted-foreground">Filter items by page (e.g. <span className="font-mono">faq</span>, <span className="font-mono">about</span>)</span>
+                    </div>
+
+                    {list.isLoading ? (
+                        <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />)}</div>
+                    ) : items.length === 0 ? (
+                        <div className="py-16 text-center text-muted-foreground">
+                            <HelpCircle className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                            <p className="font-medium">No FAQ items found for <span className="font-mono text-primary">{pageKeyFilter}</span></p>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {[...items].sort((a, b) => a.order - b.order).map(item => (
+                                <div key={item.id} className="flex items-start gap-4 p-4 rounded-xl border bg-white hover:border-primary/30 transition-colors group">
+                                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary font-bold text-sm shrink-0">{item.order}</div>
+                                    <div className="flex-1 min-w-0 space-y-1">
+                                        <p className="font-semibold text-sm text-slate-800 line-clamp-1">{item.question_en}</p>
+                                        <p className="text-sm text-slate-500 line-clamp-1 text-right" dir="rtl">{item.question_ar}</p>
+                                        <p className="text-xs text-muted-foreground line-clamp-1">{item.answer_en}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <Badge variant="outline" className={item.isActive ? "border-emerald-300 text-emerald-700 bg-emerald-50 text-[10px]" : "border-slate-200 text-slate-500 text-[10px]"}>{item.isActive ? "Active" : "Hidden"}</Badge>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:text-primary" onClick={() => openEdit(item)}><Pencil className="h-3.5 w-3.5" /></Button>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleteTarget(item)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Create / Edit Dialog */}
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>{editTarget ? "Edit FAQ Item" : "New FAQ Item"}</DialogTitle>
+                        <DialogDescription>Provide both English and Arabic questions and answers.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-2">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Page Key *</Label>
+                                <Input value={form.pageKey} onChange={e => setForm(f => ({ ...f, pageKey: e.target.value }))} placeholder="faq" className="font-mono text-xs" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Display Order</Label>
+                                <Input type="number" min={1} value={form.order ?? ""} onChange={e => setForm(f => ({ ...f, order: parseInt(e.target.value) || 1 }))} />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Question (English) *</Label>
+                                <Input value={form.question_en} onChange={e => setForm(f => ({ ...f, question_en: e.target.value }))} placeholder="What is ScholarHub?" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Question (Arabic) *</Label>
+                                <Input value={form.question_ar} onChange={e => setForm(f => ({ ...f, question_ar: e.target.value }))} placeholder="ما هو ScholarHub؟" dir="rtl" />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Answer (English) *</Label>
+                                <Textarea value={form.answer_en} onChange={e => setForm(f => ({ ...f, answer_en: e.target.value }))} rows={4} placeholder="ScholarHub is a platform..." className="resize-none text-sm" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Answer (Arabic) *</Label>
+                                <Textarea value={form.answer_ar} onChange={e => setForm(f => ({ ...f, answer_ar: e.target.value }))} rows={4} placeholder="ScholarHub هو منصة..." dir="rtl" className="resize-none text-sm" />
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <input type="checkbox" id="faq-active" checked={!!form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} className="h-4 w-4 accent-primary" />
+                            <Label htmlFor="faq-active" className="text-sm font-medium cursor-pointer">Active (shown on the FAQ page)</Label>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button onClick={handleSave} disabled={create.isPending || update.isPending || !form.question_en || !form.question_ar || !form.answer_en || !form.answer_ar} className="gap-2">
+                            {(create.isPending || update.isPending) ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Save className="h-4 w-4" />{editTarget ? "Save Changes" : "Create FAQ"}</>}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirm */}
+            <Dialog open={!!deleteTarget} onOpenChange={o => !o && setDeleteTarget(null)}>
+                <DialogContent className="sm:max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Delete FAQ Item</DialogTitle>
+                        <DialogDescription>Are you sure you want to delete this FAQ item? This cannot be undone.</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button variant="destructive" disabled={remove.isPending} onClick={() => remove.mutate(deleteTarget!.id, { onSuccess: () => setDeleteTarget(null) })} className="gap-2">
+                            {remove.isPending ? <><Loader2 className="h-4 w-4 animate-spin" />Deleting...</> : <><Trash2 className="h-4 w-4" />Delete</>}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </motion.div>
+    );
+}
+
+// ============================================
+// BLOG POSTS SECTION
+// ============================================
+
+function BlogPostsSection() {
+    const [tagFilter, setTagFilter] = useState("");
+    const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">("all");
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [editTarget, setEditTarget] = useState<BlogPost | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<BlogPost | null>(null);
+
+    const { list, create, update, remove } = useBlogPosts();
+    const posts: BlogPost[] = Array.isArray(list.data) ? list.data : Array.isArray(list.data?.posts) ? list.data.posts : [];
+
+    const filtered = posts.filter(p =>
+        (statusFilter === "all" || p.status === statusFilter) &&
+        (!tagFilter || (p.tag || "").toLowerCase().includes(tagFilter.toLowerCase()))
+    );
+
+    const emptyForm: BlogPostInput = { title: "", slug: "", content: "", excerpt: "", tag: "", coverImage: "", authorName: "", status: "draft" };
+    const [form, setForm] = useState<BlogPostInput>(emptyForm);
+
+    const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+    const openCreate = () => { setEditTarget(null); setForm(emptyForm); setDialogOpen(true); };
+    const openEdit = (p: BlogPost) => { setEditTarget(p); setForm({ title: p.title, slug: p.slug, content: p.content, excerpt: p.excerpt || "", tag: p.tag || "", coverImage: p.coverImage || "", authorName: p.authorName || "", status: p.status }); setDialogOpen(true); };
+
+    const handleSave = () => {
+        if (editTarget) {
+            update.mutate({ id: editTarget.id, data: form }, { onSuccess: () => setDialogOpen(false) });
+        } else {
+            create.mutate(form, { onSuccess: () => setDialogOpen(false) });
+        }
+    };
+
+    const statusColor = (s: string) => s === "published" ? "border-emerald-300 text-emerald-700 bg-emerald-50" : "border-amber-200 text-amber-700 bg-amber-50";
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <Card className="border-none shadow-lg">
+                <CardHeader className="pb-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle className="text-xl font-bold flex items-center gap-2"><Newspaper className="h-5 w-5 text-primary" /> Blog Posts</CardTitle>
+                            <CardDescription>Create and manage blog articles, guides, and announcements.</CardDescription>
+                        </div>
+                        <Button className="gap-2 shrink-0" onClick={openCreate}><Plus className="h-4 w-4" /> New Post</Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Filter by tag..." className="pl-9 h-10" value={tagFilter} onChange={e => setTagFilter(e.target.value)} />
+                        </div>
+                        <div className="flex gap-2">
+                            {(["all", "published", "draft"] as const).map(s => (
+                                <Button key={s} size="sm" variant={statusFilter === s ? "default" : "outline"} className="capitalize h-10 px-4" onClick={() => setStatusFilter(s)}>{s}</Button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {list.isLoading ? (
+                        <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />)}</div>
+                    ) : filtered.length === 0 ? (
+                        <div className="py-16 text-center text-muted-foreground">
+                            <Newspaper className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                            <p className="font-medium">No blog posts found</p>
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead className="bg-muted/50">
+                                    <tr className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                                        <th className="px-4 py-3">Title</th>
+                                        <th className="px-4 py-3">Slug</th>
+                                        <th className="px-4 py-3">Tag</th>
+                                        <th className="px-4 py-3">Author</th>
+                                        <th className="px-4 py-3">Status</th>
+                                        <th className="px-4 py-3">Date</th>
+                                        <th className="px-4 py-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                    {filtered.map(post => (
+                                        <tr key={post.id} className="hover:bg-muted/30 transition-colors">
+                                            <td className="px-4 py-3 font-semibold max-w-[200px] truncate">{post.title}</td>
+                                            <td className="px-4 py-3 font-mono text-xs text-muted-foreground max-w-[140px] truncate">{post.slug}</td>
+                                            <td className="px-4 py-3">{post.tag ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{post.tag}</span> : "—"}</td>
+                                            <td className="px-4 py-3 text-muted-foreground text-xs">{post.authorName || "—"}</td>
+                                            <td className="px-4 py-3"><Badge variant="outline" className={`${statusColor(post.status)} text-[10px] capitalize`}>{post.status}</Badge></td>
+                                            <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(post.createdAt).toLocaleDateString()}</td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex justify-end gap-1">
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => openEdit(post)}><Pencil className="h-3.5 w-3.5" /></Button>
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleteTarget(post)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Create / Edit Dialog */}
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>{editTarget ? "Edit Blog Post" : "New Blog Post"}</DialogTitle>
+                        <DialogDescription>Fill in the post details. Save as draft first and publish when ready.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-2">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Title *</Label>
+                            <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value, slug: editTarget ? f.slug : slugify(e.target.value) }))} placeholder="Post title" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Slug *</Label>
+                                <Input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: slugify(e.target.value) }))} placeholder="post-url-slug" className="font-mono text-xs" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Tag</Label>
+                                <Input value={form.tag || ""} onChange={e => setForm(f => ({ ...f, tag: e.target.value }))} placeholder="e.g. Scholarship Tips" />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Author Name</Label>
+                                <Input value={form.authorName || ""} onChange={e => setForm(f => ({ ...f, authorName: e.target.value }))} placeholder="e.g. ScholarHub Team" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold">Status</Label>
+                                <Select value={form.status || "draft"} onValueChange={v => setForm(f => ({ ...f, status: v as "published" | "draft" }))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="draft">Draft</SelectItem>
+                                        <SelectItem value="published">Published</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Cover Image URL</Label>
+                            <Input value={form.coverImage || ""} onChange={e => setForm(f => ({ ...f, coverImage: e.target.value }))} placeholder="https://..." className="font-mono text-xs" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Excerpt</Label>
+                            <Textarea value={form.excerpt || ""} onChange={e => setForm(f => ({ ...f, excerpt: e.target.value }))} rows={2} placeholder="Short description shown in post cards..." className="resize-none text-sm" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Content *</Label>
+                            <Textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} rows={8} placeholder="Full post content (supports Markdown)..." className="resize-none text-sm font-mono" />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button onClick={handleSave} disabled={create.isPending || update.isPending || !form.title || !form.slug || !form.content} className="gap-2">
+                            {(create.isPending || update.isPending) ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Save className="h-4 w-4" />{editTarget ? "Save Changes" : "Create Post"}</>}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirm */}
+            <Dialog open={!!deleteTarget} onOpenChange={o => !o && setDeleteTarget(null)}>
+                <DialogContent className="sm:max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Delete Blog Post</DialogTitle>
+                        <DialogDescription>Are you sure you want to delete <span className="font-semibold text-destructive">"{deleteTarget?.title}"</span>? This cannot be undone.</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button variant="destructive" disabled={remove.isPending} onClick={() => remove.mutate(deleteTarget!.id, { onSuccess: () => setDeleteTarget(null) })} className="gap-2">
+                            {remove.isPending ? <><Loader2 className="h-4 w-4 animate-spin" />Deleting...</> : <><Trash2 className="h-4 w-4" />Delete</>}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </motion.div>
     );
 }
