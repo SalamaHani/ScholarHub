@@ -13,6 +13,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/hooks/useTranslation";
+import { usePageContentEntry } from "@/hooks/usePageContent";
 
 const teamMembers = [
     {
@@ -34,6 +35,7 @@ const teamMembers = [
 
 export default function AboutPage() {
     const { t } = useTranslation();
+    const { data: pageEntry } = usePageContentEntry("about-us");
 
     const values = [
         { icon: Heart,  title: t.about.value1Title, description: t.about.value1Desc },
@@ -56,13 +58,13 @@ export default function AboutPage() {
                 <div className="max-w-3xl mx-auto text-center space-y-6">
                     <Badge variant="secondary" className="gap-1">
                         <Sparkles className="h-3 w-3" />
-                        {t.about.tag}
+                        {pageEntry?.heroText || t.about.tag}
                     </Badge>
                     <h1 className="text-4xl md:text-5xl font-bold">
-                        {t.about.title}
+                        {pageEntry?.title || t.about.title}
                     </h1>
                     <p className="text-lg text-muted-foreground">
-                        {t.about.desc}
+                        {pageEntry?.description || pageEntry?.subtitle || t.about.desc}
                     </p>
                 </div>
             </section>

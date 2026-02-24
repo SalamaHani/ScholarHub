@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useFaqItems } from "@/hooks/useFaqItems";
+import { usePageContentEntry } from "@/hooks/usePageContent";
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {
     const [open, setOpen] = useState(false);
@@ -44,6 +45,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 export default function FAQPage() {
     const { t, lang } = useTranslation();
     const { list } = useFaqItems({ pageKey: "faq" });
+    const { data: pageEntry } = usePageContentEntry("faq");
 
     // Static i18n fallback items
     const staticFaqs = [
@@ -78,13 +80,13 @@ export default function FAQPage() {
                 <div className="text-center mb-12 space-y-3">
                     <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5">
                         <HelpCircle className="h-3 w-3 mr-1" />
-                        {t.faq.tag}
+                        {pageEntry?.heroText || t.faq.tag}
                     </Badge>
                     <h1 className="text-4xl font-extrabold tracking-tight">
-                        {t.faq.title}
+                        {pageEntry?.title || t.faq.title}
                     </h1>
                     <p className="text-muted-foreground max-w-xl mx-auto">
-                        {t.faq.desc}
+                        {pageEntry?.description || pageEntry?.subtitle || t.faq.desc}
                     </p>
                 </div>
 

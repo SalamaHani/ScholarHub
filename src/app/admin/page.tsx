@@ -101,6 +101,7 @@ import { useSettings, SiteSettings } from "@/hooks/useSettings";
 import { usePageContent, PageContent, PageContentInput } from "@/hooks/usePageContent";
 import { useFaqItems, FaqItem, FaqItemInput } from "@/hooks/useFaqItems";
 import { useBlogPosts, BlogPost, BlogPostInput } from "@/hooks/useBlogPosts";
+import { useContactMessages, ContactMessage } from "@/hooks/useContactMessages";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -227,6 +228,10 @@ export default function AdminDashboardPage() {
                             <MessageSquare className="h-4 w-4" />
                             Testimonials
                         </TabsTrigger>
+                        <TabsTrigger value="contact-messages" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-4 py-2 gap-2">
+                            <Mail className="h-4 w-4" />
+                            Messages
+                        </TabsTrigger>
                         <TabsTrigger value="settings" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-4 py-2 gap-2">
                             <Settings className="h-4 w-4" />
                             Settings
@@ -270,6 +275,11 @@ export default function AdminDashboardPage() {
                     {/* Testimonials Tab */}
                     <TabsContent value="testimonials">
                         <TestimonialsSection />
+                    </TabsContent>
+
+                    {/* Contact Messages Tab */}
+                    <TabsContent value="contact-messages">
+                        <ContactMessagesSection />
                     </TabsContent>
 
                     {/* Settings Tab */}
@@ -3728,27 +3738,63 @@ function TestimonialDialog({
 // ============================================
 
 const THEME_PRESETS = [
-    { name: "Ocean Blue",   primary: "217 91% 60%", hex: "#3b82f6", ring: "217 91% 60%" },
+    { name: "Ocean Blue", primary: "217 91% 60%", hex: "#3b82f6", ring: "217 91% 60%" },
     { name: "Forest Green", primary: "142 71% 45%", hex: "#22c55e", ring: "142 71% 45%" },
     { name: "Royal Purple", primary: "262 80% 58%", hex: "#8b5cf6", ring: "262 80% 58%" },
-    { name: "Rose Red",     primary: "346 77% 55%", hex: "#f43f5e", ring: "346 77% 55%" },
-    { name: "Amber Gold",   primary: "38 92% 50%",  hex: "#f59e0b", ring: "38 92% 50%"  },
-    { name: "Teal",         primary: "173 58% 39%", hex: "#14b8a6", ring: "173 58% 39%" },
-    { name: "Indigo",       primary: "239 84% 67%", hex: "#6366f1", ring: "239 84% 67%" },
-    { name: "Slate",        primary: "215 25% 45%", hex: "#64748b", ring: "215 25% 45%" },
+    { name: "Rose Red", primary: "346 77% 55%", hex: "#f43f5e", ring: "346 77% 55%" },
+    { name: "Amber Gold", primary: "38 92% 50%", hex: "#f59e0b", ring: "38 92% 50%" },
+    { name: "Teal", primary: "173 58% 39%", hex: "#14b8a6", ring: "173 58% 39%" },
+    { name: "Indigo", primary: "239 84% 67%", hex: "#6366f1", ring: "239 84% 67%" },
+    { name: "Slate", primary: "215 25% 45%", hex: "#64748b", ring: "215 25% 45%" },
 ];
 
 const LANGUAGE_OPTIONS = [
-    { code: "en", label: "English", native: "English",  flag: "🇺🇸", rtl: false },
-    { code: "ar", label: "Arabic",  native: "العربية",  flag: "🇸🇦", rtl: true  },
+    { code: "en", label: "English", native: "English", flag: "🇺🇸", rtl: false },
+    { code: "ar", label: "Arabic", native: "العربية", flag: "🇸🇦", rtl: true },
 ];
 
 function applyTheme(primary: string, ring: string) {
     const root = document.documentElement;
     root.style.setProperty("--primary", primary);
     root.style.setProperty("--ring", ring);
-    localStorage.setItem("scholarhub_theme_primary", primary);
-    localStorage.setItem("scholarhub_theme_ring", ring);
+}
+
+function hexToHsl(hex: string): string {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        else if (max === g) h = ((b - r) / d + 2) / 6;
+        else h = ((r - g) / d + 4) / 6;
+    }
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+function hslToHex(hsl: string): string {
+    const parts = hsl.match(/[\d.]+/g);
+    if (!parts || parts.length < 3) return "#3b82f6";
+    const h = parseFloat(parts[0]) / 360;
+    const s = parseFloat(parts[1]) / 100;
+    const l = parseFloat(parts[2]) / 100;
+    const hue2rgb = (p: number, q: number, t: number) => {
+        if (t < 0) t += 1; if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    const r = Math.round(hue2rgb(p, q, h + 1 / 3) * 255);
+    const g = Math.round(hue2rgb(p, q, h) * 255);
+    const bv = Math.round(hue2rgb(p, q, h - 1 / 3) * 255);
+    return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${bv.toString(16).padStart(2, "0")}`;
 }
 
 // ── Helper: section divider ────────────────────────────────────────────────
@@ -3786,7 +3832,7 @@ function ToggleRow({ label, desc, value, onChange, danger }: { label: string; de
 }
 
 function SettingsSection() {
-    const { settings, save, isLoaded, isSaving } = useSettings();
+    const { settings, save, reset, isLoaded, isSaving } = useSettings();
     const [loc, setLoc] = useState<SiteSettings>(settings);
 
     useEffect(() => {
@@ -3798,12 +3844,42 @@ function SettingsSection() {
         setLoc(prev => ({ ...prev, [key]: value }));
     }, []);
 
-    const activePreset = THEME_PRESETS.find(p => p.primary === loc.themePrimary) || THEME_PRESETS[0];
+    // Detect unsaved changes
+    const isDirty = useMemo(() => {
+        return JSON.stringify(loc) !== JSON.stringify(settings);
+    }, [loc, settings]);
+
+    // Count changed fields
+    const changedFieldsCount = useMemo(() => {
+        let count = 0;
+        for (const key of Object.keys(loc) as (keyof SiteSettings)[]) {
+            if (JSON.stringify(loc[key]) !== JSON.stringify(settings[key])) count++;
+        }
+        return count;
+    }, [loc, settings]);
+
+    const activePreset = THEME_PRESETS.find(p => p.primary === loc.themePrimary) ?? null;
+    const currentHex = activePreset ? activePreset.hex : hslToHex(loc.themePrimary);
 
     const handleThemeSelect = (preset: typeof THEME_PRESETS[0]) => {
         setLoc(prev => ({ ...prev, themePrimary: preset.primary, themeRing: preset.ring }));
         applyTheme(preset.primary, preset.ring);
     };
+
+    const handleCustomColor = (hex: string) => {
+        const hsl = hexToHsl(hex);
+        setLoc(prev => ({ ...prev, themePrimary: hsl, themeRing: hsl }));
+        applyTheme(hsl, hsl);
+    };
+
+    const handleDiscard = useCallback(() => {
+        setLoc(settings);
+        applyTheme(settings.themePrimary, settings.themeRing);
+    }, [settings]);
+
+    const apiBase = typeof window !== "undefined"
+        ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api")
+        : "http://localhost:8080/api";
 
     if (!isLoaded) {
         return (
@@ -3819,11 +3895,60 @@ function SettingsSection() {
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
 
-            {/* Page title */}
-            <div>
-                <h2 className="text-2xl font-bold">Platform Settings</h2>
-                <p className="text-muted-foreground">Manage every aspect of your platform — appearance, SEO, integrations, and system controls.</p>
+            {/* Page title + Unsaved changes bar */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold">Platform Settings</h2>
+                    <p className="text-muted-foreground">Manage every aspect of your platform — appearance, SEO, integrations, and system controls.</p>
+                </div>
+                {isDirty && (
+                    <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2 rounded-xl animate-fadeIn">
+                        <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span className="text-xs font-bold">{changedFieldsCount} unsaved change{changedFieldsCount > 1 ? "s" : ""}</span>
+                        <Button variant="ghost" size="sm" className="h-7 text-xs font-bold text-amber-700 hover:text-amber-900 hover:bg-amber-100 px-2" onClick={handleDiscard}>Discard</Button>
+                    </div>
+                )}
             </div>
+
+            {/* ═══════════════════════════════════════════════════════════════
+                API ENDPOINT INFO
+            ════════════════════════════════════════════════════════════════ */}
+            <Card className="border-none shadow-lg bg-gradient-to-r from-primary/5 to-blue-500/5">
+                <CardContent className="p-5">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                <Globe className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold">Settings API Endpoint</h3>
+                                <p className="text-xs text-muted-foreground mt-0.5">All settings are saved to the backend API and cached in localStorage for instant frontend updates.</p>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-1.5 min-w-0">
+                            <div className="flex items-center gap-2">
+                                <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[10px] shrink-0">GET</Badge>
+                                <code className="text-xs font-mono text-muted-foreground truncate">{apiBase}/admin/settings</code>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Badge className="bg-blue-100 text-blue-700 border-0 text-[10px] shrink-0">PUT</Badge>
+                                <code className="text-xs font-mono text-muted-foreground truncate">{apiBase}/admin/settings</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        <Badge variant="outline" className="text-[10px] bg-white/60">
+                            <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-500" /> API + Browser Storage
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px] bg-white/60">
+                            <Monitor className="h-3 w-3 mr-1 text-blue-500" /> Live DOM Updates
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px] bg-white/60">
+                            <Palette className="h-3 w-3 mr-1 text-purple-500" /> Theme / SEO / Branding
+                        </Badge>
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* ═══════════════════════════════════════════════════════════════
                 SECTION 1 · CORE
@@ -3865,12 +3990,27 @@ function SettingsSection() {
                                 );
                             })}
                         </div>
+                        {/* Custom color picker */}
+                        <div className="flex items-center gap-3 p-3 rounded-xl border bg-muted/20">
+                            <label className="text-xs font-bold text-muted-foreground shrink-0">Custom Color</label>
+                            <input
+                                type="color"
+                                value={currentHex}
+                                onChange={(e) => handleCustomColor(e.target.value)}
+                                className="h-9 w-14 rounded-lg border cursor-pointer bg-transparent p-0.5"
+                                title="Pick a custom primary color"
+                            />
+                            <span className="font-mono text-xs text-muted-foreground">{currentHex.toUpperCase()}</span>
+                            {!activePreset && (
+                                <span className="ml-auto text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">Custom</span>
+                            )}
+                        </div>
                         <div className="p-4 rounded-xl bg-muted/30 border space-y-3">
                             <p className="text-[10px] font-bold tracking-widest text-muted-foreground">LIVE PREVIEW</p>
                             <div className="flex items-center gap-3 flex-wrap">
-                                <div className="h-8 px-4 rounded-lg flex items-center text-xs font-bold text-white shadow-sm" style={{ backgroundColor: activePreset.hex }}>Primary Button</div>
-                                <div className="h-8 px-4 rounded-lg flex items-center text-xs font-bold border-2 bg-transparent" style={{ color: activePreset.hex, borderColor: activePreset.hex }}>Outline</div>
-                                <Badge style={{ backgroundColor: activePreset.hex + "20", color: activePreset.hex }} className="border-0 font-bold text-xs">Badge</Badge>
+                                <div className="h-8 px-4 rounded-lg flex items-center text-xs font-bold text-white shadow-sm" style={{ backgroundColor: currentHex }}>Primary Button</div>
+                                <div className="h-8 px-4 rounded-lg flex items-center text-xs font-bold border-2 bg-transparent" style={{ color: currentHex, borderColor: currentHex }}>Outline</div>
+                                <Badge style={{ backgroundColor: currentHex + "20", color: currentHex }} className="border-0 font-bold text-xs">Badge</Badge>
                             </div>
                         </div>
                     </CardContent>
@@ -3909,11 +4049,11 @@ function SettingsSection() {
                         <p className="text-sm text-muted-foreground">Control platform-wide behaviour and feature flags.</p>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        <ToggleRow label="Maintenance Mode"       desc="Temporarily restrict access to all users."  value={loc.maintenanceMode}          onChange={(v) => set("maintenanceMode", v)}          danger />
-                        <ToggleRow label="Student Registrations"  desc="Allow new student sign-ups."                value={loc.studentsOpen}             onChange={(v) => set("studentsOpen", v)} />
-                        <ToggleRow label="Professor Applications" desc="Accept professor account requests."         value={loc.professorsOpen}           onChange={(v) => set("professorsOpen", v)} />
-                        <ToggleRow label="Google Authentication"  desc="Allow sign-in with Google OAuth."           value={loc.allowGoogleAuth}          onChange={(v) => set("allowGoogleAuth", v)} />
-                        <ToggleRow label="Email Verification"     desc="Require email verification on sign-up."     value={loc.requireEmailVerification} onChange={(v) => set("requireEmailVerification", v)} />
+                        <ToggleRow label="Maintenance Mode" desc="Temporarily restrict access to all users." value={loc.maintenanceMode} onChange={(v) => set("maintenanceMode", v)} danger />
+                        <ToggleRow label="Student Registrations" desc="Allow new student sign-ups." value={loc.studentsOpen} onChange={(v) => set("studentsOpen", v)} />
+                        <ToggleRow label="Professor Applications" desc="Accept professor account requests." value={loc.professorsOpen} onChange={(v) => set("professorsOpen", v)} />
+                        <ToggleRow label="Google Authentication" desc="Allow sign-in with Google OAuth." value={loc.allowGoogleAuth} onChange={(v) => set("allowGoogleAuth", v)} />
+                        <ToggleRow label="Email Verification" desc="Require email verification on sign-up." value={loc.requireEmailVerification} onChange={(v) => set("requireEmailVerification", v)} />
                     </CardContent>
                 </Card>
 
@@ -4002,10 +4142,10 @@ function SettingsSection() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {([
-                            { label: "Facebook",    key: "facebookUrl",  placeholder: "https://facebook.com/scholarhub"           },
-                            { label: "Twitter / X", key: "twitterUrl",   placeholder: "https://twitter.com/scholarhub"            },
-                            { label: "LinkedIn",    key: "linkedinUrl",  placeholder: "https://linkedin.com/company/scholarhub"   },
-                            { label: "Instagram",   key: "instagramUrl", placeholder: "https://instagram.com/scholarhub"          },
+                            { label: "Facebook", key: "facebookUrl", placeholder: "https://facebook.com/scholarhub" },
+                            { label: "Twitter / X", key: "twitterUrl", placeholder: "https://twitter.com/scholarhub" },
+                            { label: "LinkedIn", key: "linkedinUrl", placeholder: "https://linkedin.com/company/scholarhub" },
+                            { label: "Instagram", key: "instagramUrl", placeholder: "https://instagram.com/scholarhub" },
                         ] as { label: string; key: keyof SiteSettings; placeholder: string }[]).map(({ label, key, placeholder }) => (
                             <div key={key} className="space-y-1.5">
                                 <Label className="text-xs font-bold">{label}</Label>
@@ -4271,22 +4411,33 @@ function PageContentSection() {
     const filters = sectionFilter !== "all" ? { section: sectionFilter } : undefined;
     const { list, create, update, remove } = usePageContent(filters);
 
+    // list.data is already PageContent[] (extracted by the hook)
     const entries: PageContent[] = Array.isArray(list.data) ? list.data : [];
     const filtered = entries.filter(e =>
-        !search ||
-        e.pageKey.toLowerCase().includes(search.toLowerCase()) ||
-        e.title_en.toLowerCase().includes(search.toLowerCase()) ||
-        e.title_ar.includes(search)
+        (sectionFilter === "all" || e.section === sectionFilter) &&
+        (!search ||
+            e.pageKey.toLowerCase().includes(search.toLowerCase()) ||
+            (e.title || "").toLowerCase().includes(search.toLowerCase()) ||
+            (e.subtitle || "").toLowerCase().includes(search.toLowerCase()))
     );
 
-    const [form, setForm] = useState<PageContentInput>({ pageKey: "", title_en: "", title_ar: "", section: "", link: "", description_en: "", description_ar: "", isActive: true });
+    const emptyForm: PageContentInput = { pageKey: "", section: "", title: "", subtitle: "", description: "", heroText: "", ctaLabel: "", ctaLink: "", isActive: true };
+    const [form, setForm] = useState<PageContentInput>(emptyForm);
 
-    const openCreate = () => { setEditTarget(null); setForm({ pageKey: "", title_en: "", title_ar: "", section: sectionFilter !== "all" ? sectionFilter : "", link: "", description_en: "", description_ar: "", isActive: true }); setDialogOpen(true); };
-    const openEdit = (e: PageContent) => { setEditTarget(e); setForm({ pageKey: e.pageKey, title_en: e.title_en, title_ar: e.title_ar, section: e.section || "", link: e.link || "", description_en: e.description_en || "", description_ar: e.description_ar || "", isActive: e.isActive }); setDialogOpen(true); };
+    const openCreate = () => {
+        setEditTarget(null);
+        setForm({ ...emptyForm, section: sectionFilter !== "all" ? sectionFilter : "" });
+        setDialogOpen(true);
+    };
+    const openEdit = (e: PageContent) => {
+        setEditTarget(e);
+        setForm({ pageKey: e.pageKey, section: e.section || "", title: e.title, subtitle: e.subtitle || "", description: e.description || "", heroText: e.heroText || "", ctaLabel: e.ctaLabel || "", ctaLink: e.ctaLink || "", isActive: e.isActive });
+        setDialogOpen(true);
+    };
 
     const handleSave = () => {
         if (editTarget) {
-            update.mutate({ pageKey: editTarget.pageKey, data: form }, { onSuccess: () => setDialogOpen(false) });
+            update.mutate({ id: editTarget.id, data: form }, { onSuccess: () => setDialogOpen(false) });
         } else {
             create.mutate(form, { onSuccess: () => setDialogOpen(false) });
         }
@@ -4306,9 +4457,12 @@ function PageContentSection() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                             <CardTitle className="text-xl font-bold flex items-center gap-2"><Layout className="h-5 w-5 text-primary" /> Page Content</CardTitle>
-                            <CardDescription>Manage footer navigation links and page text displayed across the platform.</CardDescription>
+                            <CardDescription>Manage page titles, descriptions, and CTAs across the platform.</CardDescription>
                         </div>
-                        <Button className="gap-2 shrink-0" onClick={openCreate}><Plus className="h-4 w-4" /> New Entry</Button>
+                        <div className="flex gap-2 shrink-0">
+                            <Button variant="outline" size="sm" onClick={() => list.refetch()} disabled={list.isFetching} className="gap-1.5 h-9"><RefreshCw className={cn("h-3.5 w-3.5", list.isFetching && "animate-spin")} />Refresh</Button>
+                            <Button className="gap-2" onClick={openCreate}><Plus className="h-4 w-4" /> New Entry</Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -4328,6 +4482,12 @@ function PageContentSection() {
                     {/* Table */}
                     {list.isLoading ? (
                         <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />)}</div>
+                    ) : list.isError ? (
+                        <div className="py-16 text-center space-y-3">
+                            <AlertCircle className="h-12 w-12 mx-auto text-destructive/40" />
+                            <p className="font-medium text-destructive">Failed to load page content</p>
+                            <Button variant="outline" size="sm" onClick={() => list.refetch()} className="gap-2"><RefreshCw className="h-3.5 w-3.5" />Retry</Button>
+                        </div>
                     ) : filtered.length === 0 ? (
                         <div className="py-16 text-center text-muted-foreground">
                             <Layout className="h-12 w-12 mx-auto mb-3 opacity-20" />
@@ -4339,10 +4499,10 @@ function PageContentSection() {
                                 <thead className="bg-muted/50">
                                     <tr className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wide">
                                         <th className="px-4 py-3">Page Key</th>
-                                        <th className="px-4 py-3">Title EN</th>
-                                        <th className="px-4 py-3">Title AR</th>
+                                        <th className="px-4 py-3">Title</th>
+                                        <th className="px-4 py-3">Subtitle</th>
                                         <th className="px-4 py-3">Section</th>
-                                        <th className="px-4 py-3">Link</th>
+                                        <th className="px-4 py-3">CTA Link</th>
                                         <th className="px-4 py-3">Status</th>
                                         <th className="px-4 py-3 text-right">Actions</th>
                                     </tr>
@@ -4351,10 +4511,10 @@ function PageContentSection() {
                                     {filtered.map(entry => (
                                         <tr key={entry.id} className="hover:bg-muted/30 transition-colors">
                                             <td className="px-4 py-3 font-mono text-xs text-primary font-semibold">{entry.pageKey}</td>
-                                            <td className="px-4 py-3 font-medium">{entry.title_en}</td>
-                                            <td className="px-4 py-3 text-right font-medium" dir="rtl">{entry.title_ar}</td>
+                                            <td className="px-4 py-3 font-medium max-w-[160px] truncate">{entry.title}</td>
+                                            <td className="px-4 py-3 text-muted-foreground text-xs max-w-[160px] truncate">{entry.subtitle || "—"}</td>
                                             <td className="px-4 py-3"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${sectionBadgeColor(entry.section)}`}>{entry.section || "—"}</span></td>
-                                            <td className="px-4 py-3 font-mono text-xs text-muted-foreground truncate max-w-[120px]">{entry.link || "—"}</td>
+                                            <td className="px-4 py-3 font-mono text-xs text-muted-foreground truncate max-w-[120px]">{entry.ctaLink || "—"}</td>
                                             <td className="px-4 py-3"><Badge variant="outline" className={entry.isActive ? "border-emerald-300 text-emerald-700 bg-emerald-50" : "border-slate-200 text-slate-500"}>{entry.isActive ? "Active" : "Inactive"}</Badge></td>
                                             <td className="px-4 py-3">
                                                 <div className="flex justify-end gap-1">
@@ -4373,16 +4533,16 @@ function PageContentSection() {
 
             {/* Create / Edit Dialog */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="sm:max-w-lg">
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{editTarget ? "Edit Page Content" : "New Page Content Entry"}</DialogTitle>
-                        <DialogDescription>Fill in both English and Arabic text for full bilingual support.</DialogDescription>
+                        <DialogDescription>Manage the content displayed on each platform page.</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-2">
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                                 <Label className="text-xs font-bold">Page Key *</Label>
-                                <Input value={form.pageKey} onChange={e => setForm(f => ({ ...f, pageKey: e.target.value }))} placeholder="e.g. footer-browse-scholarships" className="font-mono text-xs" disabled={!!editTarget} />
+                                <Input value={form.pageKey} onChange={e => setForm(f => ({ ...f, pageKey: e.target.value }))} placeholder="e.g. browse-scholarships" className="font-mono text-xs" disabled={!!editTarget} />
                             </div>
                             <div className="space-y-1.5">
                                 <Label className="text-xs font-bold">Section</Label>
@@ -4396,28 +4556,30 @@ function PageContentSection() {
                                 </Select>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <Label className="text-xs font-bold">Title (English) *</Label>
-                                <Input value={form.title_en} onChange={e => setForm(f => ({ ...f, title_en: e.target.value }))} placeholder="e.g. Browse Scholarships" />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className="text-xs font-bold">Title (Arabic) *</Label>
-                                <Input value={form.title_ar} onChange={e => setForm(f => ({ ...f, title_ar: e.target.value }))} placeholder="مثل: تصفح المنح" dir="rtl" />
-                            </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Title *</Label>
+                            <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Browse Scholarships" />
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Link / Path</Label>
-                            <Input value={form.link || ""} onChange={e => setForm(f => ({ ...f, link: e.target.value }))} placeholder="/scholarships" className="font-mono text-xs" />
+                            <Label className="text-xs font-bold">Subtitle</Label>
+                            <Input value={form.subtitle || ""} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} placeholder="e.g. Discover thousands of scholarships tailored for you" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Description</Label>
+                            <Textarea value={form.description || ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder="Detailed description shown on the page" className="resize-none text-sm" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Hero Text</Label>
+                            <Input value={form.heroText || ""} onChange={e => setForm(f => ({ ...f, heroText: e.target.value }))} placeholder="e.g. Find Your Perfect Scholarship" />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-bold">Description (EN)</Label>
-                                <Textarea value={form.description_en || ""} onChange={e => setForm(f => ({ ...f, description_en: e.target.value }))} rows={2} placeholder="Optional description in English" className="resize-none text-sm" />
+                                <Label className="text-xs font-bold">CTA Label</Label>
+                                <Input value={form.ctaLabel || ""} onChange={e => setForm(f => ({ ...f, ctaLabel: e.target.value }))} placeholder="e.g. Start Browsing" />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-bold">Description (AR)</Label>
-                                <Textarea value={form.description_ar || ""} onChange={e => setForm(f => ({ ...f, description_ar: e.target.value }))} rows={2} placeholder="وصف اختياري بالعربية" dir="rtl" className="resize-none text-sm" />
+                                <Label className="text-xs font-bold">CTA Link</Label>
+                                <Input value={form.ctaLink || ""} onChange={e => setForm(f => ({ ...f, ctaLink: e.target.value }))} placeholder="/scholarships" className="font-mono text-xs" />
                             </div>
                         </div>
                         <div className="flex items-center gap-3 pt-1">
@@ -4427,7 +4589,7 @@ function PageContentSection() {
                     </div>
                     <DialogFooter>
                         <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                        <Button onClick={handleSave} disabled={create.isPending || update.isPending || !form.pageKey || !form.title_en || !form.title_ar} className="gap-2">
+                        <Button onClick={handleSave} disabled={create.isPending || update.isPending || !form.pageKey || !form.title} className="gap-2">
                             {(create.isPending || update.isPending) ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Save className="h-4 w-4" />{editTarget ? "Save Changes" : "Create Entry"}</>}
                         </Button>
                     </DialogFooter>
@@ -4443,7 +4605,7 @@ function PageContentSection() {
                     </DialogHeader>
                     <DialogFooter>
                         <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                        <Button variant="destructive" disabled={remove.isPending} onClick={() => remove.mutate(deleteTarget!.pageKey, { onSuccess: () => setDeleteTarget(null) })} className="gap-2">
+                        <Button variant="destructive" disabled={remove.isPending} onClick={() => remove.mutate(deleteTarget!.id, { onSuccess: () => setDeleteTarget(null) })} className="gap-2">
                             {remove.isPending ? <><Loader2 className="h-4 w-4 animate-spin" />Deleting...</> : <><Trash2 className="h-4 w-4" />Delete</>}
                         </Button>
                     </DialogFooter>
@@ -4489,7 +4651,10 @@ function FaqItemsSection() {
                             <CardTitle className="text-xl font-bold flex items-center gap-2"><HelpCircle className="h-5 w-5 text-primary" /> FAQ Items</CardTitle>
                             <CardDescription>Manage frequently asked questions displayed on the FAQ page.</CardDescription>
                         </div>
-                        <Button className="gap-2 shrink-0" onClick={openCreate}><Plus className="h-4 w-4" /> New FAQ</Button>
+                        <div className="flex gap-2 shrink-0">
+                            <Button variant="outline" size="sm" onClick={() => list.refetch()} disabled={list.isFetching} className="gap-1.5 h-9"><RefreshCw className={cn("h-3.5 w-3.5", list.isFetching && "animate-spin")} />Refresh</Button>
+                            <Button className="gap-2" onClick={openCreate}><Plus className="h-4 w-4" /> New FAQ</Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -4501,6 +4666,12 @@ function FaqItemsSection() {
 
                     {list.isLoading ? (
                         <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />)}</div>
+                    ) : list.isError ? (
+                        <div className="py-16 text-center space-y-3">
+                            <AlertCircle className="h-12 w-12 mx-auto text-destructive/40" />
+                            <p className="font-medium text-destructive">Failed to load FAQ items</p>
+                            <Button variant="outline" size="sm" onClick={() => list.refetch()} className="gap-2"><RefreshCw className="h-3.5 w-3.5" />Retry</Button>
+                        </div>
                     ) : items.length === 0 ? (
                         <div className="py-16 text-center text-muted-foreground">
                             <HelpCircle className="h-12 w-12 mx-auto mb-3 opacity-20" />
@@ -4645,7 +4816,10 @@ function BlogPostsSection() {
                             <CardTitle className="text-xl font-bold flex items-center gap-2"><Newspaper className="h-5 w-5 text-primary" /> Blog Posts</CardTitle>
                             <CardDescription>Create and manage blog articles, guides, and announcements.</CardDescription>
                         </div>
-                        <Button className="gap-2 shrink-0" onClick={openCreate}><Plus className="h-4 w-4" /> New Post</Button>
+                        <div className="flex gap-2 shrink-0">
+                            <Button variant="outline" size="sm" onClick={() => list.refetch()} disabled={list.isFetching} className="gap-1.5 h-9"><RefreshCw className={cn("h-3.5 w-3.5", list.isFetching && "animate-spin")} />Refresh</Button>
+                            <Button className="gap-2" onClick={openCreate}><Plus className="h-4 w-4" /> New Post</Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -4663,6 +4837,12 @@ function BlogPostsSection() {
 
                     {list.isLoading ? (
                         <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />)}</div>
+                    ) : list.isError ? (
+                        <div className="py-16 text-center space-y-3">
+                            <AlertCircle className="h-12 w-12 mx-auto text-destructive/40" />
+                            <p className="font-medium text-destructive">Failed to load blog posts</p>
+                            <Button variant="outline" size="sm" onClick={() => list.refetch()} className="gap-2"><RefreshCw className="h-3.5 w-3.5" />Retry</Button>
+                        </div>
                     ) : filtered.length === 0 ? (
                         <div className="py-16 text-center text-muted-foreground">
                             <Newspaper className="h-12 w-12 mx-auto mb-3 opacity-20" />
@@ -4693,6 +4873,11 @@ function BlogPostsSection() {
                                             <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(post.createdAt).toLocaleDateString()}</td>
                                             <td className="px-4 py-3">
                                                 <div className="flex justify-end gap-1">
+                                                    {post.status === "published" && (
+                                                        <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer">
+                                                            <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-emerald-50 hover:text-emerald-600" title="View post"><Eye className="h-3.5 w-3.5" /></Button>
+                                                        </a>
+                                                    )}
                                                     <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => openEdit(post)}><Pencil className="h-3.5 w-3.5" /></Button>
                                                     <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleteTarget(post)}><Trash2 className="h-3.5 w-3.5" /></Button>
                                                 </div>
@@ -4772,6 +4957,163 @@ function BlogPostsSection() {
                     <DialogHeader>
                         <DialogTitle>Delete Blog Post</DialogTitle>
                         <DialogDescription>Are you sure you want to delete <span className="font-semibold text-destructive">"{deleteTarget?.title}"</span>? This cannot be undone.</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <Button variant="destructive" disabled={remove.isPending} onClick={() => remove.mutate(deleteTarget!.id, { onSuccess: () => setDeleteTarget(null) })} className="gap-2">
+                            {remove.isPending ? <><Loader2 className="h-4 w-4 animate-spin" />Deleting...</> : <><Trash2 className="h-4 w-4" />Delete</>}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </motion.div>
+    );
+}
+
+// ============================================
+// CONTACT MESSAGES SECTION
+// ============================================
+
+function ContactMessagesSection() {
+    const [viewTarget, setViewTarget] = useState<ContactMessage | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<ContactMessage | null>(null);
+    const [search, setSearch] = useState("");
+    const [showUnread, setShowUnread] = useState(false);
+
+    const { list, markRead, remove } = useContactMessages();
+    const messages: ContactMessage[] = Array.isArray(list.data) ? list.data : [];
+
+    const filtered = messages.filter(m =>
+        (!showUnread || !m.isRead) &&
+        (!search ||
+            m.name.toLowerCase().includes(search.toLowerCase()) ||
+            m.email.toLowerCase().includes(search.toLowerCase()) ||
+            m.subject.toLowerCase().includes(search.toLowerCase()))
+    );
+
+    const unreadCount = messages.filter(m => !m.isRead).length;
+
+    const handleView = (msg: ContactMessage) => {
+        setViewTarget(msg);
+        if (!msg.isRead) markRead.mutate(msg.id);
+    };
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <Card className="border-none shadow-lg">
+                <CardHeader className="pb-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle className="text-xl font-bold flex items-center gap-2">
+                                <Mail className="h-5 w-5 text-primary" /> Contact Messages
+                                {unreadCount > 0 && (
+                                    <span className="ml-1 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold">{unreadCount}</span>
+                                )}
+                            </CardTitle>
+                            <CardDescription>Messages submitted through the contact form.</CardDescription>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => list.refetch()} disabled={list.isFetching} className="gap-1.5 h-9 shrink-0">
+                            <RefreshCw className={cn("h-3.5 w-3.5", list.isFetching && "animate-spin")} />Refresh
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Search by name, email, or subject..." className="pl-9 h-10" value={search} onChange={e => setSearch(e.target.value)} />
+                        </div>
+                        <Button size="sm" variant={showUnread ? "default" : "outline"} className="h-10 px-4 gap-2" onClick={() => setShowUnread(v => !v)}>
+                            <Bell className="h-4 w-4" />
+                            {showUnread ? "Showing Unread" : "Show Unread Only"}
+                        </Button>
+                    </div>
+
+                    {list.isLoading ? (
+                        <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />)}</div>
+                    ) : list.isError ? (
+                        <div className="py-16 text-center space-y-3">
+                            <AlertCircle className="h-12 w-12 mx-auto text-destructive/40" />
+                            <p className="font-medium text-destructive">Failed to load messages</p>
+                            <Button variant="outline" size="sm" onClick={() => list.refetch()} className="gap-2"><RefreshCw className="h-3.5 w-3.5" />Retry</Button>
+                        </div>
+                    ) : filtered.length === 0 ? (
+                        <div className="py-16 text-center text-muted-foreground">
+                            <Mail className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                            <p className="font-medium">{showUnread ? "No unread messages" : "No messages found"}</p>
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead className="bg-muted/50">
+                                    <tr className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                                        <th className="px-4 py-3">Status</th>
+                                        <th className="px-4 py-3">Name</th>
+                                        <th className="px-4 py-3">Email</th>
+                                        <th className="px-4 py-3">Subject</th>
+                                        <th className="px-4 py-3">Date</th>
+                                        <th className="px-4 py-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                    {filtered.map(msg => (
+                                        <tr key={msg.id} className={cn("transition-colors", !msg.isRead ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/30")}>
+                                            <td className="px-4 py-3">
+                                                {!msg.isRead
+                                                    ? <span className="inline-block h-2.5 w-2.5 rounded-full bg-primary" title="Unread" />
+                                                    : <span className="inline-block h-2.5 w-2.5 rounded-full bg-muted-foreground/30" title="Read" />
+                                                }
+                                            </td>
+                                            <td className="px-4 py-3 font-semibold">{msg.name}</td>
+                                            <td className="px-4 py-3 text-muted-foreground text-xs font-mono">{msg.email}</td>
+                                            <td className="px-4 py-3 max-w-[200px] truncate">{msg.subject}</td>
+                                            <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(msg.createdAt).toLocaleDateString()}</td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex justify-end gap-1">
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => handleView(msg)} title="View"><Eye className="h-3.5 w-3.5" /></Button>
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleteTarget(msg)} title="Delete"><Trash2 className="h-3.5 w-3.5" /></Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* View Message Dialog */}
+            <Dialog open={!!viewTarget} onOpenChange={o => !o && setViewTarget(null)}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary" /> {viewTarget?.subject}</DialogTitle>
+                        <DialogDescription>
+                            From <span className="font-semibold text-foreground">{viewTarget?.name}</span> — <a href={`mailto:${viewTarget?.email}`} className="text-primary hover:underline">{viewTarget?.email}</a>
+                            <span className="ml-2 text-xs text-muted-foreground">· {viewTarget && new Date(viewTarget.createdAt).toLocaleString()}</span>
+                            {viewTarget?.repliedAt && (
+                                <span className="ml-2 text-xs text-emerald-600 font-medium">· Replied {new Date(viewTarget.repliedAt).toLocaleDateString()}</span>
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="rounded-xl bg-muted/30 border p-4 text-sm leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto">
+                        {viewTarget?.message}
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Close</Button></DialogClose>
+                        <a href={`mailto:${viewTarget?.email}?subject=Re: ${encodeURIComponent(viewTarget?.subject || "")}`}>
+                            <Button className="gap-2"><Send className="h-4 w-4" />Reply via Email</Button>
+                        </a>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirm */}
+            <Dialog open={!!deleteTarget} onOpenChange={o => !o && setDeleteTarget(null)}>
+                <DialogContent className="sm:max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Delete Message</DialogTitle>
+                        <DialogDescription>Are you sure you want to delete the message from <span className="font-bold text-destructive">{deleteTarget?.name}</span>? This cannot be undone.</DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>

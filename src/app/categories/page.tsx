@@ -5,6 +5,7 @@ import { GraduationCap, Microscope, Briefcase, Palette, Globe, Code, Heart, Book
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useCategories } from "@/hooks/useCategories";
 
 export default function CategoriesPage() {
     const { t } = useTranslation();

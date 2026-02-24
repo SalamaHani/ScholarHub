@@ -17,22 +17,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FeaturedScholarships } from "@/components/home/featured-scholarships";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useSettings } from "@/hooks/useSettings";
 
 export default function HomePage() {
     const { t } = useTranslation();
+    const { settings } = useSettings();
 
     const stats = [
-        { icon: BookOpen,   value: t.home.stat1Value, label: t.home.stat1Label },
-        { icon: Globe,      value: t.home.stat2Value, label: t.home.stat2Label },
-        { icon: Users,      value: t.home.stat3Value, label: t.home.stat3Label },
+        { icon: BookOpen, value: t.home.stat1Value, label: t.home.stat1Label },
+        { icon: Globe, value: t.home.stat2Value, label: t.home.stat2Label },
+        { icon: Users, value: t.home.stat3Value, label: t.home.stat3Label },
         { icon: TrendingUp, value: t.home.stat4Value, label: t.home.stat4Label },
     ];
 
     const features = [
-        { icon: Search,      title: t.home.feature1Title, description: t.home.feature1Desc },
+        { icon: Search, title: t.home.feature1Title, description: t.home.feature1Desc },
         { icon: CalendarDays, title: t.home.feature2Title, description: t.home.feature2Desc },
-        { icon: Bell,        title: t.home.feature3Title, description: t.home.feature3Desc },
-        { icon: BookOpen,    title: t.home.feature4Title, description: t.home.feature4Desc },
+        { icon: Bell, title: t.home.feature3Title, description: t.home.feature3Desc },
+        { icon: BookOpen, title: t.home.feature4Title, description: t.home.feature4Desc },
     ];
 
     return (

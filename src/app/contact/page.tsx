@@ -14,7 +14,8 @@ import {
     Twitter,
     Linkedin,
     Instagram,
-    Loader2
+    Loader2,
+    CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,29 +26,58 @@ import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
-
-const socialLinks = [
-    { icon: Facebook, href: "#", label: "Facebook" },
-    { icon: Twitter,  href: "#", label: "Twitter"  },
-    { icon: Linkedin, href: "#", label: "LinkedIn"  },
-    { icon: Instagram, href: "#", label: "Instagram" },
-];
+import { useSettings } from "@/hooks/useSettings";
+import { useFaqItems } from "@/hooks/useFaqItems";
+import { useSendContactMessage } from "@/hooks/useContactMessages";
+import { usePageContentEntry } from "@/hooks/usePageContent";
 
 export default function ContactPage() {
-    const { t } = useTranslation();
+    const { t, lang } = useTranslation();
+    const { settings } = useSettings();
+    const sendMessage = useSendContactMessage();
+    const { list: faqList } = useFaqItems({ pageKey: "contact" });
+    const { data: pageEntry } = usePageContentEntry("contact");
+
+    // Dynamic contact info from settings
+    const contactEmail = settings.contactEmail || "info@scholarhub.ps";
 
     const contactInfo = [
-        { icon: Mail,   title: t.contact.email,        value: "info@scholarhub.ps",   href: "mailto:info@scholarhub.ps" },
-        { icon: MapPin, title: t.contact.location,     value: t.footer.location,      href: null },
+        { icon: Mail,   title: t.contact.email,        value: contactEmail,            href: `mailto:${contactEmail}` },
+        { icon: MapPin, title: t.contact.location,     value: t.footer.location,       href: null },
         { icon: Clock,  title: t.contact.responseTime, value: t.contact.responseTimeValue, href: null },
     ];
 
-    const faqItems = [
-        { question: t.contact.faq1Q, answer: t.contact.faq1A },
-        { question: t.contact.faq2Q, answer: t.contact.faq2A },
-        { question: t.contact.faq3Q, answer: t.contact.faq3A },
-        { question: t.contact.faq4Q, answer: t.contact.faq4A },
+    // Social links from settings: only show if URL is set
+    const SOCIAL_DEFS = [
+        { key: "facebookUrl"  as const, Icon: Facebook,  label: "Facebook"  },
+        { key: "twitterUrl"   as const, Icon: Twitter,   label: "Twitter/X" },
+        { key: "linkedinUrl"  as const, Icon: Linkedin,  label: "LinkedIn"  },
+        { key: "instagramUrl" as const, Icon: Instagram, label: "Instagram" },
     ];
+    const socialLinks = SOCIAL_DEFS
+        .map(s => ({ ...s, href: (settings[s.key] as string) || "" }))
+        .filter(s => s.href);
+    // If no social URLs configured, show all as # placeholders
+    const displaySocials = socialLinks.length > 0
+        ? socialLinks
+        : SOCIAL_DEFS.map(s => ({ ...s, href: "#" }));
+
+    // FAQ from API (pageKey=contact), fallback to static i18n
+    const apiFaqItems = Array.isArray(faqList.data) ? faqList.data : [];
+    const faqItems = apiFaqItems.length > 0
+        ? apiFaqItems
+            .filter((item: any) => item.isActive !== false)
+            .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
+            .map((item: any) => ({
+                question: lang === "ar" ? (item.question_ar || item.question_en) : (item.question_en || item.question_ar),
+                answer:   lang === "ar" ? (item.answer_ar   || item.answer_en)   : (item.answer_en   || item.answer_ar),
+            }))
+        : [
+            { question: t.contact.faq1Q, answer: t.contact.faq1A },
+            { question: t.contact.faq2Q, answer: t.contact.faq2A },
+            { question: t.contact.faq3Q, answer: t.contact.faq3A },
+            { question: t.contact.faq4Q, answer: t.contact.faq4A },
+          ];
 
     const {
         register,
@@ -60,18 +90,14 @@ export default function ContactPage() {
 
     const onSubmit = async (data: ContactInput) => {
         try {
-            await new Promise((resolve) => setTimeout(resolve, 1500));
+            await sendMessage.mutateAsync(data);
             toast({
-                title: "Message Sent!",
-                description: "We've received your message and will get back to you soon.",
+                title: t.contact.successTitle || "Message Sent!",
+                description: t.contact.successDesc || "We've received your message and will get back to you soon.",
             });
             reset();
         } catch {
-            toast({
-                title: "Error",
-                description: "Something went wrong. Please try again later.",
-                variant: "destructive",
-            });
+            // error toast is handled by the mutation's onError
         }
     };
 
@@ -82,13 +108,13 @@ export default function ContactPage() {
                 <div className="max-w-2xl mx-auto text-center space-y-4 mb-12">
                     <Badge variant="secondary" className="gap-1 px-4 py-1.5 rounded-full border-primary/20 bg-primary/5 text-primary">
                         <MessageSquare className="h-3 w-3" />
-                        {t.contact.tag}
+                        {pageEntry?.heroText || t.contact.tag}
                     </Badge>
                     <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight">
-                        {t.contact.title}
+                        {pageEntry?.title || t.contact.title}
                     </h1>
                     <p className="text-lg text-slate-500 font-medium max-w-lg mx-auto">
-                        {t.contact.desc}
+                        {pageEntry?.description || pageEntry?.subtitle || t.contact.desc}
                     </p>
                 </div>
 
@@ -180,11 +206,22 @@ export default function ContactPage() {
                                     </AnimatePresence>
                                 </div>
 
-                                <Button type="submit" variant="gradient" size="lg" className="w-full h-14 rounded-2xl gap-2 font-black shadow-xl shadow-primary/25 hover:scale-[1.02] transition-all" disabled={isSubmitting}>
-                                    {isSubmitting ? (
+                                <Button
+                                    type="submit"
+                                    variant="gradient"
+                                    size="lg"
+                                    className="w-full h-14 rounded-2xl gap-2 font-black shadow-xl shadow-primary/25 hover:scale-[1.02] transition-all"
+                                    disabled={isSubmitting || sendMessage.isPending}
+                                >
+                                    {(isSubmitting || sendMessage.isPending) ? (
                                         <>
                                             <Loader2 className="h-5 w-5 animate-spin" />
                                             {t.contact.sendingMessage}
+                                        </>
+                                    ) : sendMessage.isSuccess ? (
+                                        <>
+                                            <CheckCircle2 className="h-5 w-5" />
+                                            {t.contact.successTitle || "Sent!"}
                                         </>
                                     ) : (
                                         <>
@@ -227,14 +264,16 @@ export default function ContactPage() {
                                 <div className="pt-4 border-t">
                                     <div className="text-sm text-muted-foreground mb-3">{t.contact.followUs}</div>
                                     <div className="flex gap-3">
-                                        {socialLinks.map((social) => (
+                                        {displaySocials.map((social) => (
                                             <a
                                                 key={social.label}
                                                 href={social.href}
                                                 className="p-2 rounded-lg bg-muted hover:bg-primary hover:text-white transition-all duration-300"
                                                 aria-label={social.label}
+                                                target={social.href !== "#" ? "_blank" : undefined}
+                                                rel="noopener noreferrer"
                                             >
-                                                <social.icon className="h-5 w-5" />
+                                                <social.Icon className="h-5 w-5" />
                                             </a>
                                         ))}
                                     </div>
@@ -248,12 +287,24 @@ export default function ContactPage() {
                                 <CardTitle>{t.contact.faqTitle}</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {faqItems.map((item) => (
-                                    <div key={item.question} className="space-y-2">
-                                        <h4 className="font-medium">{item.question}</h4>
-                                        <p className="text-sm text-muted-foreground">{item.answer}</p>
+                                {faqList.isLoading ? (
+                                    <div className="space-y-3">
+                                        {[...Array(3)].map((_, i) => (
+                                            <div key={i} className="space-y-1.5">
+                                                <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
+                                                <div className="h-3 bg-muted rounded animate-pulse w-full" />
+                                                <div className="h-3 bg-muted rounded animate-pulse w-5/6" />
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
+                                ) : (
+                                    faqItems.map((item, i) => (
+                                        <div key={i} className="space-y-2">
+                                            <h4 className="font-medium">{item.question}</h4>
+                                            <p className="text-sm text-muted-foreground">{item.answer}</p>
+                                        </div>
+                                    ))
+                                )}
                             </CardContent>
                         </Card>
                     </div>

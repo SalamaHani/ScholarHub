@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useSettings } from "@/hooks/useSettings";
 
 export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
@@ -44,6 +45,7 @@ export function Navbar() {
     const router = useRouter();
     const { user, logout, isLoading: isAuthLoading } = useAuth();
     const { t } = useTranslation();
+    const { settings } = useSettings();
 
     const navLinks = [
         { href: "/", label: t.nav.home, icon: Home },
@@ -75,11 +77,15 @@ export function Navbar() {
                 <div className="flex items-center justify-between h-14">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 group">
-                        <div className="bg-primary p-1.5 rounded-lg transition-transform group-hover:scale-110 shadow-lg shadow-primary/20">
-                            <GraduationCap className="h-6 w-6 text-white" />
-                        </div>
+                        {settings.logoUrl ? (
+                            <img src={settings.logoUrl} alt={settings.siteName || "ScholarHub"} className="h-8 w-8 object-contain rounded-lg transition-transform group-hover:scale-110" />
+                        ) : (
+                            <div className="bg-primary p-1.5 rounded-lg transition-transform group-hover:scale-110 shadow-lg shadow-primary/20">
+                                <GraduationCap className="h-6 w-6 text-white" />
+                            </div>
+                        )}
                         <span className="font-bold text-xl tracking-tight gradient-text">
-                            ScholarHub
+                            {settings.siteName || "ScholarHub"}
                         </span>
                     </Link>
 

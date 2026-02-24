@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/hooks/useTranslation";
 import { usePublicBlogPosts } from "@/hooks/useBlogPosts";
+import { usePageContentEntry } from "@/hooks/usePageContent";
 
 // Cycle through tag colors for variety
 const TAG_COLORS = [
@@ -20,6 +21,7 @@ const TAG_COLORS = [
 export default function BlogPage() {
     const { t } = useTranslation();
     const { data, isLoading } = usePublicBlogPosts();
+    const { data: pageEntry } = usePageContentEntry("blog");
 
     // Static i18n fallback posts
     const staticPosts = [
@@ -52,13 +54,13 @@ export default function BlogPage() {
                 <div className="mb-12 space-y-3">
                     <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-wider">
                         <BookOpen className="h-4 w-4" />
-                        {t.blog.tag}
+                        {pageEntry?.heroText || t.blog.tag}
                     </div>
                     <h1 className="text-4xl font-extrabold tracking-tight">
-                        {t.blog.title}
+                        {pageEntry?.title || t.blog.title}
                     </h1>
                     <p className="text-muted-foreground max-w-xl">
-                        {t.blog.desc}
+                        {pageEntry?.description || pageEntry?.subtitle || t.blog.desc}
                     </p>
                 </div>
 
