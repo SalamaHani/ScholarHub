@@ -49,6 +49,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Inline script — runs synchronously BEFORE first paint to avoid
+            the flash of default CSS variable colors on refresh.
+            Reads themePrimary / themeRing / lang from localStorage. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=JSON.parse(localStorage.getItem('scholarhub_settings')||'{}');if(s.themePrimary)document.documentElement.style.setProperty('--primary',s.themePrimary);if(s.themeRing)document.documentElement.style.setProperty('--ring',s.themeRing);var lang=localStorage.getItem('scholarhub_user_lang')||s.defaultLanguage;if(lang){document.documentElement.lang=lang;var rtl=['ar','he','fa','ur'].indexOf(lang)!==-1;document.documentElement.dir=rtl?'rtl':'ltr';}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className={`${inter.className} antialiased`}>
         <ReduxProvider>
           <QueryProvider>

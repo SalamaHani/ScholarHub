@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Clock, ArrowRight, Tag, Loader2 } from "lucide-react";
+import { BookOpen, Clock, ArrowRight, Tag, AlertCircle, User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/hooks/useTranslation";
-import { usePublicBlogPosts } from "@/hooks/useBlogPosts";
+import { usePublicBlogPosts, type BlogPost } from "@/hooks/useBlogPosts";
 import { usePageContentEntry } from "@/hooks/usePageContent";
 
-// Cycle through tag colors for variety
 const TAG_COLORS = [
     "text-blue-600 bg-blue-50 border-blue-200",
     "text-emerald-600 bg-emerald-50 border-emerald-200",
@@ -18,38 +17,34 @@ const TAG_COLORS = [
     "text-cyan-600 bg-cyan-50 border-cyan-200",
 ];
 
+function formatDate(iso: string) {
+    try {
+        return new Date(iso).toLocaleDateString(undefined, {
+            year: "numeric", month: "short", day: "numeric",
+        });
+    } catch {
+        return iso;
+    }
+}
+
 export default function BlogPage() {
     const { t } = useTranslation();
-    const { data, isLoading } = usePublicBlogPosts();
+    const { data, isLoading, isError } = usePublicBlogPosts();
     const { data: pageEntry } = usePageContentEntry("blog");
 
-    // Static i18n fallback posts
-    const staticPosts = [
-        { slug: "how-to-write-winning-personal-statement", title: t.blog.post1Title, excerpt: t.blog.post1Desc, category: t.blog.post1Tag, date: t.blog.post1Date, readTime: t.blog.post1Read },
-        { slug: "top-fully-funded-scholarships-2026",      title: t.blog.post2Title, excerpt: t.blog.post2Desc, category: t.blog.post2Tag, date: t.blog.post2Date, readTime: t.blog.post2Read },
-        { slug: "ielts-preparation-guide",                 title: t.blog.post3Title, excerpt: t.blog.post3Desc, category: t.blog.post3Tag, date: t.blog.post3Date, readTime: t.blog.post3Read },
-        { slug: "recommendation-letter-tips",              title: t.blog.post4Title, excerpt: t.blog.post4Desc, category: t.blog.post4Tag, date: t.blog.post4Date, readTime: t.blog.post4Read },
-        { slug: "scholarship-interview-preparation",       title: t.blog.post5Title, excerpt: t.blog.post5Desc, category: t.blog.post5Tag, date: t.blog.post5Date, readTime: t.blog.post5Read },
-        { slug: "managing-multiple-applications",          title: t.blog.post6Title, excerpt: t.blog.post6Desc, category: t.blog.post6Tag, date: t.blog.post6Date, readTime: t.blog.post6Read },
-    ];
+    // Normalise API response — may be array or { posts: [...] }
+    const rawPosts: BlogPost[] = Array.isArray(data)
+        ? data
+        : Array.isArray((data as any)?.posts)
+            ? (data as any).posts
+            : [];
 
-    // Use API posts if loaded and non-empty, else fall back to static
-    const apiPosts = Array.isArray(data) ? data : Array.isArray(data?.posts) ? data.posts : [];
-    const posts = apiPosts.length > 0
-        ? apiPosts.map((post: any, i: number) => ({
-            slug:     post.slug,
-            title:    post.title,
-            excerpt:  post.excerpt || "",
-            category: post.tag || "",
-            date:     new Date(post.createdAt).toLocaleDateString(),
-            readTime: "",
-            color:    TAG_COLORS[i % TAG_COLORS.length],
-          }))
-        : staticPosts.map((p, i) => ({ ...p, color: TAG_COLORS[i % TAG_COLORS.length] }));
+    const publishedPosts = rawPosts.filter((p) => p.status === "published" || !p.status);
 
     return (
         <div className="min-h-screen bg-muted/20 py-12 md:py-16">
             <div className="container max-w-5xl">
+
                 {/* Header */}
                 <div className="mb-12 space-y-3">
                     <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-wider">
@@ -64,43 +59,87 @@ export default function BlogPage() {
                     </p>
                 </div>
 
-                {/* Loading */}
-                {isLoading ? (
-                    <div className="flex justify-center py-16">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
-                    </div>
-                ) : (
+                {/* Loading skeleton */}
+                {isLoading && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {posts.map((post) => (
-                            <Link key={post.slug} href={`/blog/${post.slug}`}>
-                                <Card className="h-full hover:shadow-md hover:border-primary/40 transition-all cursor-pointer group">
-                                    <CardContent className="p-6 flex flex-col gap-3 h-full">
-                                        {post.category && (
+                        {[...Array(4)].map((_, i) => (
+                            <div key={i} className="rounded-xl bg-muted animate-pulse h-56" />
+                        ))}
+                    </div>
+                )}
+
+                {/* Error */}
+                {isError && (
+                    <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+                        <AlertCircle className="h-10 w-10 text-destructive/60" />
+                        <p className="text-muted-foreground text-sm">Failed to load blog posts. Please try again.</p>
+                    </div>
+                )}
+
+                {/* Empty */}
+                {!isLoading && !isError && publishedPosts.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+                        <BookOpen className="h-10 w-10 text-muted-foreground/50" />
+                        <p className="text-muted-foreground text-sm">No blog posts yet. Check back soon!</p>
+                    </div>
+                )}
+
+                {/* Grid */}
+                {!isLoading && !isError && publishedPosts.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {publishedPosts.map((post, i) => (
+                            <Link key={post.id} href={`/blog/${post.slug}`}>
+                                <Card className="h-full hover:shadow-md hover:border-primary/40 transition-all cursor-pointer group overflow-hidden">
+
+                                    {/* Cover image */}
+                                    {post.coverImage && (
+                                        <div className="h-44 w-full overflow-hidden bg-muted">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={post.coverImage}
+                                                alt={post.title}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                            />
+                                        </div>
+                                    )}
+
+                                    <CardContent className="p-6 flex flex-col gap-3">
+                                        {/* Tag */}
+                                        {post.tag && (
                                             <Badge
                                                 variant="outline"
-                                                className={`self-start text-xs ${post.color}`}
+                                                className={`self-start text-xs ${TAG_COLORS[i % TAG_COLORS.length]}`}
                                             >
                                                 <Tag className="h-2.5 w-2.5 mr-1" />
-                                                {post.category}
+                                                {post.tag}
                                             </Badge>
                                         )}
 
-                                        <h2 className="font-bold text-base leading-snug group-hover:text-primary transition-colors">
+                                        {/* Title */}
+                                        <h2 className="font-bold text-base leading-snug group-hover:text-primary transition-colors line-clamp-2">
                                             {post.title}
                                         </h2>
 
-                                        <p className="text-sm text-muted-foreground leading-relaxed flex-1 line-clamp-3">
-                                            {post.excerpt}
-                                        </p>
+                                        {/* Excerpt */}
+                                        {post.excerpt && (
+                                            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                                                {post.excerpt}
+                                            </p>
+                                        )}
 
-                                        <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-                                            {post.readTime && (
-                                                <span className="flex items-center gap-1">
-                                                    <Clock className="h-3 w-3" />
-                                                    {post.readTime}
+                                        {/* Author + date */}
+                                        <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 gap-2">
+                                            {post.authorName && (
+                                                <span className="flex items-center gap-1 truncate">
+                                                    <User className="h-3 w-3 shrink-0" />
+                                                    {post.authorName}
                                                 </span>
                                             )}
-                                            <span>{post.date}</span>
+                                            <span className="flex items-center gap-1 ml-auto shrink-0">
+                                                <Clock className="h-3 w-3" />
+                                                {formatDate(post.createdAt)}
+                                            </span>
                                         </div>
 
                                         <div className="flex items-center text-xs text-primary font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
@@ -112,6 +151,7 @@ export default function BlogPage() {
                         ))}
                     </div>
                 )}
+
             </div>
         </div>
     );

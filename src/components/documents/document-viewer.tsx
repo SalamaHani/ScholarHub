@@ -28,6 +28,7 @@ import { useDocuments } from "@/hooks/useDocuments";
 import { formatFileSize } from "@/lib/document-utils";
 import { format } from "date-fns";
 import { DocumentCardSkeletonGrid, DocumentListItemSkeleton } from "@/components/skeletons";
+import { type Document } from "@/hooks/useDocuments";
 
 const DOCUMENT_CATEGORIES = [
     "General",
@@ -110,7 +111,7 @@ export const DocumentViewer = ({
                     </p>
                 ) : (
                     <div className="space-y-2">
-                        {filteredDocuments.map((document) => {
+                        {filteredDocuments.map((document: Document) => {
                             const FileIcon = getFileIcon(document.fileType);
                             return (
                                 <div
@@ -194,7 +195,7 @@ export const DocumentViewer = ({
                 </Card>
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredDocuments.map((document) => {
+                    {filteredDocuments.map((document: Document) => {
                         const FileIcon = getFileIcon(document.fileType);
                         return (
                             <motion.div

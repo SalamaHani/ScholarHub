@@ -3,16 +3,10 @@
 import { usePathname } from "next/navigation";
 import { Navbar } from "./navbar";
 import { Footer } from "./footer";
-
-import { useState, useEffect } from "react";
+import { DynamicHead } from "./dynamic-head";
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     // Pathname can be null during the very first render or SSR pass
     const safePathname = pathname || "";
@@ -24,6 +18,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex min-h-screen flex-col">
+            <DynamicHead />
             <Navbar />
             <main className="flex-1">
                 {children}

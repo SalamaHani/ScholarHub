@@ -2972,6 +2972,16 @@ function NotificationsSection() {
 // ============================================
 
 
+const CATEGORY_EMOJI_PRESETS = [
+    "📚", "🎓", "🔬", "💻", "🌍", "🏛️", "🎨", "🏥", "⚙️", "📊",
+    "🧪", "🤝", "✈️", "🌱", "🏗️", "🎵", "📐", "🧠", "💡", "🔭",
+];
+
+const COLOR_PRESETS = [
+    "#6366f1", "#3b82f6", "#10b981", "#f59e0b", "#ef4444",
+    "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#64748b",
+];
+
 function CategoryForm({ initialData, onSubmit, isLoading }: {
     initialData?: any;
     onSubmit: (data: CategoryInput) => Promise<void>;
@@ -2989,6 +2999,9 @@ function CategoryForm({ initialData, onSubmit, isLoading }: {
         e.preventDefault();
         await onSubmit(formData);
     };
+
+    const bgPreview = (formData.color || "#6366f1") + "1a";
+    const borderPreview = (formData.color || "#6366f1") + "33";
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -3010,24 +3023,79 @@ function CategoryForm({ initialData, onSubmit, isLoading }: {
                     rows={3}
                 />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label>Icon (Emoji)</Label>
-                    <Input
-                        value={formData.icon}
-                        onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                        placeholder="📚"
-                    />
+
+            {/* Icon picker */}
+            <div className="space-y-2">
+                <Label>Icon</Label>
+                <div className="flex flex-wrap gap-2 p-3 rounded-xl border bg-muted/20">
+                    {CATEGORY_EMOJI_PRESETS.map((emoji) => (
+                        <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, icon: emoji })}
+                            className={cn(
+                                "h-9 w-9 rounded-lg text-lg flex items-center justify-center transition-all border-2",
+                                formData.icon === emoji
+                                    ? "border-primary bg-primary/10 scale-110 shadow-sm"
+                                    : "border-transparent hover:border-muted-foreground/30 bg-background"
+                            )}
+                        >
+                            {emoji}
+                        </button>
+                    ))}
                 </div>
-                <div className="space-y-2">
-                    <Label>Color</Label>
-                    <Input
+                <Input
+                    value={formData.icon}
+                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                    placeholder="Or type any emoji…"
+                    className="text-sm"
+                />
+            </div>
+
+            {/* Color picker */}
+            <div className="space-y-2">
+                <Label>Color</Label>
+                <div className="flex flex-wrap gap-2 p-3 rounded-xl border bg-muted/20">
+                    {COLOR_PRESETS.map((hex) => (
+                        <button
+                            key={hex}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, color: hex })}
+                            className={cn(
+                                "h-8 w-8 rounded-full border-2 transition-all",
+                                formData.color === hex ? "scale-125 border-foreground shadow" : "border-transparent hover:scale-110"
+                            )}
+                            style={{ backgroundColor: hex }}
+                            title={hex}
+                        />
+                    ))}
+                    <input
                         type="color"
                         value={formData.color}
                         onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                        className="h-8 w-8 rounded-full border-2 border-dashed border-muted-foreground/40 cursor-pointer bg-transparent p-0.5"
+                        title="Custom color"
                     />
                 </div>
             </div>
+
+            {/* Live preview */}
+            <div className="p-3 rounded-xl border bg-muted/10 space-y-1.5">
+                <p className="text-[10px] font-bold tracking-widest text-muted-foreground">PREVIEW</p>
+                <div className="flex items-center gap-3">
+                    <div
+                        className="h-11 w-11 rounded-xl flex items-center justify-center text-xl border"
+                        style={{ backgroundColor: bgPreview, borderColor: borderPreview, color: formData.color }}
+                    >
+                        {formData.icon || "📚"}
+                    </div>
+                    <div>
+                        <p className="font-bold text-sm">{formData.name || "Category Name"}</p>
+                        <p className="text-xs text-muted-foreground truncate max-w-[200px]">{formData.description || "Description…"}</p>
+                    </div>
+                </div>
+            </div>
+
             <DialogFooter>
                 <DialogClose asChild>
                     <Button type="button" variant="outline">Cancel</Button>
@@ -4034,8 +4102,12 @@ function SettingsSection() {
                             <Textarea value={loc.siteDescription} onChange={(e) => set("siteDescription", e.target.value)} className="text-sm resize-none" rows={3} />
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Support Email</Label>
+                            <Label className="text-xs font-bold">Contact Email</Label>
                             <Input value={loc.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} type="email" className="text-sm" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">Support Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                            <Input value={loc.supportEmail} onChange={(e) => set("supportEmail", e.target.value)} type="email" className="text-sm" placeholder="support@scholarhub.com" />
                         </div>
                     </CardContent>
                 </Card>
@@ -4050,7 +4122,13 @@ function SettingsSection() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <ToggleRow label="Maintenance Mode" desc="Temporarily restrict access to all users." value={loc.maintenanceMode} onChange={(v) => set("maintenanceMode", v)} danger />
-                        <ToggleRow label="Student Registrations" desc="Allow new student sign-ups." value={loc.studentsOpen} onChange={(v) => set("studentsOpen", v)} />
+                        {loc.maintenanceMode && (
+                            <div className="space-y-1.5 px-1">
+                                <Label className="text-xs font-bold">Maintenance Message</Label>
+                                <Textarea value={loc.maintenanceMessage} onChange={(e) => set("maintenanceMessage", e.target.value)} className="text-sm resize-none" rows={2} placeholder="We are currently under maintenance. Please check back soon." />
+                            </div>
+                        )}
+                        <ToggleRow label="User Registrations" desc="Allow new user sign-ups." value={loc.studentsOpen} onChange={(v) => { set("studentsOpen", v); set("registrationEnabled", v); }} />
                         <ToggleRow label="Professor Applications" desc="Accept professor account requests." value={loc.professorsOpen} onChange={(v) => set("professorsOpen", v)} />
                         <ToggleRow label="Google Authentication" desc="Allow sign-in with Google OAuth." value={loc.allowGoogleAuth} onChange={(v) => set("allowGoogleAuth", v)} />
                         <ToggleRow label="Email Verification" desc="Require email verification on sign-up." value={loc.requireEmailVerification} onChange={(v) => set("requireEmailVerification", v)} />
@@ -4146,6 +4224,7 @@ function SettingsSection() {
                             { label: "Twitter / X", key: "twitterUrl", placeholder: "https://twitter.com/scholarhub" },
                             { label: "LinkedIn", key: "linkedinUrl", placeholder: "https://linkedin.com/company/scholarhub" },
                             { label: "Instagram", key: "instagramUrl", placeholder: "https://instagram.com/scholarhub" },
+                            { label: "YouTube", key: "youtubeUrl", placeholder: "https://youtube.com/@scholarhub" },
                         ] as { label: string; key: keyof SiteSettings; placeholder: string }[]).map(({ label, key, placeholder }) => (
                             <div key={key} className="space-y-1.5">
                                 <Label className="text-xs font-bold">{label}</Label>
