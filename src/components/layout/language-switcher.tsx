@@ -16,7 +16,6 @@ import { LANG_CHANGE_EVENT } from "@/hooks/useTranslation";
 import { cn } from "@/lib/utils";
 
 const USER_LANG_KEY = "scholarhub_user_lang";
-const SETTINGS_KEY  = "scholarhub_settings";
 
 export const LANGUAGES = [
     { code: "en", label: "English", native: "English",  flag: "🇺🇸", rtl: false },
@@ -25,18 +24,7 @@ export const LANGUAGES = [
 
 function getInitialLang(): string {
     if (typeof window === "undefined") return "en";
-    // 1. User personal preference wins
-    const userPref = localStorage.getItem(USER_LANG_KEY);
-    if (userPref) return userPref;
-    // 2. Fall back to admin-configured default
-    try {
-        const raw = localStorage.getItem(SETTINGS_KEY);
-        if (raw) {
-            const s = JSON.parse(raw);
-            if (s.defaultLanguage) return s.defaultLanguage;
-        }
-    } catch {}
-    return "en";
+    return localStorage.getItem(USER_LANG_KEY) ?? document.documentElement.lang ?? "en";
 }
 
 export function LanguageSwitcher() {

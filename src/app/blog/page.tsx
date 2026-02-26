@@ -32,14 +32,13 @@ export default function BlogPage() {
     const { data, isLoading, isError } = usePublicBlogPosts();
     const { data: pageEntry } = usePageContentEntry("blog");
 
-    // Normalise API response — may be array or { posts: [...] }
-    const rawPosts: BlogPost[] = Array.isArray(data)
-        ? data
-        : Array.isArray((data as any)?.posts)
-            ? (data as any).posts
-            : [];
+    // data is already BlogPost[] (extracted by usePublicBlogPosts)
+    const rawPosts: BlogPost[] = Array.isArray(data) ? data : [];
 
-    const publishedPosts = rawPosts.filter((p) => p.status === "published" || !p.status);
+    // Status from API can be "PUBLISHED" or "published"; show both
+    const publishedPosts = rawPosts.filter(
+        (p) => !p.status || p.status.toUpperCase() === "PUBLISHED"
+    );
 
     return (
         <div className="min-h-screen bg-muted/20 py-12 md:py-16">
@@ -105,14 +104,14 @@ export default function BlogPage() {
                                     )}
 
                                     <CardContent className="p-6 flex flex-col gap-3">
-                                        {/* Tag */}
-                                        {post.tag && (
+                                        {/* Tag — use first of tags[] array, fallback to tag string */}
+                                        {(post.tags?.[0] || post.tag) && (
                                             <Badge
                                                 variant="outline"
                                                 className={`self-start text-xs ${TAG_COLORS[i % TAG_COLORS.length]}`}
                                             >
                                                 <Tag className="h-2.5 w-2.5 mr-1" />
-                                                {post.tag}
+                                                {post.tags?.[0] || post.tag}
                                             </Badge>
                                         )}
 
@@ -130,10 +129,11 @@ export default function BlogPage() {
 
                                         {/* Author + date */}
                                         <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 gap-2">
-                                            {post.authorName && (
+                                            {(post.authorName || post.author) && (
                                                 <span className="flex items-center gap-1 truncate">
                                                     <User className="h-3 w-3 shrink-0" />
-                                                    {post.authorName}
+                                                    {post.authorName ||
+                                                        `${post.author?.firstName ?? ""} ${post.author?.lastName ?? ""}`.trim()}
                                                 </span>
                                             )}
                                             <span className="flex items-center gap-1 ml-auto shrink-0">

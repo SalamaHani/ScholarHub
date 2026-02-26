@@ -55,7 +55,7 @@ export default function RootLayout({
             Reads themePrimary / themeRing / lang from localStorage. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=JSON.parse(localStorage.getItem('scholarhub_settings')||'{}');if(s.themePrimary)document.documentElement.style.setProperty('--primary',s.themePrimary);if(s.themeRing)document.documentElement.style.setProperty('--ring',s.themeRing);var lang=localStorage.getItem('scholarhub_user_lang')||s.defaultLanguage;if(lang){document.documentElement.lang=lang;var rtl=['ar','he','fa','ur'].indexOf(lang)!==-1;document.documentElement.dir=rtl?'rtl':'ltr';}}catch(e){}})();`,
+            __html: `(function(){try{var lang=localStorage.getItem('scholarhub_user_lang');if(lang){document.documentElement.lang=lang;var rtl=['ar','he','fa','ur'].indexOf(lang)!==-1;document.documentElement.dir=rtl?'rtl':'ltr';}}catch(e){}})();`,
           }}
         />
       </head>

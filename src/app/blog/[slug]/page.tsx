@@ -74,7 +74,7 @@ export default function BlogPostPage() {
 
     // Fetch other posts for "Related" sidebar
     const { data: allData } = usePublicBlogPosts({ limit: 6 });
-    const allPosts = Array.isArray(allData) ? allData : Array.isArray(allData?.posts) ? allData.posts : [];
+    const allPosts = Array.isArray(allData) ? allData : [];
     const related = allPosts.filter((p: any) => p.slug !== slug).slice(0, 3);
 
     // ── Loading ──────────────────────────────────────────────────

@@ -42,7 +42,7 @@ export async function middleware(req: NextRequest) {
   const isProfileRoute = pathname.startsWith("/profile");
   const isDashboardRoute = pathname.startsWith("/dashboard");
   const isSavedRoute = pathname.startsWith("/saved");
-  const isProtectedPage = isSavedRoute;
+  const isProtectedPage = isDashboardRoute;
 
   // If on auth page and already logged in, redirect to home
   if (isAuthPage && token) {

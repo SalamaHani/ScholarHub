@@ -5,12 +5,18 @@ import {
     ArrowLeft,
     Building2,
     Calendar,
+    CalendarClock,
     Clock,
     CheckCircle2,
     XCircle,
     AlertCircle,
     FileText,
     ExternalLink,
+    Video,
+    Phone,
+    Users,
+    MapPin,
+    Timer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApplication } from "@/hooks/useApplications";
+import { useInterviewByApplication, type Interview } from "@/hooks/useInterviews";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -95,10 +102,126 @@ function ApplicationDetailSkeleton() {
     );
 }
 
+// ─── Interview Card ──────────────────────────────────────────────────────────
+const PLATFORM_CONFIG: Record<string, { label: string; icon: any; color: string; bg: string }> = {
+    ZOOM:            { label: "Zoom",           icon: Video,  color: "text-blue-600",    bg: "bg-blue-50 border-blue-200" },
+    GOOGLE_MEET:     { label: "Google Meet",    icon: Video,  color: "text-green-600",   bg: "bg-green-50 border-green-200" },
+    MICROSOFT_TEAMS: { label: "MS Teams",       icon: Users,  color: "text-violet-600",  bg: "bg-violet-50 border-violet-200" },
+    PHONE:           { label: "Phone",          icon: Phone,  color: "text-amber-600",   bg: "bg-amber-50 border-amber-200" },
+    IN_PERSON:       { label: "In Person",      icon: MapPin, color: "text-rose-600",    bg: "bg-rose-50 border-rose-200" },
+};
+
+const INTERVIEW_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+    SCHEDULED:  { label: "Scheduled",  color: "text-blue-600",   bg: "bg-blue-50 border-blue-200" },
+    COMPLETED:  { label: "Completed",  color: "text-emerald-600",bg: "bg-emerald-50 border-emerald-200" },
+    CANCELLED:  { label: "Cancelled",  color: "text-slate-600",  bg: "bg-slate-50 border-slate-200" },
+    NO_SHOW:    { label: "No Show",    color: "text-rose-600",   bg: "bg-rose-50 border-rose-200" },
+};
+
+function InterviewCard({ interview }: { interview: Interview }) {
+    const platform = PLATFORM_CONFIG[interview.platform] ?? PLATFORM_CONFIG.ZOOM;
+    const statusCfg = INTERVIEW_STATUS_CONFIG[interview.status] ?? INTERVIEW_STATUS_CONFIG.SCHEDULED;
+    const PlatformIcon = platform.icon;
+
+    const scheduledDate = new Date(interview.scheduledAt);
+    const isUpcoming = interview.status === "SCHEDULED" && scheduledDate > new Date();
+
+    const formattedDate = scheduledDate.toLocaleDateString("en-US", {
+        weekday: "short", month: "short", day: "numeric", year: "numeric",
+    });
+    const formattedTime = scheduledDate.toLocaleTimeString("en-US", {
+        hour: "2-digit", minute: "2-digit",
+    });
+
+    return (
+        <Card className={cn("mb-6 border-l-4", {
+            "border-l-blue-500":   interview.status === "SCHEDULED",
+            "border-l-emerald-500":interview.status === "COMPLETED",
+            "border-l-slate-400":  interview.status === "CANCELLED",
+            "border-l-rose-500":   interview.status === "NO_SHOW",
+        })}>
+            <CardHeader className="pb-3">
+                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    Interview
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-4">
+                {/* Platform + Status row */}
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                    <Badge
+                        variant="outline"
+                        className={cn("gap-1.5 text-xs font-semibold border", platform.bg, platform.color)}
+                    >
+                        <PlatformIcon className="h-3 w-3" />
+                        {platform.label}
+                    </Badge>
+                    <Badge
+                        variant="outline"
+                        className={cn("text-xs font-semibold border", statusCfg.bg, statusCfg.color)}
+                    >
+                        {statusCfg.label}
+                    </Badge>
+                </div>
+
+                {/* Date / Time / Duration */}
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-md bg-muted shrink-0">
+                            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-muted-foreground">Date</p>
+                            <p className="text-sm font-semibold">{formattedDate}</p>
+                            <p className="text-xs text-muted-foreground">{formattedTime}</p>
+                        </div>
+                    </div>
+                    {interview.duration && (
+                        <div className="flex items-center gap-2">
+                            <div className="p-1.5 rounded-md bg-muted shrink-0">
+                                <Timer className="h-3.5 w-3.5 text-muted-foreground" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground">Duration</p>
+                                <p className="text-sm font-semibold">{interview.duration} min</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Notes */}
+                {interview.notes && (
+                    <div className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2 leading-relaxed">
+                        {interview.notes}
+                    </div>
+                )}
+
+                {/* Cancel reason */}
+                {interview.cancelReason && (
+                    <div className="text-xs text-rose-600 bg-rose-50 rounded-md px-3 py-2 leading-relaxed border border-rose-200">
+                        <span className="font-semibold">Cancelled: </span>{interview.cancelReason}
+                    </div>
+                )}
+
+                {/* Join button */}
+                {isUpcoming && interview.meetingLink && (
+                    <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer">
+                        <Button className="w-full gap-2" size="sm">
+                            <PlatformIcon className="h-4 w-4" />
+                            Join {platform.label}
+                        </Button>
+                    </a>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 export default function ApplicationDetailPage({ params }: PageProps) {
     const { id } = params;
     const { data: application, isLoading, isFetching, isError, error } = useApplication(id);
+    const { data: interview } = useInterviewByApplication(id);
 
     // Show skeleton while loading (first fetch or refetch with no cached data)
     if (isLoading || (isFetching && !application)) {
@@ -366,6 +489,9 @@ export default function ApplicationDetailPage({ params }: PageProps) {
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Interview card — shown if an interview is scheduled for this application */}
+                {interview && <InterviewCard interview={interview} />}
 
                 {/* Actions */}
                 <div className="flex gap-3">

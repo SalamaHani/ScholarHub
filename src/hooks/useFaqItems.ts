@@ -34,6 +34,23 @@ export interface FaqItemInput {
     isActive?: boolean;
 }
 
+// Helper: extract FaqItem[] from various API response shapes
+function extractFaqItems(raw: any): FaqItem[] {
+    // { data: { faqItems: [...] } }
+    if (Array.isArray(raw?.data?.faqItems)) return raw.data.faqItems;
+    // { data: { items: [...] } }
+    if (Array.isArray(raw?.data?.items)) return raw.data.items;
+    // { data: [...] }
+    if (Array.isArray(raw?.data)) return raw.data;
+    // { faqItems: [...] }
+    if (Array.isArray(raw?.faqItems)) return raw.faqItems;
+    // { items: [...] }
+    if (Array.isArray(raw?.items)) return raw.items;
+    // direct array
+    if (Array.isArray(raw)) return raw;
+    return [];
+}
+
 // --- Hook ---
 
 export const useFaqItems = (filters?: FaqItemFilters) => {
@@ -43,7 +60,7 @@ export const useFaqItems = (filters?: FaqItemFilters) => {
         queryKey: ["faq-items", filters],
         queryFn: async () => {
             const { data } = await api.get("/faq-items", { params: filters });
-            return data.data || data;
+            return extractFaqItems(data);
         },
     });
 

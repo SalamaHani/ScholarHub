@@ -53,10 +53,13 @@ export const useContactMessages = () => {
         queryKey: ["contact-messages"],
         queryFn: async () => {
             const { data } = await api.get("/contact-messages");
-            // API returns { data: { messages: [...] } } or { data: [...] }
-            if (Array.isArray(data.data?.messages)) return data.data.messages;
-            if (Array.isArray(data.data)) return data.data;
-            if (Array.isArray(data)) return data;
+            // Handle all common API response shapes
+            if (Array.isArray(data?.data?.messages))        return data.data.messages;
+            if (Array.isArray(data?.data?.contactMessages)) return data.data.contactMessages;
+            if (Array.isArray(data?.data?.items))           return data.data.items;
+            if (Array.isArray(data?.data))                  return data.data;
+            if (Array.isArray(data?.messages))              return data.messages;
+            if (Array.isArray(data))                        return data;
             return [];
         },
     });

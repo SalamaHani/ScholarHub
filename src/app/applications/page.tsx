@@ -19,6 +19,7 @@ import {
     User,
     TrendingUp,
     ChevronRight,
+    CalendarClock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,12 +39,13 @@ function StudentSidebar({ counts }: { counts: Record<string, number> }) {
     const pathname = usePathname();
 
     const STUDENT_MENU = [
-        { href: "/applications", label: t.applications.title,            icon: BookOpen     },
+        { href: "/applications",  label: t.applications.title,              icon: BookOpen      },
+        { href: "/interviews",    label: t.applications.interviews,         icon: CalendarClock },
         { href: "/scholarships",  label: t.applications.browseScholarships, icon: GraduationCap },
-        { href: "/saved",         label: t.applications.savedScholarships,  icon: Bookmark     },
-        { href: "/notifications", label: t.applications.notifications,    icon: Bell         },
-        { href: "/deadlines",     label: t.applications.deadlines,        icon: Clock        },
-        { href: "/profile",       label: t.applications.myProfile,        icon: User         },
+        { href: "/saved",         label: t.applications.savedScholarships,  icon: Bookmark      },
+        { href: "/notifications", label: t.applications.notifications,      icon: Bell          },
+        { href: "/deadlines",     label: t.applications.deadlines,          icon: Clock         },
+        { href: "/profile",       label: t.applications.myProfile,          icon: User          },
     ];
 
     return (

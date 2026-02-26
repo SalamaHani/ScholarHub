@@ -13,12 +13,20 @@ export interface BlogPost {
     slug: string;
     content: string;
     excerpt?: string;
-    tag?: string;
-    coverImage?: string;
+    tag?: string;           // legacy single-tag field (admin form)
+    tags?: string[];        // API returns tags as array
+    coverImage?: string | null;
     authorName?: string;
-    status: "published" | "draft";
+    status: "published" | "draft" | "PUBLISHED" | "DRAFT";
+    publishedAt?: string | null;
     createdAt: string;
     updatedAt: string;
+    author?: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        avatar?: string | null;
+    };
 }
 
 export interface BlogPostFilters {
@@ -40,12 +48,27 @@ export interface BlogPostInput {
 
 // --- Public hook (published posts only) ---
 
+// Helper: extract BlogPost[] from various API response shapes
+function extractBlogPosts(raw: any): BlogPost[] {
+    // { data: { blogPosts: [...] } }
+    if (Array.isArray(raw?.data?.blogPosts)) return raw.data.blogPosts;
+    // { data: [...] }
+    if (Array.isArray(raw?.data)) return raw.data;
+    // { blogPosts: [...] }
+    if (Array.isArray(raw?.blogPosts)) return raw.blogPosts;
+    // { posts: [...] }
+    if (Array.isArray(raw?.posts)) return raw.posts;
+    // direct array
+    if (Array.isArray(raw)) return raw;
+    return [];
+}
+
 export const usePublicBlogPosts = (filters?: BlogPostFilters) => {
     return useQuery({
         queryKey: ["blog-posts-public", filters],
         queryFn: async () => {
             const { data } = await api.get("/blog-posts", { params: filters });
-            return data.data || data;
+            return extractBlogPosts(data);
         },
     });
 };
@@ -72,7 +95,7 @@ export const useBlogPosts = (filters?: BlogPostFilters) => {
         queryKey: ["blog-posts", filters],
         queryFn: async () => {
             const { data } = await api.get("/blog-posts/admin/all", { params: filters });
-            return data.data || data;
+            return extractBlogPosts(data);
         },
     });
 

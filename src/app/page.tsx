@@ -175,7 +175,7 @@ export default function HomePage() {
                             </Button>
                         </Link>
                         <Link href="/contact">
-                            <Button size="xl" variant="outline" className="gap-2 border-white/30 text-white hover:bg-white/10">
+                            <Button size="xl" variant="outline" className="gap-2 border-white/30 text-white bg-white/10">
                                 {t.home.contactUs}
                             </Button>
                         </Link>
