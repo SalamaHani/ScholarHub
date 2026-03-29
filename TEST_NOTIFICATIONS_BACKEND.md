@@ -80,7 +80,7 @@ http://localhost:3000/admin
 
 Login first:
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "your-email@example.com",
@@ -92,7 +92,7 @@ Copy the `token` from response.
 
 **Step 2: Send Notification**
 ```bash
-curl -X POST http://localhost:8080/api/notifications/admin/send \
+curl -X POST http://localhost/api/notifications/admin/send \
   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -H "Content-Type: application/json" \
   -d '{
@@ -119,7 +119,7 @@ curl -X POST http://localhost:8080/api/notifications/admin/send \
 
 **Step 3: Get Your Notifications**
 ```bash
-curl http://localhost:8080/api/notifications \
+curl http://localhost/api/notifications \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
@@ -158,7 +158,7 @@ curl http://localhost:8080/api/notifications \
 
 ```bash
 # Must be logged in to get token first
-curl http://localhost:8080/api/notifications \
+curl http://localhost/api/notifications \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -176,7 +176,7 @@ curl http://localhost:8080/api/notifications \
 
 ```javascript
 // Check if notifications are being fetched
-fetch('http://localhost:8080/api/notifications', {
+fetch('http://localhost/api/notifications', {
   headers: {
     'Authorization': 'Bearer ' + document.cookie.split('token=')[1]?.split(';')[0]
   }

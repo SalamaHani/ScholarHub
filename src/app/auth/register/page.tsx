@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import {
     Github,
     ArrowRight,
@@ -21,7 +21,7 @@ import { useSearchParams } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 
-export default function RegisterPage() {
+function RegisterPageContent() {
     const { t } = useTranslation();
     const [showPassword, setShowPassword] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
@@ -75,7 +75,7 @@ export default function RegisterPage() {
     const handleGoogleRegister = () => {
         try {
             setGoogleLoading(true);
-            const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+            const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost/api";
             window.location.href = `${backendUrl}/auth/google?role=${activeRole}`;
         } catch (error) {
             setGoogleLoading(false);
@@ -225,5 +225,13 @@ export default function RegisterPage() {
                 {t.auth.agreeTerms}
             </p>
         </motion.div>
+    );
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense>
+            <RegisterPageContent />
+        </Suspense>
     );
 }

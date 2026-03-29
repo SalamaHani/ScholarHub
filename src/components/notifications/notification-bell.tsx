@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, ExternalLink, WifiOff } from "lucide-react";
+import { AlertTriangle, Bell, CheckCircle, ExternalLink, FileText, GraduationCap, User, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -173,15 +173,16 @@ export function NotificationBell() {
 
         {notifications.length > 0 && (
           <div className="border-t p-2">
-            <Link href="/notifications" onClick={() => setIsOpen(false)}>
-              <Button
-                variant="ghost"
-                className="w-full text-xs h-8 font-semibold"
-              >
+            <Button
+              asChild
+              variant="ghost"
+              className="w-full text-xs h-8 font-semibold"
+            >
+              <Link href="/notifications" onClick={() => setIsOpen(false)}>
                 {t.notifications.viewAll}
                 <ExternalLink className="h-3 w-3 ml-2" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         )}
       </DropdownMenuContent>
@@ -217,7 +218,10 @@ function NotificationItem({ notification, onClick }: NotificationItemProps) {
     >
       {/* Type icon */}
       <div className="text-xl shrink-0 mt-0.5 w-8 text-center">
-        {getNotificationIcon(notification.type)}
+        {(() => {
+          const { Icon, color } = getNotificationIcon(notification.type);
+          return <Icon className={`h-5 w-5 ${color}`} />;
+        })()}
       </div>
 
       {/* Content */}
@@ -266,20 +270,47 @@ function NotificationItem({ notification, onClick }: NotificationItemProps) {
   );
 }
 
-function getNotificationIcon(type: string) {
-  switch (type) {
-    case "SCHOLARSHIP":
-      return "🎓";
-    case "APPLICATION":
-      return "📝";
-    case "SUCCESS":
-      return "✅";
-    case "WARNING":
-      return "⚠️";
-    default:
-      return "ℹ️" ;
-  }
-}
+
+ const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case "scholarship":
+        return {
+          Icon: GraduationCap,
+          bg: "bg-blue-100",
+          color: "text-blue-600",
+        };
+      case "new_application":
+        return {
+          Icon: FileText,
+          bg: "bg-purple-100",
+          color: "text-purple-600",
+        };
+      case "success":
+        return {
+          Icon: CheckCircle,
+          bg: "bg-emerald-100",
+          color: "text-emerald-600",
+        };
+      case "WARNING":
+        return {
+          Icon: AlertTriangle,
+          bg: "bg-amber-100",
+          color: "text-amber-600",
+        };
+      case "system":
+        return {
+          Icon: User,
+          bg: "bg-slate-100",
+          color: "text-slate-600",
+        };
+      default:
+        return {
+          Icon: GraduationCap,
+          bg: "bg-slate-100",
+          color: "text-slate-600",
+        };
+    }
+  };
 
 function getTypeBadgeClass(type: string) {
   switch (type) {

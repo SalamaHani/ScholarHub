@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
     LayoutDashboard,
@@ -32,6 +33,7 @@ import {
     Download,
     FileText,
     Mail,
+    Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,6 +62,14 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { DashboardSkeleton, ApplicationTableSkeleton } from "@/components/skeletons";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useInterviews, type InterviewPlatform } from "@/hooks/useInterviews";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 // Roles constant
 const ROLES = {
@@ -710,7 +720,7 @@ function ApplicationEvaluateRow({ application, onEvaluate, isSubmitting }: any) 
                     <div className="relative">
                         <div className="h-14 w-14 rounded-2xl bg-slate-100 flex items-center justify-center border shrink-0 overflow-hidden shadow-sm">
                             {application.student?.avatar ? (
-                                <img src={application.student.avatar} alt={application.student.name} className="h-full w-full object-cover" />
+                                <Image src={application.student.avatar} alt={application.student.name} width={56} height={56} className="h-full w-full object-cover" unoptimized />
                             ) : (
                                 <User className="h-7 w-7 text-slate-400" />
                             )}
@@ -839,11 +849,20 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
     const [isEvalOpen, setIsEvalOpen] = useState(false);
     const [evaluationText, setEvaluationText] = useState(application.evaluation || "");
     const [isEmailOpen, setIsEmailOpen] = useState(false);
+    const [isInterviewOpen, setIsInterviewOpen] = useState(false);
     const [emailSubject, setEmailSubject] = useState(
         `Re: Your Application for ${application.scholarship?.title || "Scholarship"}`
     );
     const { t } = useTranslation();
     const [emailBody, setEmailBody] = useState("");
+    const [interviewForm, setInterviewForm] = useState({
+        platform: "ZOOM" as InterviewPlatform,
+        scheduledAt: "",
+        duration: "",
+        meetingLink: "",
+        notes: "",
+    });
+    const { schedule } = useInterviews();
 
     const studentEmail = application.user?.email || application.student?.email || "";
     const studentName = application.user?.firstName
@@ -856,6 +875,26 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
         window.open(mailto, "_blank");
         setIsEmailOpen(false);
         setEmailBody("");
+    };
+
+    const handleScheduleInterview = () => {
+        if (!interviewForm.scheduledAt || !interviewForm.platform) return;
+        schedule.mutate(
+            {
+                applicationId: application.id,
+                scheduledAt: new Date(interviewForm.scheduledAt).toISOString(),
+                platform: interviewForm.platform,
+                ...(interviewForm.meetingLink && { meetingLink: interviewForm.meetingLink }),
+                ...(interviewForm.duration && { duration: Number(interviewForm.duration) }),
+                ...(interviewForm.notes && { notes: interviewForm.notes }),
+            },
+            {
+                onSuccess: () => {
+                    setIsInterviewOpen(false);
+                    setInterviewForm({ platform: "ZOOM", scheduledAt: "", duration: "", meetingLink: "", notes: "" });
+                },
+            }
+        );
     };
 
     const getStatusColor = (status: string) => {
@@ -965,6 +1004,117 @@ function ApplicationTableRow({ application, onEvaluate, isSubmitting }: any) {
                             >
                                 <Send className="h-3.5 w-3.5" />
                                 {t.dashboard.openInMail}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Schedule Interview Dialog */}
+                <Dialog open={isInterviewOpen} onOpenChange={setIsInterviewOpen}>
+                    <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="h-8 text-xs font-bold gap-1 text-violet-600 border-violet-200 hover:bg-violet-50">
+                            <Video className="h-3 w-3" />
+                            {t.dashboard.interviewBtn}
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <Video className="h-4 w-4 text-violet-600" />
+                                {t.dashboard.scheduleInterview}
+                            </DialogTitle>
+                            <p className="text-xs text-muted-foreground pt-1">
+                                {studentName} — {application.scholarship?.title || ""}
+                            </p>
+                        </DialogHeader>
+                        <div className="space-y-4 py-2">
+                            {/* Platform */}
+                            <div className="space-y-1.5">
+                                <Label>{t.dashboard.interviewPlatform}</Label>
+                                <Select
+                                    value={interviewForm.platform}
+                                    onValueChange={(v) => setInterviewForm((f) => ({ ...f, platform: v as InterviewPlatform }))}
+                                >
+                                    <SelectTrigger className="text-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ZOOM">{t.dashboard.platformZoom}</SelectItem>
+                                        <SelectItem value="GOOGLE_MEET">{t.dashboard.platformMeet}</SelectItem>
+                                        <SelectItem value="MICROSOFT_TEAMS">{t.dashboard.platformTeams}</SelectItem>
+                                        <SelectItem value="PHONE">{t.dashboard.platformPhone}</SelectItem>
+                                        <SelectItem value="IN_PERSON">{t.dashboard.platformInPerson}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {/* Date & Time */}
+                            <div className="space-y-1.5">
+                                <Label>{t.dashboard.interviewDate}</Label>
+                                <Input
+                                    type="datetime-local"
+                                    className="text-sm"
+                                    value={interviewForm.scheduledAt}
+                                    onChange={(e) => setInterviewForm((f) => ({ ...f, scheduledAt: e.target.value }))}
+                                />
+                            </div>
+                            {/* Duration */}
+                            <div className="space-y-1.5">
+                                <Label>
+                                    {t.dashboard.interviewDuration}
+                                    <span className="text-muted-foreground ml-1 text-xs">({t.dashboard.interviewOptional})</span>
+                                </Label>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    placeholder="60"
+                                    className="text-sm"
+                                    value={interviewForm.duration}
+                                    onChange={(e) => setInterviewForm((f) => ({ ...f, duration: e.target.value }))}
+                                />
+                            </div>
+                            {/* Meeting Link */}
+                            {interviewForm.platform !== "PHONE" && interviewForm.platform !== "IN_PERSON" && (
+                                <div className="space-y-1.5">
+                                    <Label>
+                                        {t.dashboard.interviewMeetingLink}
+                                        <span className="text-muted-foreground ml-1 text-xs">({t.dashboard.interviewOptional})</span>
+                                    </Label>
+                                    <Input
+                                        type="url"
+                                        placeholder="https://..."
+                                        className="text-sm"
+                                        value={interviewForm.meetingLink}
+                                        onChange={(e) => setInterviewForm((f) => ({ ...f, meetingLink: e.target.value }))}
+                                    />
+                                </div>
+                            )}
+                            {/* Notes */}
+                            <div className="space-y-1.5">
+                                <Label>
+                                    {t.dashboard.interviewNotes}
+                                    <span className="text-muted-foreground ml-1 text-xs">({t.dashboard.interviewOptional})</span>
+                                </Label>
+                                <Textarea
+                                    rows={3}
+                                    className="text-sm resize-none"
+                                    placeholder="..."
+                                    value={interviewForm.notes}
+                                    onChange={(e) => setInterviewForm((f) => ({ ...f, notes: e.target.value }))}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter className="gap-2">
+                            <DialogClose asChild>
+                                <Button variant="outline" size="sm">{t.dashboard.cancel}</Button>
+                            </DialogClose>
+                            <Button
+                                size="sm"
+                                className="gap-1.5 font-bold bg-violet-600 hover:bg-violet-700 text-white"
+                                onClick={handleScheduleInterview}
+                                disabled={!interviewForm.scheduledAt || schedule.isPending}
+                            >
+                                {schedule.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Video className="h-3.5 w-3.5" />}
+                                {t.dashboard.scheduleInterview}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

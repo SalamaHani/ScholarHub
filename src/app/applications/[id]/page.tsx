@@ -205,12 +205,12 @@ function InterviewCard({ interview }: { interview: Interview }) {
 
                 {/* Join button */}
                 {isUpcoming && interview.meetingLink && (
-                    <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer">
-                        <Button className="w-full gap-2" size="sm">
+                    <Button asChild className="w-full gap-2" size="sm">
+                        <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer">
                             <PlatformIcon className="h-4 w-4" />
                             Join {platform.label}
-                        </Button>
-                    </a>
+                        </a>
+                    </Button>
                 )}
             </CardContent>
         </Card>
@@ -232,7 +232,6 @@ export default function ApplicationDetailPage({ params }: PageProps) {
     if (isError || !application || !application.id) {
         const httpStatus = (error as any)?.response?.status;
         const is403 = httpStatus === 403;
-        const is404 = httpStatus === 404 || !application || !application?.id;
 
         const errorTitle = is403
             ? "Access Denied"
@@ -249,12 +248,12 @@ export default function ApplicationDetailPage({ params }: PageProps) {
                 <div className="container max-w-3xl">
                     {/* Back */}
                     <div className="mb-6">
-                        <Link href="/applications">
-                            <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
+                        <Button asChild variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
+                            <Link href="/applications">
                                 <ArrowLeft className="h-4 w-4" />
                                 My Applications
-                            </Button>
-                        </Link>
+                            </Link>
+                        </Button>
                     </div>
 
                     <Card className="border-none shadow-md overflow-hidden">
@@ -292,18 +291,18 @@ export default function ApplicationDetailPage({ params }: PageProps) {
 
                             {/* Actions */}
                             <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
-                                <Link href="/applications" className="flex-1">
-                                    <Button variant="default" className="w-full gap-2">
+                                <Button asChild variant="default" className="flex-1 gap-2">
+                                    <Link href="/applications">
                                         <ArrowLeft className="h-4 w-4" />
                                         My Applications
-                                    </Button>
-                                </Link>
-                                <Link href="/scholarships" className="flex-1">
-                                    <Button variant="outline" className="w-full gap-2">
+                                    </Link>
+                                </Button>
+                                <Button asChild variant="outline" className="flex-1 gap-2">
+                                    <Link href="/scholarships">
                                         <FileText className="h-4 w-4" />
                                         Browse Scholarships
-                                    </Button>
-                                </Link>
+                                    </Link>
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -385,12 +384,12 @@ export default function ApplicationDetailPage({ params }: PageProps) {
 
                 {/* Back */}
                 <div className="mb-6">
-                    <Link href="/applications">
-                        <Button variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
+                    <Button asChild variant="ghost" size="sm" className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
+                        <Link href="/applications">
                             <ArrowLeft className="h-4 w-4" />
                             My Applications
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
                 </div>
 
                 {/* Header card */}
@@ -493,22 +492,86 @@ export default function ApplicationDetailPage({ params }: PageProps) {
                 {/* Interview card — shown if an interview is scheduled for this application */}
                 {interview && <InterviewCard interview={interview} />}
 
+                {/* Answers card */}
+                {(() => {
+                    if (!application.answers) return null;
+                    try {
+                        const answers = typeof application.answers === "string"
+                            ? JSON.parse(application.answers)
+                            : application.answers;
+                        const questions = application.scholarship?.questions ?? [];
+                        const questionsMap = new Map(questions.map((q: any) => [q.id, q]));
+
+                        const resolveQ = (id: string) =>
+                            (questionsMap.get(id) as any)?.question || id;
+
+                        let pairs: { question: string; answer: string }[] = [];
+
+                        if (Array.isArray(answers)) {
+                            pairs = answers.map((a: any) => {
+                                const qRef = a.questionId || a.question;
+                                return {
+                                    question: typeof qRef === "object" ? qRef.question : resolveQ(qRef),
+                                    answer: a.answer || "—",
+                                };
+                            });
+                        } else if (questions.length > 0) {
+                            pairs = questions.map((q: any) => ({
+                                question: q.question,
+                                answer: answers[q.id] || "—",
+                            }));
+                        } else {
+                            pairs = Object.entries(answers).map(([qId, ans]: [string, any]) => ({
+                                question: resolveQ(qId),
+                                answer: ans || "—",
+                            }));
+                        }
+
+                        if (pairs.length === 0) return null;
+
+                        return (
+                            <Card className="mb-6">
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                        <FileText className="h-3.5 w-3.5" />
+                                        Your Answers
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="pt-0 space-y-4">
+                                    {pairs.map((p, i) => (
+                                        <div key={i} className="space-y-1.5">
+                                            <p className="text-xs font-semibold text-foreground/80 leading-snug">
+                                                {i + 1}. {p.question}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 leading-relaxed italic">
+                                                &ldquo;{p.answer}&rdquo;
+                                            </p>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        );
+                    } catch {
+                        return null;
+                    }
+                })()}
+
                 {/* Actions */}
                 <div className="flex gap-3">
                     {application.scholarship?.id && (
-                        <Link href={`/scholarships/${application.scholarship.id}`} className="flex-1">
-                            <Button variant="outline" className="w-full gap-2">
+                        <Button asChild variant="outline" className="flex-1 gap-2">
+                            <Link href={`/scholarships/${application.scholarship.id}`}>
                                 <ExternalLink className="h-4 w-4" />
                                 View Scholarship
-                            </Button>
-                        </Link>
+                            </Link>
+                        </Button>
                     )}
-                    <Link href="/applications">
-                        <Button variant="ghost" className="gap-2">
+                    <Button asChild variant="ghost" className="gap-2">
+                        <Link href="/applications">
                             <ArrowLeft className="h-4 w-4" />
                             All Applications
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
                 </div>
 
             </div>

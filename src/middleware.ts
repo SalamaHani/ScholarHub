@@ -37,56 +37,37 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value;
   const { pathname } = req.nextUrl;
 
-  // Define route access rules
   const isAuthPage = pathname.startsWith("/auth");
   const isProfileRoute = pathname.startsWith("/profile");
   const isDashboardRoute = pathname.startsWith("/dashboard");
   const isSavedRoute = pathname.startsWith("/saved");
-  const isProtectedPage = isDashboardRoute;
+  const isProtectedPage = isProfileRoute || isDashboardRoute || isSavedRoute;
 
-  // If on auth page and already logged in, redirect to home
-  if (isAuthPage && token) {
-    const payload = await verifyToken(token);
-    if (payload) {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-  }
-
-  // Protected routes - require authentication
-  if (isProtectedPage) {
-    if (!token) {
-      return NextResponse.redirect(new URL("/auth/login", req.url));
-    }
-
-    // Verify the token is valid
-    const payload = await verifyToken(token);
-    if (!payload) {
-      return NextResponse.redirect(new URL("/auth/login", req.url));
-    }
-
-    // Get user data and role
-    const userData = getUserDataFromCookie(req);
-    const role = getRoleFromCookie(req) || (payload as any).role?.toUpperCase();
-
-    // Dashboard is only accessible to PROFESSOR and ADMIN
-    if (isDashboardRoute && role === "STUDENT") {
-      return NextResponse.redirect(new URL("/profile", req.url));
-    }
-
-    // Check if professor is verified before allowing dashboard access
-    if (isDashboardRoute && role === "PROFESSOR") {
-      const isVerified =
-        userData?.isVerified || userData?.isProfessorVerified || false;
-      if (!isVerified) {
-        return NextResponse.redirect(
-          new URL("/auth/pending-verification", req.url),
-        );
+  // Auth pages: only redirect to home if token is valid
+  // Allow /auth/pending-verification even with a token (no redirect loop)
+  if (isAuthPage && token && !pathname.startsWith("/auth/pending-verification"))
+    if (isProtectedPage) {
+      // Protected routes — require a valid token
+      if (!token) {
+        return NextResponse.redirect(new URL("/auth/login", req.url));
+      }
+      const userData = getUserDataFromCookie(req);
+      const role = getRoleFromCookie(req) || userData?.role;
+      // Students cannot access dashboard — send to profile
+      if (isDashboardRoute && role === "STUDENT") {
+        return NextResponse.redirect(new URL("/profile", req.url));
+      }
+      // Unverified professors cannot access dashboard
+      if (isDashboardRoute && role === "PROFESSOR") {
+        const isVerified =
+          userData?.isVerified || userData?.isProfessorVerified || false;
+        if (!isVerified) {
+          return NextResponse.redirect(
+            new URL("/auth/pending-verification", req.url),
+          );
+        }
       }
     }
-
-    // All authenticated users can access profile and saved routes
-  }
-
   return NextResponse.next();
 }
 

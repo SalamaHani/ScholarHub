@@ -74,6 +74,7 @@ enum NotificationType {
 ```
 
 Then update your User model:
+
 ```prisma
 model User {
   // ... existing fields
@@ -82,6 +83,7 @@ model User {
 ```
 
 Run migration:
+
 ```bash
 npx prisma migrate dev --name add_notifications
 npx prisma generate
@@ -109,21 +111,21 @@ Copy the `notifications.js` file to your backend routes folder, then integrate:
 
 ```javascript
 // In your main app.js or server.js
-const notificationsRoutes = require('./routes/notifications');
+const notificationsRoutes = require("./routes/notifications");
 
 // Mount the routes
-app.use('/api', notificationsRoutes);
+app.use("/api", notificationsRoutes);
 ```
 
 ### Fastify Example:
 
 ```javascript
 // In your main app.js or server.js
-const notificationsRoutes = require('./routes/notifications');
+const notificationsRoutes = require("./routes/notifications");
 
 // Convert Express routes to Fastify
-fastify.register(require('@fastify/express'));
-fastify.use('/api', notificationsRoutes);
+fastify.register(require("@fastify/express"));
+fastify.use("/api", notificationsRoutes);
 ```
 
 ---
@@ -134,14 +136,15 @@ Open `notifications.js` and uncomment/update these lines:
 
 ```javascript
 // Line 8-10: Import your actual middleware
-const { authenticateToken, isAdmin } = require('../middleware/auth');
+const { authenticateToken, isAdmin } = require("../middleware/auth");
 
 // Line 11-12: Import your actual models
-const Notification = require('../models/Notification');
-const User = require('../models/User');
+const Notification = require("../models/Notification");
+const User = require("../models/User");
 ```
 
 Then uncomment the database queries in each route:
+
 - Line 38-46: GET notifications query
 - Line 75-86: PUT mark as read query
 - Line 117-125: PUT mark all as read query
@@ -161,11 +164,12 @@ npm start
 ### 2. Test GET Notifications
 
 ```bash
-curl http://localhost:8080/api/notifications \
+curl http://localhost/api/notifications \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 Expected response:
+
 ```json
 {
   "success": true,
@@ -176,13 +180,14 @@ Expected response:
 ### 3. Test Beams Auth
 
 ```bash
-curl -X POST http://localhost:8080/api/notifications/beams-auth \
+curl -X POST http://localhost/api/notifications/beams-auth \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"userId": "your-user-id"}'
 ```
 
 Expected response:
+
 ```json
 {
   "success": true,
@@ -193,7 +198,7 @@ Expected response:
 ### 4. Test Send Notification (Admin)
 
 ```bash
-curl -X POST http://localhost:8080/api/admin/notifications/send \
+curl -X POST http://localhost/api/admin/notifications/send \
   -H "Authorization: Bearer ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -233,22 +238,22 @@ curl -X POST http://localhost:8080/api/admin/notifications/send \
 ```javascript
 // Example: Send push when scholarship is published
 const sendScholarshipNotification = async (scholarship) => {
-    await fetch('http://localhost:8080/api/admin/notifications/send', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${adminToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            title: 'New Scholarship Available',
-            message: `${scholarship.title} is now open for applications!`,
-            type: 'SCHOLARSHIP',
-            link: `/scholarships/${scholarship.id}`,
-            targetRole: 'STUDENT',
-            sendPush: true,
-            interests: ['role-student', `category-${scholarship.category}`]
-        })
-    });
+  await fetch("http://localhost/api/admin/notifications/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${adminToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      title: "New Scholarship Available",
+      message: `${scholarship.title} is now open for applications!`,
+      type: "SCHOLARSHIP",
+      link: `/scholarships/${scholarship.id}`,
+      targetRole: "STUDENT",
+      sendPush: true,
+      interests: ["role-student", `category-${scholarship.category}`],
+    }),
+  });
 };
 ```
 
@@ -256,14 +261,14 @@ const sendScholarshipNotification = async (scholarship) => {
 
 ## 🎯 API Endpoints Summary
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/notifications` | User | Get user's notifications |
-| PUT | `/api/notifications/:id/read` | User | Mark single as read |
-| PUT | `/api/notifications/read-all` | User | Mark all as read |
-| POST | `/api/notifications/beams-auth` | User | Get Beams auth token |
-| POST | `/api/admin/notifications/send` | Admin | Send notifications + push |
-| POST | `/api/admin/notifications/email` | Admin | Send email notification |
+| Method | Endpoint                         | Auth  | Description               |
+| ------ | -------------------------------- | ----- | ------------------------- |
+| GET    | `/api/notifications`             | User  | Get user's notifications  |
+| PUT    | `/api/notifications/:id/read`    | User  | Mark single as read       |
+| PUT    | `/api/notifications/read-all`    | User  | Mark all as read          |
+| POST   | `/api/notifications/beams-auth`  | User  | Get Beams auth token      |
+| POST   | `/api/admin/notifications/send`  | Admin | Send notifications + push |
+| POST   | `/api/admin/notifications/email` | Admin | Send email notification   |
 
 ---
 
@@ -303,6 +308,7 @@ const sendScholarshipNotification = async (scholarship) => {
 ## 🎉 Done!
 
 Your notification system is now complete with:
+
 - ✅ In-app notifications
 - ✅ Browser push notifications
 - ✅ Admin notification panel

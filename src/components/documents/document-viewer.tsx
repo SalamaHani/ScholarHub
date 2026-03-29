@@ -10,8 +10,6 @@ import {
     FileImage,
     FileSpreadsheet,
     Loader2,
-    ExternalLink,
-    Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,9 +84,9 @@ export const DocumentViewer = ({
         isPublic: publicOnly,
     });
 
-    const handleDownload = async (documentId: string) => {
+    const handleDownload = async (fileUrl: string, fileName: string) => {
         try {
-            await download.mutateAsync(documentId);
+            await download.mutateAsync({ fileUrl, fileName });
         } catch (error) {
             console.error("Download error:", error);
         }
@@ -132,7 +130,7 @@ export const DocumentViewer = ({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => handleDownload(document.id)}
+                                        onClick={() => handleDownload(document.fileUrl, document.fileName)}
                                     >
                                         <Download className="h-4 w-4" />
                                     </Button>
@@ -243,7 +241,7 @@ export const DocumentViewer = ({
 
                                         <Button
                                             className="w-full gap-2"
-                                            onClick={() => handleDownload(document.id)}
+                                            onClick={() => handleDownload(document.fileUrl, document.fileName)}
                                             disabled={download.isPending}
                                         >
                                             {download.isPending ? (

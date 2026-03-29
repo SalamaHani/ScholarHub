@@ -128,7 +128,7 @@ html {
 /* ── 1. Cairo font for Arabic ─────────────────────────────────────────── */
 html[lang="ar"],
 html[lang="ar"] body {
-    font-family: var(--font-sans, 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif);
+    font-family: var(--font-cairo, 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif);
 }
 
 /* Arabic needs more generous line-height for readability */
@@ -251,5 +251,5 @@ html[dir="rtl"] .ltr {
 
 /* ── 11. Utility class — Cairo font (used in admin language picker preview) */
 .font-cairo {
-    font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
+    font-family: var(--font-cairo, 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif);
 }

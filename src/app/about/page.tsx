@@ -1,41 +1,65 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
 import {
     Heart,
     Target,
     Users,
     Globe,
-    GraduationCap,
     Sparkles,
     Award,
-    BookOpen
+    BookOpen,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useTranslation } from "@/hooks/useTranslation";
 import { usePageContentEntry } from "@/hooks/usePageContent";
 
 const teamMembers = [
     {
-        name: "Ahmad Hassan",
-        role: "Founder & Lead Developer",
-        description: "Computer Science graduate passionate about education access.",
+        name: "Tareq Radi",
+        role: "CEO & Founder",
+        description: "Visionary leader driving ScholarHub's mission to make higher education accessible for every student in Gaza and beyond.",
+        descriptionAr: "قائد رؤيوي يقود مهمة ScholarHub لجعل التعليم العالي في متناول كل طالب في غزة وخارجها.",
+        color: "bg-primary/10 text-primary",
+        initials: "TR",
+        image: "",
     },
     {
-        name: "Sara Mahmoud",
-        role: "Content Manager",
-        description: "Experienced in scholarship research and student guidance.",
+        name: "Mahmoud Alshantti",
+        role: "Software Architect",
+        description: "Designs the backbone of ScholarHub's platform — scalable, secure, and built to serve thousands of students.",
+        descriptionAr: "يصمم البنية التحتية لمنصة ScholarHub — قابلة للتوسع وآمنة ومبنية لخدمة آلاف الطلاب.",
+        color: "bg-violet-100 text-violet-700",
+        initials: "MA",
+        image: "",
     },
     {
-        name: "Mohammed Ali",
-        role: "Community Outreach",
-        description: "Connecting with universities and scholarship providers.",
+        name: "Salama Eligla",
+        role: "Full-Stack Developer",
+        description: "Brings features to life with clean, performant code — from backend APIs to seamless front-end experiences.",
+        descriptionAr: "يُحيي الميزات بكود نظيف وعالي الأداء — من واجهات برمجية خلفية إلى تجارب أمامية سلسة.",
+        color: "bg-emerald-100 text-emerald-700",
+        initials: "SE",
+        image: "",
+    },
+    {
+        name: "Amir Alshantti",
+        role: "UI/UX Designer",
+        description: "Crafts intuitive, beautiful interfaces that make finding scholarships feel effortless for every student.",
+        descriptionAr: "يصمم واجهات بديهية وجميلة تجعل البحث عن المنح أمراً سهلاً لكل طالب.",
+        color: "bg-amber-100 text-amber-700",
+        initials: "AA",
+        image: "",
     },
 ];
 
 export default function AboutPage() {
-    const { t } = useTranslation();
+    const { t, lang } = useTranslation();
     const { data: pageEntry } = usePageContentEntry("about-us");
+    const [viewMember, setViewMember] = useState<typeof teamMembers[0] | null>(null);
 
     const values = [
         { icon: Heart,  title: t.about.value1Title, description: t.about.value1Desc },
@@ -149,24 +173,76 @@ export default function AboutPage() {
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
                         {teamMembers.map((member) => (
-                            <Card key={member.name} className="card-hover">
+                            <Card key={member.name} className="card-hover group border-transparent hover:border-primary/20 transition-all shadow-sm hover:shadow-md">
                                 <CardContent className="p-6 text-center space-y-4">
-                                    <div className="w-20 h-20 rounded-full bg-primary/10 mx-auto flex items-center justify-center">
-                                        <GraduationCap className="h-10 w-10 text-primary" />
+                                    {/* Circular clickable avatar */}
+                                    <button
+                                        onClick={() => setViewMember(member)}
+                                        className="mx-auto block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-full"
+                                        aria-label={`View ${member.name}`}
+                                    >
+                                        <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center text-2xl font-black tracking-tight shadow-md overflow-hidden ring-2 ring-transparent group-hover:ring-primary/30 transition-all hover:scale-105 ${!member.image ? member.color : ""}`}>
+                                            {member.image ? (
+                                                <Image
+                                                    src={member.image}
+                                                    alt={member.name}
+                                                    width={80}
+                                                    height={80}
+                                                    className="w-full h-full object-cover rounded-full"
+                                                    unoptimized
+                                                />
+                                            ) : (
+                                                member.initials
+                                            )}
+                                        </div>
+                                    </button>
+                                    <div className="space-y-1">
+                                        <h3 className="font-bold text-base leading-tight">{member.name}</h3>
+                                        <Badge variant="secondary" className="text-[10px] font-semibold tracking-wide px-2">
+                                            {member.role}
+                                        </Badge>
                                     </div>
-                                    <div>
-                                        <h3 className="font-semibold text-lg">{member.name}</h3>
-                                        <p className="text-sm text-primary">{member.role}</p>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        {member.description}
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        {lang === "ar" ? member.descriptionAr : member.description}
                                     </p>
                                 </CardContent>
                             </Card>
                         ))}
                     </div>
+
+                    {/* Member profile dialog */}
+                    <Dialog open={!!viewMember} onOpenChange={(open) => { if (!open) setViewMember(null); }}>
+                        <DialogContent className="max-w-sm text-center p-8">
+                            {viewMember && (
+                                <div className="space-y-5">
+                                    {/* Large circular avatar */}
+                                    <div className={`w-28 h-28 rounded-full mx-auto flex items-center justify-center text-4xl font-black tracking-tight shadow-lg overflow-hidden ring-4 ring-primary/20 ${!viewMember.image ? viewMember.color : ""}`}>
+                                        {viewMember.image ? (
+                                            <Image
+                                                src={viewMember.image}
+                                                alt={viewMember.name}
+                                                width={112}
+                                                height={112}
+                                                className="w-full h-full object-cover rounded-full"
+                                                unoptimized
+                                            />
+                                        ) : (
+                                            viewMember.initials
+                                        )}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h3 className="text-xl font-bold">{viewMember.name}</h3>
+                                        <Badge className="text-xs px-3 py-1">{viewMember.role}</Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">
+                                        {lang === "ar" ? viewMember.descriptionAr : viewMember.description}
+                                    </p>
+                                </div>
+                            )}
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </section>
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Cairo } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
@@ -8,7 +9,8 @@ import { ReduxProvider } from "@/components/providers/ReduxProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const cairo = Cairo({ subsets: ["arabic", "latin"], variable: "--font-cairo" });
 
 export const metadata: Metadata = {
   title: "ScholarHub - Find Scholarships for Students Worldwide",
@@ -47,19 +49,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = headers();
+  const lang = headersList.get("x-lang") ?? "en";
+  const dir = headersList.get("x-dir") ?? "ltr";
+
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Inline script — runs synchronously BEFORE first paint to avoid
-            the flash of default CSS variable colors on refresh.
-            Reads themePrimary / themeRing / lang from localStorage. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var lang=localStorage.getItem('scholarhub_user_lang');if(lang){document.documentElement.lang=lang;var rtl=['ar','he','fa','ur'].indexOf(lang)!==-1;document.documentElement.dir=rtl?'rtl':'ltr';}}catch(e){}})();`,
-          }}
-        />
-      </head>
-      <body className={`${inter.className} antialiased`}>
+    <html lang={lang} dir={dir} suppressHydrationWarning>
+      <head />
+      <body className={`${inter.variable} ${cairo.variable} ${inter.className} antialiased`}>
         <ReduxProvider>
           <QueryProvider>
             <ThemeProvider>

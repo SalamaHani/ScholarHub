@@ -148,7 +148,7 @@ export const DocumentManager = () => {
 
         try {
             await update.mutateAsync({
-                id: selectedDocument.id,
+                documentUrl: selectedDocument.fileUrl,
                 data: formData,
             });
             setIsEditOpen(false);
@@ -173,7 +173,7 @@ export const DocumentManager = () => {
 
     const handleDownload = async (document: Document) => {
         try {
-            await download.mutateAsync(document.id);
+            await download.mutateAsync({ fileUrl: document.fileUrl, fileName: document.fileName });
         } catch (error) {
             console.error("Download error:", error);
         }

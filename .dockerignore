@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Next.js build output
+.next
+out
+
+# Git
+.git
+.gitignore
+
+# Environment files (inject at runtime via --env-file or -e)
+.env
+.env.*
+!.env.example
+
+# Dev / docs
+*.md
+*.txt
+*.http
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode
+.idea
+
+# Test / debug files
+*.test.*
+*.spec.*
+coverage
+
+# Docker itself
+Dockerfile
+.dockerignore
+docker-compose*.yml

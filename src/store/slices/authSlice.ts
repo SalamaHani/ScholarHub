@@ -177,10 +177,33 @@ function setAuthStorage(token: string, user: User): void {
         isVerified: user.isVerified || user.isProfessorVerified
     }));
 
-    // LocalStorage for full user data (client-only recovery)
+    // LocalStorage — store only essential fields to avoid quota errors.
+    // Large arrays (documents, experience, certifications) are refreshed
+    // from the API via initializeAuth on every session start.
     if (typeof window !== "undefined") {
-        localStorage.setItem("scholarhub_user", JSON.stringify(user));
-        localStorage.setItem("scholarhub_token", token);
+        try {
+            const slim = {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                avatar: user.avatar,
+                isVerified: user.isVerified,
+                isProfessorVerified: user.isProfessorVerified,
+                isEmailVerified: user.isEmailVerified,
+                isBlocked: user.isBlocked,
+            };
+            localStorage.setItem("scholarhub_user", JSON.stringify(slim));
+            localStorage.setItem("scholarhub_token", token);
+        } catch (e) {
+            // Quota exceeded — clear stale data and retry with minimal payload
+            try {
+                localStorage.removeItem("scholarhub_user");
+                localStorage.setItem("scholarhub_token", token);
+            } catch {
+                // Storage fully unavailable — auth will rely on cookies
+            }
+        }
     }
 }
 
@@ -228,13 +251,13 @@ function getStoredAuth(): { token: string | null; user: User | null } {
 }
 
 // --- Initial State ---
-
-const { token: initialToken, user: initialUser } = getStoredAuth();
+// Always start empty to avoid server/client hydration mismatch.
+// initializeAuth (called in ReduxProvider) restores auth from storage client-side.
 
 const initialState: AuthState = {
-    user: initialUser,
-    token: initialToken,
-    isAuthenticated: !!initialToken && !!initialUser,
+    user: null,
+    token: null,
+    isAuthenticated: false,
     isLoading: false,
     isInitialized: false,
     error: null,

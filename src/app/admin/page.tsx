@@ -3644,7 +3644,7 @@ function ApplicationsSection() {
                                             const url =
                                               studentAnswer.startsWith("http")
                                                 ? studentAnswer
-                                                : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"}${studentAnswer}`;
+                                                : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost/api"}${studentAnswer}`;
                                             window.open(
                                               url,
                                               "_blank",
@@ -3676,7 +3676,7 @@ function ApplicationsSection() {
                                             const url =
                                               studentAnswer.startsWith("http")
                                                 ? studentAnswer
-                                                : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"}${studentAnswer}`;
+                                                : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost/api"}${studentAnswer}`;
 
                                             const response = await fetch(url);
                                             if (!response.ok)
@@ -3855,10 +3855,10 @@ function ApplicationsSection() {
         open={!!evaluatingApplication}
         onOpenChange={(open) => !open && setEvaluatingApplication(null)}
       >
-        <DialogContent className="sm:max-w-[500px] border-none shadow-2xl p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-[500px] border-none shadow-2xl p-0 overflow-hidden max-h-[90vh] flex flex-col">
           {evaluatingApplication && (
-            <div className="flex flex-col">
-              <div className="p-6 bg-gradient-to-br from-primary/10 to-transparent border-b">
+            <div className="flex flex-col min-h-0 flex-1">
+              <div className="p-6 bg-gradient-to-br from-primary/10 to-transparent border-b shrink-0">
                 <DialogHeader>
                   <div className="flex items-center gap-3 mb-2">
                     <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
@@ -3876,42 +3876,70 @@ function ApplicationsSection() {
                 </DialogHeader>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-6 space-y-6 overflow-y-auto flex-1">
                 <div className="space-y-3">
                   <Label className="text-[10px] font-black tracking-widest text-slate-400">
-                    Select Achievement Status
+                    Application Status
                   </Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {["PENDING", "UNDER_REVIEW", "ACCEPTED", "REJECTED"].map(
-                      (status) => (
-                        <Button
-                          key={status}
-                          type="button"
-                          variant={
-                            targetStatus === status ? "default" : "outline"
-                          }
-                          className={cn(
-                            "h-11 font-bold text-[10px] tracking-widest uppercase rounded-xl transition-all border-slate-200",
-                            targetStatus === status &&
-                              status === "ACCEPTED" &&
-                              "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-200",
-                            targetStatus === status &&
-                              status === "REJECTED" &&
-                              "bg-rose-600 hover:bg-rose-700 text-white border-none shadow-lg shadow-rose-200",
-                            targetStatus === status &&
-                              status === "UNDER_REVIEW" &&
-                              "bg-amber-500 hover:bg-amber-600 text-white border-none shadow-lg shadow-amber-200",
-                            targetStatus === status &&
-                              status === "PENDING" &&
-                              "bg-slate-700 hover:bg-slate-800 text-white border-none shadow-lg shadow-slate-200",
-                          )}
-                          onClick={() => setTargetStatus(status)}
-                        >
-                          {status.replace("_", " ")}
-                        </Button>
-                      ),
-                    )}
-                  </div>
+                  <Select value={targetStatus} onValueChange={setTargetStatus}>
+                    <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-slate-50 font-semibold text-sm focus:ring-primary">
+                      <SelectValue placeholder="Select status..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PENDING">
+                        <span className="flex items-center gap-2">
+                          <Clock className="h-3.5 w-3.5 text-slate-500" />
+                          Pending
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="UNDER_REVIEW">
+                        <span className="flex items-center gap-2">
+                          <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                          Under Review
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="ACCEPTED">
+                        <span className="flex items-center gap-2">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                          Accepted
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="REJECTED">
+                        <span className="flex items-center gap-2">
+                          <XCircle className="h-3.5 w-3.5 text-rose-600" />
+                          Rejected
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="WITHDRAWN">
+                        <span className="flex items-center gap-2">
+                          <X className="h-3.5 w-3.5 text-muted-foreground" />
+                          Withdrawn
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {/* Status preview badge */}
+                  {targetStatus && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-[10px] text-muted-foreground">
+                        Current selection:
+                      </span>
+                      <Badge
+                        variant={
+                          targetStatus === "ACCEPTED"
+                            ? "success"
+                            : targetStatus === "PENDING"
+                              ? "warning"
+                              : targetStatus === "UNDER_REVIEW"
+                                ? "secondary"
+                                : "destructive"
+                        }
+                        className="text-[10px]"
+                      >
+                        {targetStatus.replace("_", " ")}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -4033,7 +4061,7 @@ function ApplicationsSection() {
                 )}
               </div>
 
-              <DialogFooter className="p-6 bg-slate-50/50 border-t flex gap-3">
+              <DialogFooter className="p-6 bg-slate-50/50 border-t flex gap-3 shrink-0">
                 <Button
                   variant="ghost"
                   className="flex-1 rounded-xl font-bold text-xs"
@@ -4059,14 +4087,14 @@ function ApplicationsSection() {
                       },
                     );
                   }}
-                  disabled={evaluate.isPending}
+                  disabled={evaluate.isPending || !targetStatus}
                 >
                   {evaluate.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   ) : (
-                    <Save className="h-4 w-4 mr-2" />
+                    <Check className="h-4 w-4 mr-2" />
                   )}
-                  Commit Changes
+                  Submit
                 </Button>
               </DialogFooter>
             </div>
@@ -5717,8 +5745,8 @@ function SettingsSection() {
 
   const apiBase =
     typeof window !== "undefined"
-      ? process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
-      : "http://localhost:8080/api";
+      ? process.env.NEXT_PUBLIC_API_URL || "http://localhost/api"
+      : "http://localhost/api";
 
   if (!isLoaded) {
     return (
@@ -8004,12 +8032,13 @@ function InterviewsSection() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [cancelTarget, setCancelTarget] = useState<Interview | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [viewTarget, setViewTarget] = useState<Interview | null>(null);
 
   const interviews: Interview[] = Array.isArray(data) ? data : [];
 
   const filtered = interviews.filter((i) => {
     const scholarship = i.application?.scholarship;
-    const student = i.application?.student;
+    const student = i.application?.user;
     const matchSearch =
       !search ||
       scholarship?.title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -8136,7 +8165,7 @@ function InterviewsSection() {
                 </thead>
                 <tbody>
                   {filtered.map((interview) => {
-                    const student = interview.application?.student ?? null;
+                    const student = interview.application?.user ?? null;
                     const scholarship = interview.application?.scholarship;
                     const sc =
                       STATUS_CONFIG[interview.status] ??
@@ -8257,6 +8286,15 @@ function InterviewsSection() {
                         {/* Actions */}
                         <td className="p-3">
                           <div className="flex justify-end gap-1">
+                            {/* View Details */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 gap-1 text-xs"
+                              onClick={() => setViewTarget(interview)}
+                            >
+                              <Eye className="h-3 w-3" /> View
+                            </Button>
                             {interview.meetingLink && (
                               <a
                                 href={interview.meetingLink}
@@ -8327,6 +8365,211 @@ function InterviewsSection() {
           )}
         </CardContent>
       </Card>
+
+      {/* View Interview Dialog */}
+      <Dialog
+        open={!!viewTarget}
+        onOpenChange={(o) => !o && setViewTarget(null)}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarClock className="h-5 w-5 text-primary" />
+              Interview Details
+            </DialogTitle>
+          </DialogHeader>
+          {viewTarget &&
+            (() => {
+              const iv = viewTarget;
+              const student = iv.application?.user ?? null;
+              const scholarship = iv.application?.scholarship;
+              const dt = new Date(iv.scheduledAt);
+              const sc = {
+                SCHEDULED: {
+                  label: "Scheduled",
+                  cls: "bg-blue-100 text-blue-700",
+                },
+                COMPLETED: {
+                  label: "Completed",
+                  cls: "bg-emerald-100 text-emerald-700",
+                },
+                CANCELLED: {
+                  label: "Cancelled",
+                  cls: "bg-rose-100 text-rose-700",
+                },
+                NO_SHOW: {
+                  label: "No-Show",
+                  cls: "bg-amber-100 text-amber-700",
+                },
+              }[iv.status] ?? {
+                label: iv.status,
+                cls: "bg-muted text-muted-foreground",
+              };
+              const PLATFORM_LABEL: Record<string, string> = {
+                ZOOM: "Zoom",
+                GOOGLE_MEET: "Google Meet",
+                MICROSOFT_TEAMS: "Microsoft Teams",
+                PHONE: "Phone Call",
+                IN_PERSON: "In Person",
+              };
+              return (
+                <div className="space-y-5 py-2">
+                  {/* Status badge */}
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={cn(
+                        "text-xs font-bold px-3 py-1 rounded-full",
+                        sc.cls,
+                      )}
+                    >
+                      {sc.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ID: {iv.id.slice(0, 8)}…
+                    </span>
+                  </div>
+
+                  {/* Student */}
+                  <div className="rounded-xl border p-4 space-y-1 bg-muted/30">
+                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                      Student
+                    </p>
+                    <p className="font-bold text-sm">
+                      {student
+                        ? `${student.firstName ?? ""} ${student.lastName ?? ""}`.trim() ||
+                          "Unknown"
+                        : "Unknown"}
+                    </p>
+                    {student?.email && (
+                      <a
+                        href={`mailto:${student.email}`}
+                        className="text-xs text-primary hover:underline flex items-center gap-1 w-fit"
+                      >
+                        <Mail className="h-3 w-3" /> {student.email}
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Scholarship */}
+                  <div className="rounded-xl border p-4 space-y-1 bg-muted/30">
+                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                      Scholarship
+                    </p>
+                    <p className="font-bold text-sm">
+                      {scholarship?.title ?? "—"}
+                    </p>
+                    {scholarship?.organization && (
+                      <p className="text-xs text-muted-foreground">
+                        {scholarship.organization}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Interview Info grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border p-3 space-y-0.5">
+                      <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                        Platform
+                      </p>
+                      <p className="font-semibold text-sm flex items-center gap-1">
+                        <Video className="h-3.5 w-3.5 text-primary" />
+                        {PLATFORM_LABEL[iv.platform] ?? iv.platform}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border p-3 space-y-0.5">
+                      <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                        Duration
+                      </p>
+                      <p className="font-semibold text-sm flex items-center gap-1">
+                        <Timer className="h-3.5 w-3.5 text-primary" />
+                        {iv.duration ? `${iv.duration} min` : "—"}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border p-3 space-y-0.5 col-span-2">
+                      <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                        Scheduled At
+                      </p>
+                      <p className="font-semibold text-sm flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5 text-primary" />
+                        {dt.toLocaleDateString(undefined, {
+                          weekday: "short",
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                        {" · "}
+                        {dt.toLocaleTimeString(undefined, {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Meeting link */}
+                  {iv.meetingLink && (
+                    <div className="rounded-xl border p-3 space-y-1">
+                      <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                        Meeting Link
+                      </p>
+                      <a
+                        href={iv.meetingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline flex items-center gap-1 break-all"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                        {iv.meetingLink}
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {iv.notes && (
+                    <div className="rounded-xl border p-3 space-y-1">
+                      <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                        Notes
+                      </p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {iv.notes}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Cancel reason */}
+                  {iv.cancelReason && (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 space-y-1">
+                      <p className="text-[10px] font-bold tracking-widest text-rose-500 uppercase">
+                        Cancellation Reason
+                      </p>
+                      <p className="text-sm text-rose-700 whitespace-pre-wrap">
+                        {iv.cancelReason}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" size="sm">
+                Close
+              </Button>
+            </DialogClose>
+            {viewTarget?.meetingLink && (
+              <a
+                href={viewTarget.meetingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button size="sm" className="gap-1.5">
+                  <ExternalLink className="h-3.5 w-3.5" /> Join Meeting
+                </Button>
+              </a>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Cancel Dialog */}
       <Dialog

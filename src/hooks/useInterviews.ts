@@ -43,7 +43,7 @@ export interface Interview {
             organization?: string;
             logoUrl?: string | null;
         };
-        student?: {
+        user?: {
             id: string;
             firstName?: string;
             lastName?: string;

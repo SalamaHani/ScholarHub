@@ -401,7 +401,7 @@ function InterviewCard({ interview }: { interview: Interview }) {
     const StatusIcon = cfg.icon;
     const { date, time } = formatDateTime(interview.scheduledAt);
     const scholarship = interview.application?.scholarship;
-    const studentEmail = interview.application?.student?.email ?? user?.email;
+    const studentEmail = interview.application?.user?.email ?? user?.email;
     const upcoming = isUpcoming(interview);
 
     return (

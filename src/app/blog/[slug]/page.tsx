@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import {
     ArrowLeft,
@@ -99,7 +100,7 @@ export default function BlogPostPage() {
                     </div>
                     <h2 className="text-2xl font-bold">Post Not Found</h2>
                     <p className="text-muted-foreground text-sm">
-                        This blog post doesn't exist or has been removed.
+                        This blog post does not exist or has been removed.
                     </p>
                     <Button onClick={() => router.push("/blog")} className="gap-2">
                         <ArrowLeft className="h-4 w-4" />
@@ -134,11 +135,12 @@ export default function BlogPostPage() {
 
                         {/* Cover image */}
                         {post.coverImage && (
-                            <div className="rounded-2xl overflow-hidden aspect-video bg-muted">
-                                <img
+                            <div className="rounded-2xl overflow-hidden aspect-video bg-muted relative">
+                                <Image
                                     src={post.coverImage}
                                     alt={post.title}
-                                    className="w-full h-full object-cover"
+                                    fill
+                                    className="object-cover"
                                 />
                             </div>
                         )}

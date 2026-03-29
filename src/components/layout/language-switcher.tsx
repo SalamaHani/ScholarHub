@@ -12,7 +12,6 @@ import {
     DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { applyLangToDom } from "@/hooks/useSettings";
-import { LANG_CHANGE_EVENT } from "@/hooks/useTranslation";
 import { cn } from "@/lib/utils";
 
 const USER_LANG_KEY = "scholarhub_user_lang";
@@ -37,6 +36,8 @@ export function LanguageSwitcher() {
 
     const handleSelect = (code: string) => {
         localStorage.setItem(USER_LANG_KEY, code);
+        // Also persist in a cookie so middleware can read it server-side
+        document.cookie = `${USER_LANG_KEY}=${code};path=/;max-age=31536000;SameSite=Lax`;
         setCurrent(code);
         applyLangToDom(code); // also dispatches LANG_CHANGE_EVENT internally
         setOpen(false);

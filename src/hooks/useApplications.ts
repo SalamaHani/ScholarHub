@@ -218,12 +218,27 @@ export const useApplication = (id: string) => {
     queryKey: ["application", id],
     queryFn: async () => {
       const { data } = await api.get<any>(`/applications/${id}`);
-      // Normalise: { success, data: { ...app } } or { ...app } directly
-      const app = data?.data ?? data;
-      // Guard: if response is a success-false envelope, treat as not found
-      if (app && app.success === false) {
-        throw new Error(app.message || "Application not found");
+
+      // Guard: explicit failure envelope
+      if (data?.success === false) {
+        throw new Error(data.message || "Application not found");
       }
+
+      // Normalise all common response shapes:
+      //  { data: { application: {...} } }
+      //  { data: { ...app } }
+      //  { application: {...} }
+      //  { ...app }
+      const app =
+        data?.data?.application ??
+        data?.data ??
+        data?.application ??
+        data;
+
+      if (!app || !app.id) {
+        throw new Error("Application not found");
+      }
+
       return app;
     },
     enabled: !!id && id !== "undefined",

@@ -232,7 +232,7 @@ document.cookie = `token=${accessToken}; path=/`;
 ### 1. Generate a 5-minute token on backend
 ```bash
 # Login to get token
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password"}'
 ```
@@ -241,7 +241,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 ### 3. Make an authenticated request
 ```bash
-curl http://localhost:8080/api/notifications \
+curl http://localhost/api/notifications \
   -H "Authorization: Bearer expired-token"
 ```
 
