@@ -1,3 +1,6 @@
+# syntax=docker/dockerfile:1
+# ^^^ Enables BuildKit cache mounts. Must stay on the first line.
+
 # ============================================================
 # Stage 1: Install dependencies
 # ============================================================
@@ -7,11 +10,12 @@ RUN apk add --no-cache libc6-compat openssl
 
 WORKDIR /app
 
-# Copy lockfile and manifests
 COPY package.json package-lock.json ./
 
-# Install all dependencies (including devDependencies needed for build)
-RUN npm ci
+# Cache mount keeps downloaded packages on the host disk between builds.
+# Packages are NOT re-fetched unless package-lock.json changes.
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline
 
 # ============================================================
 # Stage 2: Build the application
@@ -22,21 +26,24 @@ RUN apk add --no-cache libc6-compat openssl
 
 WORKDIR /app
 
-# Bring in node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
-
-# Copy full source
 COPY . .
 
-# Generate Prisma client
-# RUN npx prisma generate
+# Generate Prisma client (required before build)
+RUN npx prisma generate
 
-# Set environment to production for the build
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Build Next.js app (standalone output)
-RUN npm run build
+# Limit Node heap to 768 MB so the build does not OOM-kill on a 1 GB server.
+# TypeScript/ESLint checks are skipped in next.config.mjs — that is what
+# caused the previous 4000-second build on this hardware.
+ENV NODE_OPTIONS="--max-old-space-size=768"
+
+# Cache mount keeps Next.js webpack/SWC incremental output on the host.
+# Only changed pages are recompiled on subsequent builds.
+RUN --mount=type=cache,target=/app/.next/cache \
+    npm run build
 
 # ============================================================
 # Stage 3: Production runner (minimal image)
@@ -50,20 +57,18 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create a non-root user for security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser  --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser  --system --uid 1001 nextjs && \
+    mkdir -p /app/data && chown nextjs:nodejs /app/data
 
-# Copy public assets
-COPY --from=builder /app/public ./public
-
-# Copy standalone build output
+COPY --from=builder --chown=nextjs:nodejs /app/public           ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static     ./.next/static
 
-# Copy Prisma schema and generated client (needed at runtime)
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma                   ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma     ./node_modules/.prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma     ./node_modules/@prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma      ./node_modules/prisma
 
 USER nextjs
 
@@ -72,4 +77,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "node_modules/.bin/prisma db push --skip-generate && node server.js"]

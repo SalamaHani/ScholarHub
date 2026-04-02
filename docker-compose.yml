@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   scholarhub:
     build:
@@ -11,4 +10,17 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      # Override DATABASE_URL to use the persistent volume path inside the container
+      - DATABASE_URL=file:/app/data/db.sqlite
+    volumes:
+      - scholarhub-data:/app/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  scholarhub-data:
