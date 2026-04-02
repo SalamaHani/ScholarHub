@@ -15,7 +15,7 @@ COPY package.json package-lock.json ./
 # Cache mount keeps downloaded packages on the host disk between builds.
 # Packages are NOT re-fetched unless package-lock.json changes.
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --prefer-offline --no-audit --no-fund
+    NODE_OPTIONS="--max-old-space-size=512" npm ci --prefer-offline --no-audit --no-fund
 
 # ============================================================
 # Stage 2: Build the application
