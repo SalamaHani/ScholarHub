@@ -37,7 +37,3 @@ next-env.d.ts
 # IDE
 .idea/
 .vscode/
-
-# Prisma
-prisma/*.db
-prisma/*.db-journal
