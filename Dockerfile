@@ -6,7 +6,7 @@
 # ============================================================
 FROM node:20-alpine AS deps
 
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
@@ -22,22 +22,19 @@ RUN --mount=type=cache,target=/root/.npm \
 # ============================================================
 FROM node:20-alpine AS builder
 
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client (required before build)
-RUN npx prisma generate
-
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Limit Node heap to 768 MB so the build does not OOM-kill on a 1 GB server.
-# TypeScript/ESLint checks are skipped in next.config.mjs — that is what
-# caused the previous 4000-second build on this hardware.
+# Limit Node heap to 768 MB so the build does not OOM on a 1 GB server.
+# TypeScript type-checking and ESLint are skipped in next.config.mjs —
+# those were the cause of the 4000-second build on low-resource hardware.
 ENV NODE_OPTIONS="--max-old-space-size=768"
 
 # Cache mount keeps Next.js webpack/SWC incremental output on the host.
@@ -50,7 +47,7 @@ RUN --mount=type=cache,target=/app/.next/cache \
 # ============================================================
 FROM node:20-alpine AS runner
 
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat
 
 WORKDIR /app
 
@@ -58,8 +55,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser  --system --uid 1001 nextjs && \
-    mkdir -p /app/data && chown nextjs:nodejs /app/data
+    adduser  --system --uid 1001 nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/public           ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -72,4 +68,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["sh", "-c", "node_modules/.bin/prisma db push --skip-generate && node server.js"]
+CMD ["node", "server.js"]
