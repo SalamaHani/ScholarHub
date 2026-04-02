@@ -13,6 +13,10 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const cairo = Cairo({ subsets: ["arabic", "latin"], variable: "--font-cairo" });
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
   title: "ScholarHub - Find Scholarships for Students Worldwide",
   description:
     "ScholarHub helps students worldwide discover and access scholarship opportunities for academic and professional growth. Find scholarships, deadlines, and application links in one place.",
