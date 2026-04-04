@@ -35,6 +35,5 @@ Thumbs.db
 coverage
 
 # Docker itself
-Dockerfile
 .dockerignore
 docker-compose*.yml
