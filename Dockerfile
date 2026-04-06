@@ -1,18 +1,29 @@
 # syntax=docker/dockerfile:1
 
 # ────────────────────────────────────────────
-# Stage 1 — install dependencies
+# Stage 1a — production dependencies only
+# This layer is cached as long as package.json doesn't change.
 # ────────────────────────────────────────────
-FROM node:20-alpine AS deps
+FROM node:20-alpine AS deps-prod
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-# Cache mount: npm packages are stored on the host between builds.
-# On rebuild, only new/changed packages are downloaded.
 RUN --mount=type=cache,target=/root/.npm \
-    NODE_OPTIONS="--max-old-space-size=512" \
+    npm ci --omit=dev --no-audit --no-fund
+
+# ────────────────────────────────────────────
+# Stage 1b — all dependencies (prod + dev)
+# Reuses the downloaded cache from stage 1a.
+# ────────────────────────────────────────────
+FROM node:20-alpine AS deps-dev
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN --mount=type=cache,target=/root/.npm \
     npm ci --no-audit --no-fund
 
 # ────────────────────────────────────────────
@@ -22,16 +33,15 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps-dev /app/node_modules ./node_modules
 COPY . .
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-# Prevent OOM kill on 1 GB servers during compilation
-ENV NODE_OPTIONS="--max-old-space-size=768"
+# Stay under 800 MB to avoid OOM on 1 GB servers
+ENV NODE_OPTIONS="--max-old-space-size=800"
 
-# Cache mount: Next.js stores incremental compile cache here.
-# On rebuild, only changed pages are recompiled.
+# Next.js incremental build cache — only changed pages recompile on rebuild.
 RUN --mount=type=cache,target=/app/.next/cache \
     npm run build
 
