@@ -157,24 +157,15 @@ export const useDocuments = (filters?: DocumentFilters) => {
   const download = useMutation({
     mutationFn: async ({
       fileUrl,
-      fileName,
     }: {
       fileUrl: string;
       fileName: string;
     }) => {
-      const { data } = await api.get("/documents/download", {
+      const { data } = await api.get<{ data: { url: string; filename: string } }>("/documents/download", {
         params: { url: fileUrl },
-        responseType: "blob",
       });
-      // Trigger browser download
-      const blobUrl = window.URL.createObjectURL(new Blob([data]));
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(blobUrl);
+      // Open the presigned S3 URL directly in the browser
+      window.open(data.data.url, "_blank", "noopener,noreferrer");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
