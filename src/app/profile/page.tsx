@@ -2742,18 +2742,10 @@ function DocCard({
     e.stopPropagation();
     if (!url) return;
     try {
-      const { data } = await api.get("/documents/download", {
+      const { data } = await api.get<{ data: { url: string; filename: string } }>("/documents/download", {
         params: { url },
-        responseType: "blob",
       });
-      const blobUrl = window.URL.createObjectURL(new Blob([data]));
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
+      window.open(data.data.url, "_blank", "noopener,noreferrer");
     } catch (error) {
       console.error("Download failed:", error);
     }
