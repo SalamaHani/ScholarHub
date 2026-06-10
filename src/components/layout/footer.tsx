@@ -134,16 +134,15 @@ export function Footer() {
           <div className="lg:col-span-2 space-y-4">
             <Link
               href="/"
-              className="flex items-center gap-2 group ltr"
-              dir="ltr"
+              className="flex items-center gap-2 group"
             >
               {settings.logoUrl ? (
-                <Image src={settings.logoUrl} alt={settings.siteName || "ScholarHub"} width={32} height={32} className="object-contain" unoptimized />
+                <Image src={settings.logoUrl} alt={t.brand.siteName} width={32} height={32} className="object-contain" unoptimized />
               ) : (
                 <GraduationCap className="h-8 w-8 text-primary" />
               )}
               <span className="text-xl font-bold gradient-text">
-                {settings.siteName || "ScholarHub"}
+                {t.brand.siteName}
               </span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
@@ -244,7 +243,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-1">
             <p className="ltr" data-ltr>
-              {settings.copyrightText || `© ${currentYear} ${settings.siteName || "ScholarHub"}. ${t.footer.rights}`}
+              {settings.copyrightText || `© ${currentYear} ${t.brand.siteName}. ${t.footer.rights}`}
             </p>
           </div>
 

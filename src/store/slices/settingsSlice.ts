@@ -68,7 +68,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     professorsOpen: true,
     allowGoogleAuth: true,
     requireEmailVerification: true,
-    defaultLanguage: "en",
+    defaultLanguage: "ar",
     timezone: "UTC",
     footerText: "Connecting students with scholarship opportunities worldwide.",
     copyrightText: `© ${new Date().getFullYear()} ScholarHub. All rights reserved.`,

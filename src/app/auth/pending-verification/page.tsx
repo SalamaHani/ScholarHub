@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useTranslation } from "@/hooks/useTranslation";
 
 /**
  * Professor Pending Verification Page
@@ -16,6 +17,7 @@ import { motion } from "framer-motion";
 export default function PendingVerificationPage() {
   const router = useRouter();
   const { user, logout, refresh, isLoading } = useAuth();
+  const { t } = useTranslation();
 
   // Initialize auth on mount
   useEffect(() => {
@@ -67,10 +69,10 @@ export default function PendingVerificationPage() {
               {/* Title */}
               <div className="space-y-1">
                 <h1 className="text-2xl font-bold text-zinc-900">
-                  Pending Verification
+                  {t.auth.pendingVerificationTitle}
                 </h1>
                 <p className="text-base text-zinc-600">
-                  Welcome, Professor {user?.firstName || user?.name}!
+                  {t.auth.welcomeProfessor} {user?.firstName || user?.name}!
                 </p>
               </div>
 
@@ -80,11 +82,10 @@ export default function PendingVerificationPage() {
                   <Shield className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-sm text-zinc-900">
-                      Your account is being reviewed
+                      {t.auth.accountReviewing}
                     </h3>
                     <p className="text-xs text-zinc-600 mt-0.5">
-                      Our admin team is reviewing your professor account. This
-                      usually takes 24-48 hours.
+                      {t.auth.accountReviewingBody}
                     </p>
                   </div>
                 </div>
@@ -94,11 +95,10 @@ export default function PendingVerificationPage() {
                     <FileText className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="font-semibold text-sm text-zinc-900">
-                        Complete your profile
+                        {t.auth.completeYourProfile}
                       </h3>
                       <p className="text-xs text-zinc-600 mt-0.5">
-                        While you wait, complete your profile to speed up the
-                        verification process.
+                        {t.auth.completeYourProfileBody}
                       </p>
                     </div>
                   </div>
@@ -108,7 +108,7 @@ export default function PendingVerificationPage() {
               {/* Progress Steps */}
               <div className="bg-white border border-zinc-200 rounded-lg p-4">
                 <h3 className="font-semibold text-sm text-zinc-900 mb-3 text-left">
-                  Verification Steps
+                  {t.auth.verificationSteps}
                 </h3>
                 <div className="space-y-2.5">
                   <div className="flex items-center gap-2.5 text-left">
@@ -116,7 +116,7 @@ export default function PendingVerificationPage() {
                       <CheckCircle className="h-3 w-3 text-white" />
                     </div>
                     <span className="text-xs text-zinc-600">
-                      Account created
+                      {t.auth.accountCreatedStep}
                     </span>
                   </div>
 
@@ -138,8 +138,8 @@ export default function PendingVerificationPage() {
                     </div>
                     <span className="text-xs font-medium">
                       {isProfileComplete
-                        ? "Profile completed"
-                        : "Complete your profile"}
+                        ? t.auth.profileCompletedStep
+                        : t.auth.completeYourProfileStep}
                     </span>
                   </div>
 
@@ -147,14 +147,14 @@ export default function PendingVerificationPage() {
                     <div className="w-5 h-5 rounded-full border border-zinc-300 flex items-center justify-center flex-shrink-0">
                       <Clock className="h-3 w-3" />
                     </div>
-                    <span className="text-xs">Admin verification</span>
+                    <span className="text-xs">{t.auth.adminVerificationStep}</span>
                   </div>
 
                   <div className="flex items-center gap-2.5 text-left text-zinc-400">
                     <div className="w-5 h-5 rounded-full border border-zinc-300 flex items-center justify-center flex-shrink-0">
                       <CheckCircle className="h-3 w-3" />
                     </div>
-                    <span className="text-xs">Access granted</span>
+                    <span className="text-xs">{t.auth.accessGrantedStep}</span>
                   </div>
                 </div>
               </div>
@@ -166,7 +166,7 @@ export default function PendingVerificationPage() {
                     onClick={handleCompleteProfile}
                     className="w-full h-10 bg-primary hover:bg-primary/90 text-white font-semibold text-sm"
                   >
-                    Complete Your Profile
+                    {t.auth.completeYourProfileBtn}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}
@@ -176,7 +176,7 @@ export default function PendingVerificationPage() {
                   variant="outline"
                   className="w-full h-9 border-zinc-300 text-sm"
                 >
-                  Back to Login
+                  {t.auth.backToLogin}
                 </Button>
               </div>
             </div>

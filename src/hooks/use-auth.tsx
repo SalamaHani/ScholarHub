@@ -21,6 +21,7 @@ export type { User };
 import type { AppDispatch } from "@/store";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/hooks/useTranslation";
 
 /**
  * Professional Auth Hook
@@ -30,6 +31,7 @@ import { useRouter } from "next/navigation";
 export const useAuth = () => {
     const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
+    const { t } = useTranslation();
 
     // Selectors
     const user = useSelector(selectUser);
@@ -44,8 +46,8 @@ export const useAuth = () => {
         try {
             const result = await dispatch(loginUser(credentials)).unwrap();
             toast({
-                title: "Login successful",
-                description: "Welcome back to ScholarHub!",
+                title: t.auth.loginSuccessful,
+                description: t.auth.welcomeBackToast,
             });
             await dispatch(initializeAuth());
 
@@ -63,20 +65,20 @@ export const useAuth = () => {
             }
         } catch (err: any) {
             toast({
-                title: "Login failed",
-                description: err || "Invalid credentials",
+                title: t.auth.loginFailed,
+                description: err || t.auth.invalidCredentials,
                 variant: "destructive",
             });
             throw err;
         }
-    }, [dispatch, router]);
+    }, [dispatch, router, t]);
 
     const register = useCallback(async (userData: any) => {
         try {
             const result = await dispatch(registerUser(userData)).unwrap();
             toast({
-                title: "Registration successful",
-                description: "Your ScholarHub account has been created.",
+                title: t.auth.registrationSuccessful,
+                description: t.auth.accountCreated,
             });
 
             // Check if professor needs verification
@@ -93,8 +95,8 @@ export const useAuth = () => {
             }
         } catch (err: any) {
             toast({
-                title: "Registration failed",
-                description: err || "Something went wrong",
+                title: t.auth.registrationFailed,
+                description: err || t.auth.somethingWentWrong,
                 variant: "destructive",
             });
             throw err;
@@ -105,46 +107,46 @@ export const useAuth = () => {
         // Always clear local state first — regardless of API result
         await dispatch(logoutUser());
         toast({
-            title: "Logged out",
-            description: "You have been successfully logged out.",
+            title: t.auth.loggedOutTitle,
+            description: t.auth.loggedOutDesc,
         });
         router.push("/auth/login");
-    }, [dispatch, router]);
+    }, [dispatch, router, t]);
 
     const editProfile = useCallback(async (profileData: any) => {
         try {
             await dispatch(updateUserProfile(profileData)).unwrap();
             toast({
-                title: "Profile updated",
-                description: "Your changes have been saved and synced.",
+                title: t.auth.profileUpdated,
+                description: t.auth.profileUpdatedDesc,
             });
         } catch (err: any) {
             toast({
-                title: "Update failed",
-                description: err || "Could not update profile",
+                title: t.auth.updateFailed,
+                description: err || t.auth.couldNotUpdateProfile,
                 variant: "destructive",
             });
             throw err;
         }
-    }, [dispatch]);
+    }, [dispatch, t]);
 
     const editAvatar = useCallback(async (avatarData: { avatar: string }) => {
         try {
             await dispatch(updateAvatar(avatarData)).unwrap();
             toast({
-                title: "Avatar updated",
-                description: "Your individual profile visual has been updated.",
+                title: t.auth.avatarUpdated,
+                description: t.auth.avatarUpdatedDesc,
             });
             router.refresh(); // Sync Next.js server state
         } catch (err: any) {
             toast({
-                title: "Avatar update failed",
-                description: err || "Could not update avatar image",
+                title: t.auth.avatarUpdateFailed,
+                description: err || t.auth.couldNotUpdateAvatar,
                 variant: "destructive",
             });
             throw err;
         }
-    }, [dispatch, router]);
+    }, [dispatch, router, t]);
 
     const refresh = useCallback(async () => {
         try {

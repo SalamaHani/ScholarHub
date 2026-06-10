@@ -7,6 +7,7 @@ import { setCredentials } from "@/store/slices/authSlice";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import api from "@/lib/axios";
+import { useTranslation } from "@/hooks/useTranslation";
 
 /**
  * OAuth Callback Page
@@ -15,6 +16,7 @@ import api from "@/lib/axios";
 export default function CallbackPage() {
     const router = useRouter();
     const dispatch = useDispatch();
+    const { t } = useTranslation();
     const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 
     useEffect(() => {
@@ -86,7 +88,7 @@ export default function CallbackPage() {
                     : "Failed to process authentication";
 
                 toast({
-                    title: "Authentication failed",
+                    title: t.auth.authFailedToast,
                     description: errorMessage,
                     variant: "destructive",
                 });
@@ -106,16 +108,16 @@ export default function CallbackPage() {
                     {status === "loading" && (
                         <>
                             <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-                            <h2 className="text-xl font-bold text-zinc-900">Completing authentication...</h2>
-                            <p className="text-sm text-zinc-500">Please wait while we sign you in</p>
+                            <h2 className="text-xl font-bold text-zinc-900">{t.auth.completingAuth}</h2>
+                            <p className="text-sm text-zinc-500">{t.auth.pleaseWaitSignIn}</p>
                         </>
                     )}
 
                     {status === "error" && (
                         <>
                             <XCircle className="h-12 w-12 text-red-500 mx-auto" />
-                            <h2 className="text-xl font-bold text-zinc-900">Authentication Failed</h2>
-                            <p className="text-sm text-zinc-500">Redirecting back to login...</p>
+                            <h2 className="text-xl font-bold text-zinc-900">{t.auth.authFailed}</h2>
+                            <p className="text-sm text-zinc-500">{t.auth.redirectingBackLogin}</p>
                         </>
                     )}
                 </div>

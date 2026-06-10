@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter, Cairo } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
@@ -54,12 +55,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const headersList = headers();
-  const lang = headersList.get("x-lang") ?? "en";
-  const dir = headersList.get("x-dir") ?? "ltr";
+  const lang = headersList.get("x-lang") ?? "ar";
+  const dir = headersList.get("x-dir") ?? "rtl";
+  const adsenseClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
 
   return (
     <html lang={lang} dir={dir} suppressHydrationWarning>
-      <head />
+      <head>
+        {adsenseClient && (
+          <Script
+            id="adsense-loader"
+            async
+            strategy="afterInteractive"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+            crossOrigin="anonymous"
+          />
+        )}
+      </head>
       <body className={`${inter.variable} ${cairo.variable} ${inter.className} antialiased`}>
         <ReduxProvider>
           <QueryProvider>

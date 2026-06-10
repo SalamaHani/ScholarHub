@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Block private/auth-only areas from search and ad crawlers
+Disallow: /admin
+Disallow: /admin/
+Disallow: /auth/callback
+Disallow: /auth/google/success
+Disallow: /auth/pending-verification
+Disallow: /api/
+
+# Allow Google AdSense crawler everywhere it's allowed by AdSense terms
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: AdsBot-Google
+Allow: /
+
+Sitemap: https://scholarhub.ps/sitemap.xml

@@ -80,7 +80,7 @@ export function Navbar() {
             {settings.logoUrl ? (
               <Image
                 src={settings.logoUrl}
-                alt={settings.siteName || "ScholarHub"}
+                alt={t.brand.siteName}
                 width={32}
                 height={32}
                 className="object-contain rounded-lg transition-transform group-hover:scale-110"
@@ -92,7 +92,7 @@ export function Navbar() {
               </div>
             )}
             <span className="font-bold text-xl tracking-tight gradient-text">
-              {settings.siteName || "ScholarHub"}
+              {t.brand.siteName}
             </span>
           </Link>
 

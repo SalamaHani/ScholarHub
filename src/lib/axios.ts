@@ -2,7 +2,8 @@ import axios from "axios";
 import { getCookie, clearAllAuthCookies } from "@/lib/cookies";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost/api",
+  baseURL:
+    process.env.NEXT_PUBLIC_API_URL || "https://scholarhub.palshop.app/api",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

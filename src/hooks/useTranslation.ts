@@ -7,8 +7,8 @@ const USER_LANG_KEY   = "scholarhub_user_lang";
 export const LANG_CHANGE_EVENT = "scholarhub:langchange";
 
 function readCurrentLang(): string {
-    if (typeof window === "undefined") return "en";
-    return localStorage.getItem(USER_LANG_KEY) ?? document.documentElement.lang ?? "en";
+    if (typeof window === "undefined") return "ar";
+    return localStorage.getItem(USER_LANG_KEY) ?? document.documentElement.lang ?? "ar";
 }
 
 /**
@@ -20,7 +20,7 @@ function readCurrentLang(): string {
  *   <p>{t.nav.home}</p>
  */
 export function useTranslation(): { t: Translations; lang: string } {
-    const [lang, setLang] = useState<string>("en");
+    const [lang, setLang] = useState<string>("ar");
 
     useEffect(() => {
         // Sync with the real value after hydration

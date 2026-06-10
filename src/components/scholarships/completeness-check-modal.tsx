@@ -23,6 +23,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { getProfileStatus, getStatusColor, getStatusIndicatorColor, getStatusBgColor } from "@/lib/profileStatus";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface CompletenessCheckModalProps {
     isOpen: boolean;
@@ -31,6 +32,7 @@ interface CompletenessCheckModalProps {
 }
 
 export function CompletenessCheckModal({ isOpen, onClose, completeness }: CompletenessCheckModalProps) {
+    const { t } = useTranslation();
     const isReady = completeness >= 80;
     const status = getProfileStatus(completeness);
     const statusColor = getStatusColor(status);
@@ -91,27 +93,27 @@ export function CompletenessCheckModal({ isOpen, onClose, completeness }: Comple
                         </div>
 
                         <DialogTitle className={cn("text-2xl font-black tracking-tighter uppercase", statusColor)}>
-                            Application Locked
+                            {t.completeness.applicationLocked}
                         </DialogTitle>
                         <DialogDescription className="text-slate-500 font-medium leading-relaxed">
-                            Your professional profile is at <span className={`${statusColor} font-bold underline decoration-2 underline-offset-4`}>{completeness}% strength ({status})</span>.
-                            ScholarHub requires a minimum of <span className="text-primary font-bold">80% profile completeness</span> to ensure your application meets high academic standards.
+                            {t.completeness.profileStrengthPrefix} <span className={`${statusColor} font-bold underline decoration-2 underline-offset-4`}>{completeness}% {t.completeness.strengthSuffix} ({status})</span>.
+                            {" "}{t.completeness.requiresMin} <span className="text-primary font-bold">{t.completeness.profileCompleteness}</span> {t.completeness.requiresMinSuffix}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="mt-8 space-y-6">
                         <div className="space-y-3">
                             <div className="flex justify-between items-end">
-                                <span className="text-[10px] font-black tracking-widest text-slate-400">Current Strength</span>
+                                <span className="text-[10px] font-black tracking-widest text-slate-400">{t.completeness.currentStrength}</span>
                                 <span className={`text-lg font-black ${statusColor}`}>{completeness}%</span>
                             </div>
                             <Progress value={completeness} className="h-3 bg-slate-100" indicatorClassName={indicatorColor} />
                         </div>
 
                         <div className={cn("p-4 rounded-2xl border space-y-3", bgColor, "border-" + status.toLowerCase() + "-200")}>
-                            <h4 className={cn("text-[10px] font-black uppercase tracking-widest", statusColor)}>Why this matters?</h4>
+                            <h4 className={cn("text-[10px] font-black uppercase tracking-widest", statusColor)}>{t.completeness.whyMatters}</h4>
                             <p className="text-xs text-slate-600 leading-relaxed font-medium italic">
-                                &quot;Institutions prioritize complete profiles. A comprehensive dossier increases your chances of approval by up to 300%.&quot;
+                                &quot;{t.completeness.whyMattersBody}&quot;
                             </p>
                         </div>
                     </div>
@@ -119,12 +121,12 @@ export function CompletenessCheckModal({ isOpen, onClose, completeness }: Comple
                     <div className="mt-8 flex flex-col gap-3">
                         <Link href="/profile" className="w-full">
                             <Button className={cn("w-full h-12 rounded-2xl text-white font-bold group transition-all text-xs uppercase tracking-widest shadow-lg", getButtonGradient())}>
-                                Complete My Profile
+                                {t.completeness.completeProfile}
                                 <UserCircle2 className="ml-2 h-4 w-4 group-hover:scale-110 transition-transform" />
                             </Button>
                         </Link>
                         <Button variant="ghost" onClick={onClose} className="w-full h-12 rounded-2xl font-bold text-slate-400 hover:text-slate-600">
-                            Maybe Later
+                            {t.completeness.maybeLater}
                         </Button>
                     </div>
                 </div>
