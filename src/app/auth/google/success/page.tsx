@@ -6,6 +6,7 @@ import { useDispatch } from "react-redux";
 import { setCredentials } from "@/store/slices/authSlice";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, XCircle } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 /**
  * Google OAuth Success Page
@@ -15,6 +16,7 @@ function GoogleAuthSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading",
   );
@@ -29,8 +31,8 @@ function GoogleAuthSuccessContent() {
         if (!token || !userStr) {
           setStatus("error");
           toast({
-            title: "Authentication failed",
-            description: "Missing authentication data from server",
+            title: t.auth.authFailedToast,
+            description: t.auth.somethingWentWrong,
             variant: "destructive",
           });
           setTimeout(() => router.push("/auth/login"), 2000);
@@ -77,7 +79,7 @@ function GoogleAuthSuccessContent() {
             ? error.message
             : "Failed to process authentication data";
         toast({
-          title: "Authentication failed",
+          title: t.auth.authFailedToast,
           description: errorMessage,
           variant: "destructive",
         });
@@ -87,7 +89,7 @@ function GoogleAuthSuccessContent() {
     };
 
     processAuth();
-  }, [searchParams, dispatch, router]);
+  }, [searchParams, dispatch, router, t]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-white to-blue-50">
@@ -96,10 +98,10 @@ function GoogleAuthSuccessContent() {
           <>
             <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
             <h2 className="text-xl font-bold text-zinc-900">
-              Completing authentication...
+              {t.auth.completingAuth}
             </h2>
             <p className="text-sm text-zinc-500">
-              Please wait while we sign you in
+              {t.auth.pleaseWaitSignIn}
             </p>
           </>
         )}
@@ -108,10 +110,10 @@ function GoogleAuthSuccessContent() {
           <>
             <XCircle className="h-12 w-12 text-red-500 mx-auto" />
             <h2 className="text-xl font-bold text-zinc-900">
-              Authentication Failed
+              {t.auth.authFailed}
             </h2>
             <p className="text-sm text-zinc-500">
-              Redirecting back to login...
+              {t.auth.redirectingBackLogin}
             </p>
           </>
         )}

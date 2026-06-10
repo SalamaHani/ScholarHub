@@ -10,14 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Save, X } from "lucide-react";
 import { Testimonial, TestimonialInput } from "@/hooks/useTestimonials";
-
-const testimonialSchema = z.object({
-    quote: z.string().min(10, "Quote must be at least 10 characters"),
-    author: z.string().min(2, "Author name is required"),
-    role: z.string().min(2, "Role/Title is required"),
-    avatar: z.string().optional(),
-    isActive: z.boolean().default(true),
-});
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface TestimonialFormProps {
     initialData?: Partial<Testimonial>;
@@ -27,7 +20,16 @@ interface TestimonialFormProps {
 }
 
 export function TestimonialForm({ initialData, onSuccess, onCancel, onSubmit }: TestimonialFormProps) {
+    const { t } = useTranslation();
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const testimonialSchema = z.object({
+        quote: z.string().min(10, t.testimonialForm.quoteMin),
+        author: z.string().min(2, t.testimonialForm.authorRequired),
+        role: z.string().min(2, t.testimonialForm.roleRequired),
+        avatar: z.string().optional(),
+        isActive: z.boolean().default(true),
+    });
 
     const {
         register,
@@ -59,10 +61,10 @@ export function TestimonialForm({ initialData, onSuccess, onCancel, onSubmit }: 
     return (
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6 pt-4">
             <div className="space-y-2">
-                <Label htmlFor="author">Author Name</Label>
+                <Label htmlFor="author">{t.testimonialForm.authorName}</Label>
                 <Input
                     id="author"
-                    placeholder="e.g. Dr. Jane Smith or Student Name"
+                    placeholder={t.testimonialForm.authorPlaceholder}
                     {...register("author")}
                     className={errors.author ? "border-destructive" : ""}
                 />
@@ -70,10 +72,10 @@ export function TestimonialForm({ initialData, onSuccess, onCancel, onSubmit }: 
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="role">Role / Position</Label>
+                <Label htmlFor="role">{t.testimonialForm.roleLabel}</Label>
                 <Input
                     id="role"
-                    placeholder="e.g. PhD Researcher at MIT"
+                    placeholder={t.testimonialForm.rolePlaceholder}
                     {...register("role")}
                     className={errors.role ? "border-destructive" : ""}
                 />
@@ -81,10 +83,10 @@ export function TestimonialForm({ initialData, onSuccess, onCancel, onSubmit }: 
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="quote">Testimonial Quote</Label>
+                <Label htmlFor="quote">{t.testimonialForm.quoteLabel}</Label>
                 <Textarea
                     id="quote"
-                    placeholder="Describe the experience or impact..."
+                    placeholder={t.testimonialForm.quotePlaceholder}
                     rows={4}
                     {...register("quote")}
                     className={errors.quote ? "border-destructive" : ""}
@@ -93,7 +95,7 @@ export function TestimonialForm({ initialData, onSuccess, onCancel, onSubmit }: 
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="avatar">Avatar URL (Optional)</Label>
+                <Label htmlFor="avatar">{t.testimonialForm.avatarLabel}</Label>
                 <Input
                     id="avatar"
                     placeholder="https://example.com/avatar.jpg"
@@ -103,7 +105,7 @@ export function TestimonialForm({ initialData, onSuccess, onCancel, onSubmit }: 
 
             <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button type="button" variant="outline" onClick={onCancel}>
-                    Cancel
+                    {t.testimonialForm.cancel}
                 </Button>
                 <Button type="submit" disabled={isSubmitting} className="gap-2">
                     {isSubmitting ? (
@@ -111,7 +113,7 @@ export function TestimonialForm({ initialData, onSuccess, onCancel, onSubmit }: 
                     ) : (
                         <Save className="h-4 w-4" />
                     )}
-                    {initialData?.id ? "Update Testimonial" : "Create Testimonial"}
+                    {initialData?.id ? t.testimonialForm.updateTestimonial : t.testimonialForm.createTestimonial}
                 </Button>
             </div>
         </form>

@@ -66,7 +66,7 @@ export default function AuthLayout({
                     <div className="p-2 bg-white/20 backdrop-blur-md rounded-lg shadow-xl border border-white/20 group-hover/logo:rotate-12 transition-transform">
                         <GraduationCap className="h-6 w-6 text-white" />
                     </div>
-                    <span className="text-xl font-bold tracking-tight text-white drop-shadow-md">ScholarHub</span>
+                    <span className="text-xl font-bold tracking-tight text-white drop-shadow-md">{t.brand.siteName}</span>
                 </Link>
 
                 <div className="relative z-10">
@@ -132,7 +132,7 @@ export default function AuthLayout({
 
                 <div className="absolute bottom-6 left-0 right-0 text-center">
                     <p className="text-[10px] text-zinc-400 font-medium tracking-widest">
-                        © 2026 ScholarHub • Academic Excellence
+                        © 2026 {t.brand.siteName} • {t.brand.tagline}
                     </p>
                 </div>
             </div>

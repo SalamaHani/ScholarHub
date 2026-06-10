@@ -263,6 +263,7 @@ export default function ProfilePage() {
     register,
     handleSubmit,
     watch,
+    getValues,
     setValue,
     reset,
     formState: { isSubmitting, errors },
@@ -378,6 +379,56 @@ export default function ProfilePage() {
       refresh();
     } catch (error) {
       console.error("Profile update failed:", error);
+      toast({
+        title: t.profile.toastUpdateFailed,
+        description: t.profile.toastUpdateFailedDesc,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const onSaveSkills = async () => {
+    try {
+      const formData = getValues();
+      const validLanguages = languageProficiencies.filter(
+        (lang) => lang.name.trim() !== "",
+      );
+      await editProfile.mutate({
+        ...formData,
+        skills: skillTags,
+        languages: validLanguages,
+        experience: experienceItems,
+        certifications: certificationItems,
+      });
+      setIsEditingSkills(false);
+      refresh();
+    } catch (error) {
+      console.error("Skills update failed:", error);
+      toast({
+        title: t.profile.toastUpdateFailed,
+        description: t.profile.toastUpdateFailedDesc,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const onSaveLanguages = async () => {
+    try {
+      const formData = getValues();
+      const validLanguages = languageProficiencies.filter(
+        (lang) => lang.name.trim() !== "",
+      );
+      await editProfile.mutate({
+        ...formData,
+        skills: skillTags,
+        languages: validLanguages,
+        experience: experienceItems,
+        certifications: certificationItems,
+      });
+      setIsEditingLanguages(false);
+      refresh();
+    } catch (error) {
+      console.error("Languages update failed:", error);
       toast({
         title: t.profile.toastUpdateFailed,
         description: t.profile.toastUpdateFailedDesc,
@@ -1806,10 +1857,7 @@ export default function ProfilePage() {
       {/* Specialized Skills & Expertise Dialog */}
       <Dialog open={isEditingSkills} onOpenChange={setIsEditingSkills}>
         <DialogContent className="sm:max-w-xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
-          <form
-            onSubmit={handleSubmit(onUpdateProfile)}
-            className="flex flex-col"
-          >
+          <div className="flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-slate-100">
               <h2 className="text-xl font-semibold text-slate-900">
                 {t.profile.dialogExpertiseProfile}
@@ -1880,27 +1928,25 @@ export default function ProfilePage() {
                 {t.profile.cancel}
               </Button>
               <Button
-                type="submit"
+                type="button"
                 className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white"
-                disabled={isSubmitting}
+                disabled={editProfile.isPending}
+                onClick={onSaveSkills}
               >
-                {isSubmitting && (
+                {editProfile.isPending && (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 )}
                 {t.profile.save}
               </Button>
             </div>
-          </form>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Specialized Language Mastery Dialog */}
       <Dialog open={isEditingLanguages} onOpenChange={setIsEditingLanguages}>
         <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-white border border-slate-200 shadow-xl rounded-lg">
-          <form
-            onSubmit={handleSubmit(onUpdateProfile)}
-            className="flex flex-col max-h-[90vh]"
-          >
+          <div className="flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between p-6 border-b border-slate-100">
               <h2 className="text-xl font-semibold text-slate-900">
                 {t.profile.dialogLanguages}
@@ -2020,17 +2066,18 @@ export default function ProfilePage() {
                 {t.profile.cancel}
               </Button>
               <Button
-                type="submit"
+                type="button"
                 className="h-10 flex-[2] rounded-md font-medium bg-primary hover:bg-primary/90 text-white"
-                disabled={isSubmitting}
+                disabled={editProfile.isPending}
+                onClick={onSaveLanguages}
               >
-                {isSubmitting && (
+                {editProfile.isPending && (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 )}
                 {t.profile.save}
               </Button>
             </div>
-          </form>
+          </div>
         </DialogContent>
       </Dialog>
 

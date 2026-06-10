@@ -294,7 +294,6 @@ export default function ScholarshipDetailPage({
                   content={scholarship.benefits}
                 />
               )}
-              
             </div>
 
             {/* Application Questions */}

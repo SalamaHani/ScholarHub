@@ -11,6 +11,7 @@ import {
 import { CheckCircle, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface LoginSuccessDialogProps {
     open: boolean;
@@ -29,6 +30,7 @@ export function LoginSuccessDialog({
     autoRedirect = true,
     redirectDelay = 3000,
 }: LoginSuccessDialogProps) {
+    const { t } = useTranslation();
     const [countdown, setCountdown] = useState(Math.floor(redirectDelay / 1000));
 
     useEffect(() => {
@@ -68,7 +70,7 @@ export function LoginSuccessDialog({
                     </motion.div>
 
                     <DialogTitle className="text-center text-xl font-bold">
-                        Welcome to ScholarHub! 🎓
+                        {t.brand.welcomeDialog}
                     </DialogTitle>
                     <DialogDescription className="text-center space-y-2 pt-1">
                         <motion.div
@@ -78,13 +80,13 @@ export function LoginSuccessDialog({
                             className="space-y-1.5"
                         >
                             <p className="text-base font-medium text-zinc-900">
-                                {userName ? `Hello, ${userName}!` : "Login successful!"}
+                                {userName ? `${t.auth.helloUser} ${userName}!` : t.auth.loginSuccessShort}
                             </p>
                             {userRole && (
                                 <div className="flex items-center justify-center gap-2">
                                     <Sparkles className="h-4 w-4 text-primary" />
                                     <span className="text-sm text-zinc-600">
-                                        Logged in as {userRole === "PROFESSOR" ? "Professor" : "Student"}
+                                        {t.auth.loggedInAs} {userRole === "PROFESSOR" ? t.auth.professor : t.auth.student}
                                     </span>
                                 </div>
                             )}
@@ -96,7 +98,7 @@ export function LoginSuccessDialog({
                             transition={{ delay: 0.4 }}
                             className="text-sm text-zinc-500 pt-1"
                         >
-                            You&apos;re being redirected to your dashboard...
+                            {t.auth.redirectingToDashboard}
                         </motion.p>
                     </DialogDescription>
                 </DialogHeader>
@@ -109,7 +111,7 @@ export function LoginSuccessDialog({
                 >
                     {autoRedirect && (
                         <div className="text-center text-xs text-zinc-400">
-                            Redirecting in {countdown} second{countdown !== 1 ? "s" : ""}...
+                            {t.auth.redirectingIn} {countdown} {countdown !== 1 ? t.auth.seconds : t.auth.second}...
                         </div>
                     )}
 
@@ -117,7 +119,7 @@ export function LoginSuccessDialog({
                         onClick={onContinue}
                         className="w-full bg-primary hover:bg-primary/90 font-semibold h-10"
                     >
-                        Continue
+                        {t.auth.continueBtn}
                         <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                 </motion.div>
